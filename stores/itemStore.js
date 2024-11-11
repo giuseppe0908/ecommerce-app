@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 export const useItemStore = defineStore('itemStore', {
   state: () => ({
     items: [],
-    item: []
+    item: null
   }),
   actions: {
     async fetchItems() {
@@ -13,10 +13,9 @@ export const useItemStore = defineStore('itemStore', {
       this.items = data
     },
     async fetchItemById(itemId) {
-      console.log(this.items.filter((item)=>  item.id == itemId));
-      
-      this.item = this.items.filter((item)=>  item.id == itemId);
-     return this.item
+      const response = await fetch(`/api/items/${itemId}`);
+      const data = await response.json();
+      this.item = data;
     },
     async addItem(item) {
       console.log(item);

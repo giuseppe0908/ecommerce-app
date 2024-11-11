@@ -1,8 +1,11 @@
 <template>
-    <div v-for="item in itemStore.item" :key="fav.id>
-      <h1>{{ item.name }}</h1>
-      <p>{{ item.description }}</p>
-      <p>Prezzo: {{ item.price }}€</p>
+    <div>
+        <div class="product">
+            <h1>{{ itemStore.item }}</h1>
+            <p>{{ itemStore.item }}</p>
+            <p>Prezzo: {{ itemStore.item }}€</p>
+        </div>
+      
     </div>
   </template>
   
