@@ -1,0 +1,20 @@
+
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "lib": ["esnext"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "preserve",
+    "types": ["@types/node", "vue", "vuex"]
+  },
+  "exclude": ["node_modules", ".nuxt"],
+  "include": [
+   "server/**/*",
+   "prisma/**/*"
+  ]
+}

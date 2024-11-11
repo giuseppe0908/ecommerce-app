@@ -1,0 +1,62 @@
+-- CreateTable
+CREATE TABLE `ITEM` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(191) NOT NULL,
+    `categoryId` INTEGER NOT NULL,
+    `brandId` INTEGER NOT NULL,
+    `preferity` BOOLEAN NOT NULL,
+    `promo` BOOLEAN NOT NULL,
+    `price` DOUBLE NOT NULL,
+    `photo` VARCHAR(191) NOT NULL,
+    `codeItem` VARCHAR(191) NOT NULL,
+    `percentualPromo` DOUBLE NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `BRAND` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(191) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `CATEGORY` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(191) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `USER` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(191) NOT NULL,
+    `surname` VARCHAR(191) NOT NULL,
+    `email` VARCHAR(191) NOT NULL,
+    `password` VARCHAR(191) NOT NULL,
+
+    UNIQUE INDEX `USER_email_key`(`email`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `ORDINE` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `idUtente` INTEGER NOT NULL,
+    `codeId` VARCHAR(191) NOT NULL,
+    `price` DOUBLE NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `ITEM` ADD CONSTRAINT `ITEM_categoryId_fkey` FOREIGN KEY (`categoryId`) REFERENCES `CATEGORY`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `ITEM` ADD CONSTRAINT `ITEM_brandId_fkey` FOREIGN KEY (`brandId`) REFERENCES `BRAND`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `ORDINE` ADD CONSTRAINT `ORDINE_idUtente_fkey` FOREIGN KEY (`idUtente`) REFERENCES `USER`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
