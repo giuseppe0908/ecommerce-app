@@ -20,7 +20,7 @@ const gucci = await prisma.brand.create({ data: { name: 'Gucci' } })
 
 
   // Aggiungi articoli
-  await prisma.item.createMany({
+  await prisma.product.createMany({
     data: [
       {
         name: 'T-Shirt Nike',

@@ -1,23 +1,24 @@
 
   <template>
-    <div>
-      <h1>Items Store</h1>
+    <div :style="{ backgroundColor: productStore.colorPrimary }">
+      <Jumbo/>
+      <!-- <h1>Items Store</h1>
      
   
-      <div class="item flex" v-for="itemm in itemStore.items" :key="itemm.id">
+      <div class="item flex" v-for="product in productStore.products" :key="product.id">
         <div class="name flex flex-col border-solid border-2 border-sky-500">
           <h3 class="text-red-500 ">NAME</h3>
-          <NuxtLink :to="`/product/${itemm.id}`"><p>{{ itemm.name }}</p></NuxtLink>
+          <NuxtLink :to="`/product/${product.id}`"><p>{{ product.name }}</p></NuxtLink>
         </div>
         <div class="price flex flex-col border-solid border-2 border-sky-500">
           <h3 class="text-red-500 ">PRICE</h3>
-          <p>{{ itemm.price }}</p>
+          <p>{{ product.price }}</p>
         </div>
         <div class="codeiotem flex flex-col border-solid border-2 border-sky-500">
           <h3 class="text-red-500 ">CODEITEM</h3>
-          <p>{{ itemm.codeItem }}</p>
+          <p>{{ product.codeItem }}</p>
         </div>
-        <p @click="deleteItems(itemm.id)" class=" bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded align-middle ">Button</p>
+        <p @click="deleteProducts(product.id)" class=" bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded align-middle ">Button</p>
       </div>
       <h2>Aggiungi un nuovo item</h2>
 
@@ -29,15 +30,15 @@
       </div>
       <div class="add-new">
         <h1>Aggiungi un nuovo item</h1>
-        <form @submit.prevent="addItems">
+        <form @submit.prevent="addProducts">
 
-            <!-- Name Input -->
+            <!-- Name Input 
             <div class="form-group">
                 <label for="name">Product Name</label>
                 <input type="text" v-model="product.name" required placeholder="Enter product name" />
             </div>
 
-            <!-- Category Select -->
+            <!-- Category Select 
             <div class="form-group">
                 <label for="categoryId">Category</label>
                 <select v-model="product.categoryId" required>
@@ -47,7 +48,7 @@
                 </select>
             </div>
 
-            <!-- Brand Select -->
+            <!-- Brand Select
             <div class="form-group">
                 <label for="brandId">Brand</label>
                 <select v-model="product.brandId" required>
@@ -57,66 +58,68 @@
                 </select>
             </div>
 
-            <!-- Favorite Checkbox -->
+            <!-- Favorite Checkbox
             <div class="form-group">
                 <label for="favorite">
                 <input type="checkbox" v-model="product.favorite" /> Favorite
                 </label>
             </div>
 
-            <!-- Promo Checkbox -->
+            <!-- Promo Checkbox
             <div class="form-group">
                 <label for="promo">
                 <input type="checkbox" v-model="product.promo" /> Promo
                 </label>
             </div>
 
-                <!-- Percentual Promo Input -->
+                <!-- Percentual Promo Input
               <div v-if="product.promo" class="form-group">
                 <label for="percentualPromo">Promo Percentage</label>
                 <input type="number" v-model="product.percentualPromo" placeholder="Enter promo %" min="0" max="100" />
               </div>
 
-            <!-- Price Input -->
+            <!-- Price Input 
             <div class="form-group">
                 <label for="price">Price</label>
                 <input type="number" v-model="product.price" required placeholder="Enter price" min="0" step="0.01" />
             </div>
 
-            <!-- Photo URL Input -->
+            <!-- Photo URL Input 
             <div class="form-group">
                 <label for="photo">Photo URL</label>
                 <input type="url" v-model="product.photo" required placeholder="Enter image URL" />
             </div>
 
-            <!-- Code Item Input -->
+            <!-- Code Item Input 
             <div class="form-group">
                 <label for="codeItem">Product Code</label>
                 <input type="text" v-model="product.codeItem" required placeholder="Enter product code" />
             </div>
-            <!-- Submit Button -->
+            <!-- Submit Button
             <button type="submit">Submit</button>
         </form>
-      </div>
-    </div>
+      </div>-->
+    </div> 
   </template>
   <script setup>
-  import { useItemStore } from '@/stores/itemStore'
+  import Jumbo from '~/components/Jumbo.vue'
+
+  import { useProductStore } from '@/stores/productStore'
   import { useCategoryStore } from '@/stores/categoryStore'
 
   import { onMounted, ref } from 'vue'
   
-  const itemStore = useItemStore()
+  const productStore = useProductStore()
   const categoryStore = useCategoryStore()
-  const fetchItems = () => {
-    itemStore.fetchItems()
+  const fetchProducts = () => {
+    productStore.fetchProducts()
   }
   const fetchCategories= () =>{
     categoryStore.fetchCategories()
   }
-  //addItem richiamata nello store
-  const addItems = () =>{
-    itemStore.addItem(product.value)
+  //addProduct richiamata nello store
+  const addProducts = () =>{
+    productStore.addProduct(product.value)
   }
 
 //   const name = ref("");
@@ -137,16 +140,16 @@ const product = ref({
       codeItem: '',
       percentualPromo: 0,
  });
-  const deleteItems = (itemId) => {
-    itemStore.deleteItem(itemId)
+  const deleteProducts = (itemId) => {
+    productStore.deleteProduct(itemId)
   }
 
   const filterfavorite = computed(() => {
-        return itemStore.items.filter((item)=>  item.favorite == true);
+      return productStore.products.filter((item)=>  item.favorite == true);
   });
   
   onMounted(() => {
-    fetchItems();
+    fetchProducts();
     fetchCategories();
   })
   </script>

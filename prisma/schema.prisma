@@ -1,13 +1,14 @@
-datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-model Item {
+// prisma/schema.prisma
+datasource db {
+  provider  = "postgresql"
+  url  	    = env("DATABASE_URL")
+}
+
+model Product {
   id               Int      @id @default(autoincrement())
   name             String
   categoryId       Int
@@ -25,13 +26,13 @@ model Item {
 model Brand {
   id    Int    @id @default(autoincrement())
   name  String
-  items Item[]
+  products Product[]
 }
 
 model Category {
   id    Int    @id @default(autoincrement())
   name  String
-  items Item[]
+  products Product[]
 }
 
 model User {

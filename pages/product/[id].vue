@@ -1,29 +1,32 @@
 <template>
     <div>
-        <div class="product">
-            <h1>{{ itemStore.item }}</h1>
-            <p>{{ itemStore.item }}</p>
-            <p>Prezzo: {{ itemStore.item }}€</p>
-        </div>
-      
+        <!-- <div class="product" v-for="product in productStore.product" :key="product.id">
+            <h1>{{ product.name }}</h1>
+           
+           <p>Prezzo: {{ product.price }}€</p>
+        </div> -->
+       
+
+      <h1>{{productStore.product.name}}</h1>
+      <p>{{productStore.product.price}}€</p>
     </div>
   </template>
   
   <script setup>
   import { useRoute } from 'vue-router'
   import { ref, onMounted } from 'vue'
-  import { useItemStore } from '@/stores/itemStore'
-  const itemStore = useItemStore()
+  import { useProductStore } from '@/stores/productStore'
+  const productStore = useProductStore()
   
   // Definisci il prodotto come un ref
-  const item = ref([null])
+  const product = ref([null])
   const route = useRoute()
   
   
   // Recupera l'ID dalla route e chiama fetchItemById
   onMounted(async () => {
-    const itemId = route.params.id
-    itemStore.fetchItemById(itemId)
+    const productId = route.params.id
+    productStore.fetchProductById(productId)
     
   })
   </script>
