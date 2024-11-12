@@ -36,9 +36,19 @@ model Brand {
 }
 
 model Category {
-  id       Int       @id @default(autoincrement())
-  name     String
-  products Product[]
+  id            Int             @id @default(autoincrement())
+  name          String
+  images        CategoryImage[]  // Relazione con le immagini per genere
+  products      Product[]        // Relazione con i prodotti appartenenti alla categoria
+}
+
+model CategoryImage {
+  id           Int        @id @default(autoincrement())
+  imageUrl     String     // URL dell'immagine
+  genderId     Int      
+  categoryId   Int
+  category     Category    @relation(fields: [categoryId], references: [id])
+  gender       Gender      @relation(fields: [genderId], references: [id])
 }
 
 model User {
@@ -63,6 +73,7 @@ model Gender {
   id        Int       @id @default(autoincrement())
   name      String
   products  Product[] // Relazione con i prodotti
+  categoryImages CategoryImage[]
 }
 
 model Review {
