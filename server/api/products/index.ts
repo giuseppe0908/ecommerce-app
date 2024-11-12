@@ -7,8 +7,10 @@ export default defineEventHandler(async (event) => {
     if (method === 'GET') {
         const products = await prisma.product.findMany({
           include: {
-            category: true,  // Include la categoria
-            brand: true,     // Include il brand
+            category: true,  
+            brand: true, 
+            gender: true,
+            reviews: true    
           },
         })
         return products

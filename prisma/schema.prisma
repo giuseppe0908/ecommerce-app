@@ -1,53 +1,76 @@
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
 generator client {
   provider = "prisma-client-js"
 }
 
-// prisma/schema.prisma
-datasource db {
-  provider  = "postgresql"
-  url  	    = env("DATABASE_URL")
-}
-
 model Product {
-  id               Int      @id @default(autoincrement())
+  id               Int       @id @default(autoincrement())
   name             String
   categoryId       Int
   brandId          Int
-  favorite        Boolean
+  genderId         Int?
+  favorite         Boolean
   promo            Boolean
+  plus             Boolean  
+  newArrival       Boolean   
   price            Float
   photo            String
   codeItem         String
   percentualPromo  Float
-  category         Category @relation(fields: [categoryId], references: [id])
-  brand            Brand    @relation(fields: [brandId], references: [id])
+  rating           Float?  
+  description      String  
+  category         Category  @relation(fields: [categoryId], references: [id])
+  brand            Brand     @relation(fields: [brandId], references: [id])
+  gender           Gender?   @relation(fields: [genderId], references: [id]) // Relazione con Gender
+  reviews          Review[]  // Relazione per le recensioni degli utenti
 }
 
 model Brand {
-  id    Int    @id @default(autoincrement())
-  name  String
+  id       Int       @id @default(autoincrement())
+  name     String
   products Product[]
 }
 
 model Category {
-  id    Int    @id @default(autoincrement())
-  name  String
+  id       Int       @id @default(autoincrement())
+  name     String
   products Product[]
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
+  id       Int       @id @default(autoincrement())
   name     String
   surname  String
-  email    String  @unique
+  email    String    @unique
   password String
   orders   Order[]
+  reviews  Review[]  // Relazione con le recensioni lasciate dall'utente
 }
 
 model Order {
-  id        Int    @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   idUtente  Int
   codeId    String
   price     Float
-  user      User   @relation(fields: [idUtente], references: [id])
+  user      User      @relation(fields: [idUtente], references: [id])
+}
+
+model Gender {
+  id        Int       @id @default(autoincrement())
+  name      String
+  products  Product[] // Relazione con i prodotti
+}
+
+model Review {
+  id        Int       @id @default(autoincrement())
+  productId Int
+  userId    Int
+  rating    Float     // Valutazione da parte dell'utente
+  comment   String?   // Commento facoltativo dell'utente
+  product   Product   @relation(fields: [productId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 }
