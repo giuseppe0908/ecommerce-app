@@ -3,7 +3,8 @@ import { defineStore } from 'pinia'
 export const useCategoryStore = defineStore('categoryStore', {
   state: () => ({
     categories: [],
-    brands:[]
+    brands:[],
+    colorPrimary:"#56768D"
   }),
   actions: {
     async fetchCategories() {

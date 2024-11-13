@@ -1,22 +1,22 @@
 <template>
     <div class="jumbo bg-no-repeat w-max ">
         <div class="pt-11">
-            <ButtonJumbo name="DONNA" bgColor="white" :colorText="productStore.colorPrimary"  to="/Donna" :leftRadius="false" />
+            <Button name="DONNA" :bgColor="colorPrimary" colorText="white"  to="/Donna" :leftRadius="false" width="142px" height="42px"/>
         </div>
         <div class="mt-5">
-            <ButtonJumbo name="UOMO" bgColor="white" :colorText="productStore.colorPrimary"  to="/Uomo" :leftRadius="false" />
+            <Button name="UOMO" bgColor="white" :colorText="colorPrimary"  to="/Uomo" :leftRadius="false" width="142px" height="42px"/>
         </div>
          <div class="mt-5">
-            <ButtonJumbo name="BAMBINO" :bgColor="productStore.colorPrimary" colorText="white"  to="/Bambino" :leftRadius="false" />
+            <Button name="BAMBINO" :bgColor="colorPrimary" colorText="white"  to="/Bambino" :leftRadius="false" width="142px" height="42px"/>
         </div>
     </div>
    
 </template>
 
 <script setup>
-import ButtonJumbo from './ButtonJumbo.vue'
-import { useProductStore } from '@/stores/productStore'
-  const productStore = useProductStore()
+import Button from './Button.vue'
+const props = defineProps(['colorPrimary'])
+const {colorPrimary} = props
 
 </script>
 <style scoped>

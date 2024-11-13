@@ -1,10 +1,12 @@
 
-datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
-}
 generator client {
   provider = "prisma-client-js"
+}
+
+// prisma/schema.prisma
+datasource db {
+  provider  = "postgresql"
+  url  	    = env("DATABASE_URL")
 }
 
 model Product {
@@ -25,7 +27,7 @@ model Product {
   description      String  
   category         Category  @relation(fields: [categoryId], references: [id])
   brand            Brand     @relation(fields: [brandId], references: [id])
-  gender           Gender?   @relation(fields: [genderId], references: [id]) // Relazione con Gender
+  gender           Gender   @relation(fields: [genderId], references: [id]) // Relazione con Gender
   reviews          Review[]  // Relazione per le recensioni degli utenti
 }
 

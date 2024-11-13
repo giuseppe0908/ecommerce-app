@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
             category: true,  
             brand: true, 
             gender: true,
-            reviews: true    
+            // reviews: true    
           },
         })
         return products

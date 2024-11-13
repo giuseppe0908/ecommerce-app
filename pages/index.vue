@@ -1,7 +1,9 @@
 
   <template>
     <div :style="{ backgroundColor: productStore.colorPrimary }">
-      <Jumbo/>
+      <Jumbo :colorPrimary=categoryStore.colorPrimary />
+      <Category/>
+      <Promo />
       <!-- <h1>Items Store</h1>
      
   
@@ -103,7 +105,8 @@
   </template>
   <script setup>
   import Jumbo from '~/components/Jumbo.vue'
-
+  import Category from '~/components/Category.vue'
+  import Promo from '~/components/Promo.vue'
   import { useProductStore } from '@/stores/productStore'
   import { useCategoryStore } from '@/stores/categoryStore'
 
@@ -150,7 +153,7 @@ const product = ref({
   
   onMounted(() => {
     fetchProducts();
-    fetchCategories();
+   categoryStore.fetchCategories();
   })
   </script>
   
