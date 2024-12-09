@@ -4,7 +4,9 @@ export const useProductStore = defineStore('productstore', {
   state: () => ({
     products: [],
     product: null,
-    colorPrimary:"#56768D"
+    // colorPrimary:"#56768D"
+    colorPrimary:"#5D758B",
+    colorSecondary:'#00192F'
   }),
   actions: {
     async fetchProducts() {
@@ -43,14 +45,18 @@ export const useProductStore = defineStore('productstore', {
       const index = this.products.findIndex(i => i.id === updatedProduct.id)
       this.products[index] = updatedProduct
     },
-    async deleteProduct(id) {      
-      await fetch(`/api/products`, { 
-        method: 'DELETE' , 
+    async deleteProduct(id) {
+      const response = await fetch('/api/products', {
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id }),})
-      this.products = this.products.filter(product => product.id !== id)
+        body: JSON.stringify({ id }),
+      });
+
+      if (response.ok) {
+        this.products = this.products.filter(product => product.id !== id);  // Rimuovi il prodotto dallo store
+      }
     },
   },
-})
+});

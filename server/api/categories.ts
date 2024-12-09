@@ -9,12 +9,13 @@ export default defineEventHandler(async (event) => {
    
     if (method === 'GET') {
         // Se è una chiamata GET, esegui la logica per recuperare i dati
+        console.time('fetchCategories');
         const categories = await prisma.category.findMany({
             include: {
               images: true,  
-              
             },
-          })     
+          })    
+        console.timeEnd('fetchCategories'); 
         return categories
         
     }

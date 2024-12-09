@@ -3,16 +3,38 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 export default defineEventHandler(async (event) => {
 
+  const query = getQuery(event);
+
+  const filters = {
+    ...(query.category && { categoryId: parseInt(query.category, 10) }),
+    ...(query.brand && { brandId: parseInt(query.brand, 10) }),
+    ...(query.gender && { genderId: parseInt(query.gender, 10) }),
+    ...(query.priceMin && query.priceMax && {
+      price: {
+        gte: parseFloat(query.priceMin),
+        lte: parseFloat(query.priceMax),
+      },
+    }),
+  };
   const method = event.node.req.method;
     if (method === 'GET') {
-        const products = await prisma.product.findMany({
+      // Verifica se i filtri sono vuoti
+      const products = Object.keys(filters).length === 0
+      ? await prisma.product.findMany({
           include: {
-            category: true,  
-            brand: true, 
+            category: true,
+            brand: true,
             gender: true,
-            // reviews: true    
           },
         })
+      : await prisma.product.findMany({
+          where: filters,
+          include: {
+            category: true,
+            brand: true,
+            gender: true,
+          },
+        });        
         return products
         
     }
@@ -26,15 +48,17 @@ export default defineEventHandler(async (event) => {
         
     }
     else if (method === 'DELETE') {
-      const body = await readBody(event);
-        try {
-            const { id } = await readBody(event)
-            await prisma.product.delete({
-              where: { id },
-            });
-          } catch (error) {
-              console.log(error);
-          }
-    } 
-  
-})
+      const { id } = await readBody(event);  // Prendi solo l'id dal body
+      try {
+          await prisma.product.delete({
+            where: { id },
+          });
+          return { success: true };
+      }catch (error) {
+        console.error('Error deleting product:', error);
+        throw createError({ statusCode: 500, statusMessage: 'Error deleting product' });
+      }
+    } else {
+      throw createError({ statusCode: 405, statusMessage: 'Method not allowed' });
+    }
+  });

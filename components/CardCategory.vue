@@ -1,41 +1,103 @@
 <script setup>
-import Button from './Button.vue'
+import Button from './Button.vue';
+import { ref, onMounted, computed } from 'vue';
 
-const props = defineProps(['id','name', 'img', 'colorPrimary'])
-const {id,  name, img, colorPrimary } = props
+// Props
+const props = defineProps(['id', 'name', 'img', 'colorPrimary']);
+const { id, name, img, colorPrimary } = props;
+const windowWidth = ref(null);
+// Variabili reattive
+const buttonWidth = ref('106px'); // Impostazione predefinita per mobile
+const buttonHeight = ref('42px');
 
+const screenWidth = ref(windowWidth); // Monitora la larghezza dello schermo
+const buttonStyle = ref({}); // Stile dinamico per il bottone
+
+// Funzione per aggiornare lo stile in base alla larghezza dello schermo
+const updateButtonStyle = () => {
+  if (screenWidth.value >= 1024) {
+    // Stile per schermi grandi
+    buttonStyle.value = {
+      left: '50%',
+      width: '95%', // Aggiunge il width
+    };
+  } else {
+    // Stile per schermi piccoli
+    buttonStyle.value = {
+      left: '50%', // Mantiene solo il "left"
+    };
+  }
+};
+
+// Funzione per aggiornare la larghezza dello schermo
+const updateScreenWidth = () => {
+  screenWidth.value = window.innerWidth;
+};
+
+// Watcher: Ricalcola lo stile ogni volta che cambia la larghezza dello schermo
+watch(screenWidth, updateButtonStyle);
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateScreenWidth);
+});
+
+// Aggiorna la larghezza al montaggio
+onMounted(() => {
+  windowWidth.value = window.innerWidth;
+  updateButtonStyle();
+  window.addEventListener('resize', updateScreenWidth);
+  if (process.client) {
+    buttonWidth.value = window.innerWidth >= 1024 ? '100%' : '106px';
+    buttonHeight.value = window.innerWidth >= 1024 ? '64px' : '42px';
+
+    // Aggiorna dinamicamente durante il ridimensionamento
+    window.addEventListener('resize', () => {
+      buttonWidth.value = window.innerWidth >= 1024 ? '100%' : '106px';
+      buttonHeight.value = window.innerWidth >= 1024 ? '64px' : '42px';
+    });
+  }
+});
 </script>
 
 <template>
-    <div class="categories">
-        <div class="card h-45 min-w-[150px] relative">
-            <div class="img ">
-                <img class="w-full h-full" :src="img" :alt="name">
-            </div>
-            <div class="absolute bottom-[-20px] btn-center">
-                <Button :name="name" bgColor="white" :colorText="colorPrimary"  :to="name" :leftRadius="true" width="106px" height="42px" />
-            </div>
-        </div>
+  <div class="categories min-w-[134px] min-h-[193px]">
+    <div class="card w-full relative">
+      <div class="img w-full h-full">
+        <img 
+          class="w-full h-full" 
+          src="https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg" 
+          :alt="name" 
+          loading="lazy" 
+        />
+      </div>
+      <div 
+        class="absolute bottom-[-20px] btn-center" 
+        :style="buttonStyle"
+      >
+        <Button 
+          :name="name" 
+          bgColor="white" 
+          :colorText="colorPrimary" 
+          :to="name" 
+          :leftRadius="true" 
+          :width="buttonWidth" 
+          :height="buttonHeight" 
+        />
+      </div>
     </div>
-    
+  </div>
 </template>
 
 <style scoped>
-.card{
-     /* margin: 10px;
-    width: calc(100% / 6 - 20px); */
+.categories {
+  width: calc(25% - 40px);
+  margin: 30px 20px;
 }
-.img{
-    height: 193px;
-    width: 134px;
-    
+.card {}
+.img img {
+  border-radius: 13px;
 }
-.img img{
-    border-radius: 13px;
+.btn-center {
+  transform: translateX(-50%);
 }
-.btn-center{
-   left: 45%;
-   transform: translateX(-50%);
-}
-
 </style>

@@ -4,7 +4,8 @@ export const useCategoryStore = defineStore('categoryStore', {
   state: () => ({
     categories: [],
     brands:[],
-    colorPrimary:"#56768D"
+    // colorPrimary:"#56768D"
+    colorPrimary:"#5D758B"
   }),
   actions: {
     async fetchCategories() {

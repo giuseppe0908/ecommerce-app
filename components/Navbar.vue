@@ -77,21 +77,22 @@ const links = [
         <div class="md:hidden flex space-x-4 items-center">
           <!-- User Icon -->
           <NuxtLink to="/profile" class="text-gray-800">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 font-extrabold" fill="currentColor" viewBox="0 0 24 24">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 font-extrabold" :style="{ color: productStore.colorPrimary }" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 12c2.209 0 4-1.791 4-4s-1.791-4-4-4-4 1.791-4 4 1.791 4 4 4zm0 2c-3.86 0-7 3.14-7 7h2c0-2.762 2.238-5 5-5s5 2.238 5 5h2c0-3.86-3.14-7-7-7z"/>
             </svg>
           </NuxtLink>
           <!-- Heart Icon -->
           <NuxtLink to="/favorites" class="text-gray-800">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-black border-2 border-black rounded-full p-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-black border-2 border-black rounded-full p-1" :style="{ color: productStore.colorPrimary }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 10-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
             </svg>
           </NuxtLink>
           <!-- Cart Icon -->
           <NuxtLink to="/cart" class="text-gray-800">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-black border-2 border-black rounded-full p-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <!-- <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-black border-2 border-black rounded-full p-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M16 13a4 4 0 11-8 0m8 0H7" />
-            </svg>
+            </svg> -->
+            <CartIcon width="32" height="32" customClass="text-gray-700"  />
           </NuxtLink>
         </div>
       </div>

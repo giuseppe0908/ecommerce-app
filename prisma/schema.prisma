@@ -1,12 +1,10 @@
 
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
 generator client {
   provider = "prisma-client-js"
-}
-
-// prisma/schema.prisma
-datasource db {
-  provider  = "postgresql"
-  url  	    = env("DATABASE_URL")
 }
 
 model Product {
@@ -14,7 +12,7 @@ model Product {
   name             String
   categoryId       Int
   brandId          Int
-  genderId         Int?
+  genderId         Int
   favorite         Boolean
   promo            Boolean
   plus             Boolean  
@@ -60,7 +58,26 @@ model User {
   email    String    @unique
   password String
   orders   Order[]
-  reviews  Review[]  // Relazione con le recensioni lasciate dall'utente
+  reviews  Review[] 
+  role     Role      @default(USER)
+  createdAt DateTime @default(now())
+  tokens    Token[]   // Relazione con i token
+}
+
+model Token {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id])
+  token     String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+enum Role {
+  USER
+  ADMIN
 }
 
 model Order {

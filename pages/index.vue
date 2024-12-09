@@ -3,7 +3,10 @@
     <div :style="{ backgroundColor: productStore.colorPrimary }">
       <Jumbo :colorPrimary=categoryStore.colorPrimary />
       <Category/>
-      <Promo />
+      <Promo :colorPrimary=categoryStore.colorPrimary />
+      <Brand :colorPrimary=categoryStore.colorPrimary />
+      <NewArrivals />
+      <Banner/>
       <!-- <h1>Items Store</h1>
      
   
@@ -107,6 +110,9 @@
   import Jumbo from '~/components/Jumbo.vue'
   import Category from '~/components/Category.vue'
   import Promo from '~/components/Promo.vue'
+  import Brand from '~/components/Brand.vue'
+  import NewArrivals from '~/components/NewArrivals.vue'
+  import Banner from '~/components/Banner.vue'
   import { useProductStore } from '@/stores/productStore'
   import { useCategoryStore } from '@/stores/categoryStore'
 
@@ -175,4 +181,8 @@ import { onMounted } from 'vue'
 //    await useAsyncData('user', () => store.fetchUser())
 </script> -->
   
-  
+  <style>
+/* image */
+
+
+</style>
