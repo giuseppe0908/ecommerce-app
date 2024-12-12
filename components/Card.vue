@@ -1,4 +1,5 @@
 <script setup>
+// import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 // const props = defineProps(['id','name','category','price','brand','quantity','cod_item','preferity','promo','percentual_promo'])
 const props = defineProps(['id', 'name', 'img', ' promo', 'plus', 'price', 'category','colorPrimary', 'colorSecondary']);
@@ -7,7 +8,11 @@ const { id, name, img, promo, plus, price, category, colorPrimary, colorSecondar
 
 <template>
     <div class="card relative min-w-[134px] min-h-[193px] flex flex-col">
-        <div class="btnLike absolute right-2 top-2  text-gray-500 cursor-pointer">❤️</div>
+        <div class="btnLike absolute right-2 top-2  text-gray-500 cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-black border-2 border-black rounded-full p-1" :style="{ color:colorPrimary }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 10-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+            </svg>
+        </div>
         <div v-if="promo" class="btn btnPromo absolute left-0 top-0">Promo</div>
         <div class="img h-[250px]">
             <img class=" w-full h-full" src="https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg" alt="">

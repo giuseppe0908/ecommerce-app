@@ -19,6 +19,8 @@ export default defineEventHandler(async (event) => {
         brand: true,
       },
     });
+    console.log("hhh");
+    
     return product || { error: "product not found" };
   } else if (method === 'PUT') {
     // Aggiorna un product specifico tramite ID

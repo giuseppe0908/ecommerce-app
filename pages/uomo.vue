@@ -51,10 +51,12 @@
             @change="fetchProducts"
             class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="">Tutti</option>
+            <!-- <option value="">Tutti</option>
             <option value="Uomo">Uomo</option>
             <option value="Donna">Donna</option>
-            <option value="Bambini">Bambini</option>
+            <option value="Bambini">Bambini</option> -->
+            <option value="">Tutti</option>
+            <option v-for="gender in genders" :key="gender.id" :value="gender.id">{{ gender.name }}</option>
           </select>
         </div>
   
@@ -82,7 +84,7 @@
       </div>
   
       <!-- Griglia Prodotti -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="productGrid grid grid-cols-2 pt-5 gap-8 w-[95%] containerGrid md:grid-cols-6 pt-2 gap-8">
         <Card
           v-for="product in products"
           :key="product.id"
@@ -94,6 +96,8 @@
           :price="product.price"
           :category="product.category.name"
           :brand="product.brand.name"
+          :colorPrimary="colorPrimary"
+          colorSecondary="#00192F"
         />
       </div>
     </div>
@@ -103,10 +107,11 @@
   import { ref, computed } from 'vue';
   import { useFetch } from '#app';
   import Card from '../components/Card.vue';
-  
+  const colorPrimary = "#5D758B";
   const products = ref([]);
   const categories = ref([]);
   const brands = ref([]);
+  const genders = ref([]);
   const filters = ref({
     category: '',
     brand: '',
@@ -118,8 +123,10 @@
   // Caricamento iniziale di categorie e brand
   const { data: categoryData } = await useFetch('/api/categories');
   const { data: brandData } = await useFetch('/api/brands');
+  const { data: genderData } = await useFetch('/api/genders');
   categories.value = categoryData.value || [];
   brands.value = brandData.value || [];
+  genders.value = genderData.value || [];
   
   // Funzione per recuperare i prodotti con filtri
   const fetchProducts = async () => {
@@ -142,8 +149,9 @@
       if (brand) active.push({ key: 'brand', label: `Brand: ${brand.name}` });
     }
     if (filters.value.gender) {
-      const genderLabel = filters.value.gender === 'male' ? 'Uomo' : 'Donna';
-      active.push({ key: 'gender', label: `Genere: ${genderLabel}` });
+      //const genderLabel = filters.value.gender === 'male' ? 'Uomo' : 'Donna';
+      const gender = genders.value.find(g=> g.id === parseInt(filters.value.gender, 10))
+      if (gender) active.push({ key: 'gender', label: `Gender: ${gender.name}` });
     }
     if (filters.value.priceMin) {
       active.push({ key: 'priceMin', label: `Prezzo Min: €${filters.value.priceMin}` });

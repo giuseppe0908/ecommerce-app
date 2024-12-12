@@ -48,9 +48,9 @@
                     Iscriviti
                 </button>
             </form>
-            <p class="m-[-164px] lg:m-[0px] text-sm mt-4 lg:mt-8 lg:col-span-2 text-left">
+            <!-- <p class="m-[-164px] lg:m-[0px] text-sm mt-4 lg:mt-8 lg:col-span-2 text-left">
                Consulta la nostra <a href="#" class="text-blue-500 underline">politica sulla privacy</a>
-            </p>   
+            </p>    -->
         </div>
           
       </div>
