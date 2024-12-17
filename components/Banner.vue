@@ -1,5 +1,5 @@
 <template>
-    <section class="flex flex-col lg:flex-row items-center bg-gray-100 p-6 lg:p-12 relative">
+    <section class="flex flex-col lg:flex-row items-center bg-gray-100 p-6 lg:p-12 relative mt-12">
       <!-- Testo -->
       <div class="lg:w-1/2 z-10 flex justify-between items-center lg:block">
         <div class="left w-[50%]">

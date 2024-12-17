@@ -131,6 +131,8 @@
   // Funzione per recuperare i prodotti con filtri
   const fetchProducts = async () => {
     const queryParams = new URLSearchParams(filters.value).toString();
+    console.log(queryParams);
+    
     const { data } = await useFetch(`/api/products?${queryParams}`);
     products.value = data.value || [];
     console.log(products.value);

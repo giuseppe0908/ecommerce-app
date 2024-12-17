@@ -2,9 +2,15 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 export default defineEventHandler(async (event) => {
-
+  console.log("evento");
+  console.log(event);
+  
+  
   const query = getQuery(event);
-
+  console.log("parametri funzione");
+  console.log(query);
+  
+  
   const filters = {
     ...(query.category && { categoryId: parseInt(query.category, 10) }),
     ...(query.brand && { brandId: parseInt(query.brand, 10) }),

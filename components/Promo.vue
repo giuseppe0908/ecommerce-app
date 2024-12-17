@@ -8,11 +8,13 @@ const props = defineProps(['colorPrimary'])
     <section class="Promo h-[50vh] md:h-[100vh] bg-white relative">
         <div class="imgPromo h-[70%] w-[85%]  md:w-[73%] centrato absolute">
             <div class="centrato absolute "
-            :class="{
-                'md:right-[-45px] md:translate-x-1/2': true,
-                'right-[-60px] translate-x-3/4': true /* Schermo piccolo */
-            }"
-        >
+                :class="{
+                    'md:right-[-45px] md:translate-x-1/2': true,
+                    'right-[-60px] translate-x-3/4': true /* Schermo piccolo */
+                }"
+            >
+            <div id="ellipse">
+            </div>
             <Button name="PROMO" bgColor="white" :colorText="colorPrimary"  to="/Promo" :leftRadius="true" width="90px" height="42px" />
         </div>
         </div>
@@ -31,7 +33,16 @@ const props = defineProps(['colorPrimary'])
     top: 50%;
     transform: translateY(-50%);
 }
-
+#ellipse {
+    float: left;
+      width: 150px;
+      height: 150px;
+      margin: 20px;
+      shape-outside: circle(50% at 30%);
+      clip-path: circle(50% at 0%);
+      background: lightblue;
+            z-index: 3;
+    }
 @media (max-width: 769px) {
     .imgPromo {
         border-top-right-radius: 120px;
