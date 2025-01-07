@@ -2,7 +2,6 @@
 <template>
     <div>
       <Navbar />
-
       <main>
         <slot />
       </main>
@@ -14,6 +13,5 @@
   </script>
   
   <style scoped>
-
   </style>
   

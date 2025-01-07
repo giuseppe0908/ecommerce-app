@@ -60,9 +60,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="categories min-w-[134px] min-h-[193px]">
-    <div class="card w-full relative">
-      <div class="img w-full h-full">
+  <div class="categories min-w-[134px] md:max-w-[300px] mx-auto">
+    <div class="card  w-full relative">
+      <div class="img w-full h-[193px] md:h-[321px]">
         <img 
           class="w-full h-full" 
           src="https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg" 
@@ -91,7 +91,7 @@ onMounted(() => {
 <style scoped>
 .categories {
   width: calc(25% - 40px);
-  margin: 30px 20px;
+  padding: 30px 0px;
 }
 .card {}
 .img img {

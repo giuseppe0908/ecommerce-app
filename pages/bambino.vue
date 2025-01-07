@@ -169,8 +169,7 @@
     fetchProducts();
   };
   
-  // Caricamento iniziale prodotti
-  await fetchProducts();
+
   </script>
   
   <style scoped>

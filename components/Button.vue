@@ -1,5 +1,5 @@
 <script setup>
-const props = defineProps(['name', 'bgColor', 'colorText', 'to', 'leftRadius', 'width', 'height'])
+const props = defineProps(['name', 'bgColor', 'colorText', 'to', 'leftRadius', 'width', 'height', 'ml_25', 'ml_46', 'size_13'])
 </script>
 
 <template>
@@ -8,8 +8,16 @@ const props = defineProps(['name', 'bgColor', 'colorText', 'to', 'leftRadius', '
             :class="leftRadius ? '' : ' ml--30'"
             :style="{ backgroundColor: bgColor, width, height }">
              <NuxtLink :to="to" class="no-underline w-full">
-            <span class="flex justify-center" :style="{ color: colorText }">
-                <p>{{ name }}</p>
+            <span class="flex justify-center font-semibold" :style="{ color: colorText }">
+                <p 
+                    :style="{
+                        marginLeft: ml_46 ? `${ml_46}` : (ml_25 ? `${ml_25}` : ''),
+                        fontSize: size_13 ? `${size_13}` : ''
+                    }"
+                    >
+                    {{ name }}
+                </p>
+
             </span>
             </NuxtLink>  
         </div>

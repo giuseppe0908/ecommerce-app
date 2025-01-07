@@ -26,20 +26,16 @@ const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
 </script>
 
 <template>
-    <div class="h-[55vh]">
-    <div class="mt-5">
-        <Button name="NUOVI ARRIVI" bgColor="white" :colorText="productStore.colorPrimary"  to="/NewArrivi" :leftRadius="false" :width="buttonWidth" :height="buttonHeight"/>
+    <div class="h-[60vh]">
+    <div class="mt-6">
+        <Button name="NUOVI ARRIVI" bgColor="white" :colorText="productStore.colorPrimary"  to="/NewArrivi" :leftRadius="false" :width="buttonWidth" :height="buttonHeight" ml_46="46px" />
     </div>
 
     <div v-if="pending">Loading...</div>
     <div v-else-if="error">Error loading new arrivals!</div>
     <section v-else 
-     class="NewArrivals pt-1 flex items-center overflow-x-scroll whitespace-nowrap mt-[9px] space-x-4 pr-4 md:overflow-x-hidden md:flex-wrap md:w-[95%]"
+     class="NewArrivals pt-1 flex items-center overflow-x-scroll whitespace-nowrap mt-[15px] space-x-4 pr-4 md:overflow-x-hidden md:flex-wrap md:w-[95%]"
     >
-
-    <!-- <section v-else
-        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
-     >  -->
         <Card v-for="product in newArrivals" :key="product.id"
             :id="product.id"
             :name="product.name"
@@ -55,7 +51,5 @@ const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
     </div>
 </template>
 <style scoped>
-.NewArrivals{
-    margin: 0 auto;
-}
+
 </style>
