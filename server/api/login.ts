@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     const token = jwt.sign(
       { userId: user.id, role: user.role },
       JWT_SECRET,
-      { expiresIn: '1h' }  // Scadenza di 1 ora
+      { expiresIn: '1m' }  // Scadenza di 1 ora
     );
 
     // Trova se esiste già un token per questo utente
@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
         where: { id: existingToken.id },  // Usa l'id del token esistente per l'aggiornamento
         data: {
           token,  // Aggiorna il token
-          expiresAt: new Date(Date.now() + 3600 * 1000),  // Imposta una nuova scadenza (1 ora)
+          expiresAt: new Date(Date.now() + 60 * 1000),  // Imposta una nuova scadenza (1 minuto)
         },
       });
     } else {
@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
         data: {
           userId: user.id,
           token,
-          expiresAt: new Date(Date.now() + 3600 * 1000), // Scadenza tra 1 ora
+          expiresAt: new Date(Date.now() + 60 * 1000), // Scadenza tra 1 ora
         },
       });
     }

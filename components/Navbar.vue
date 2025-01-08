@@ -2,8 +2,10 @@
 import { ref } from 'vue'
 import { useProductStore } from '@/stores/productStore'
 import SearchBar from './SearchBar.vue'
-  
-  const productStore = useProductStore()
+import { useCartStore } from '@/stores/cartStore';
+
+const cartStore = useCartStore();  
+const productStore = useProductStore()
 // Stato del menu mobile
 const isOpen = ref(false)
 const searchBar = ref(false)
@@ -105,9 +107,12 @@ const openSearch = () => {
 
           </NuxtLink>
           <!-- Cart Icon -->
-          <NuxtLink to="/cart" class="text-gray-800">
+          <!-- <NuxtLink to="/cart" class="text-gray-800">
             <CartIcon :colorPrimary="productStore.colorPrimary"/>
-          </NuxtLink>
+          </NuxtLink> -->
+          <div @click="cartStore.flag_cart = !cartStore.flag_cart">
+            <CartIcon :colorPrimary="productStore.colorPrimary"/>
+          </div>
         </div>
       </div>
     </div>

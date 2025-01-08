@@ -46,6 +46,7 @@ const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
             :category="product.category"
             :colorPrimary="productStore.colorPrimary"
             :colorSecondary="productStore.colorSecondary"
+            :codeItem="product.codeItem"
         /> 
     </section >
     </div>

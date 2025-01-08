@@ -9,7 +9,7 @@ const props = defineProps(['colorPrimary'])
             <div class="centrato absolute "
                 :class="{
                     'md:right-[-45px] md:translate-x-1/2': true,
-                    'right-[-60px] translate-x-3/4': true /* Schermo piccolo */
+                    'right-[-56px] translate-x-3/4': true /* Schermo piccolo */
                 }"
             >
             <!-- <div id="ellipse">

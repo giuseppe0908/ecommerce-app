@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div class="container">
     <!-- TOGGLE MENU -->
-    <div v-if="open" class="menu bg-[#5D758B] min-h-screen min-w-[95vw] px-4 py-6 text-white">
+    <div v-if="open" class="menu bg-[#5D758B] min-h-screen min-w-[95vw]  text-white">
       <!-- Tabs -->
       <div class="flex justify-between items-center mb-6">
         <div class="flex gap-6 text-black">
@@ -85,9 +85,9 @@
       </div>
 
       <div class="buttons flex gap-2 text-xs ">
-        <Button name="DONNA" :bgColor="colorPrimary" colorText="white" to="/donna" leftRadius="true" width="100px" height="30px"/>
-        <Button name="UOMO" bgColor="white" :colorText="colorPrimary" to="/uomo" leftRadius="true" width="100px" height="30px"/>
-        <Button name="BAMBINO" :bgColor="colorPrimary" colorText="white" to="/bambino" leftRadius="true" width="100px" height="30px"/>
+        <Button name="DONNA" :bgColor="colorPrimary" colorText="white" to="/donna" leftRadius="true" width="83px" height="30px"/>
+        <Button name="UOMO" bgColor="white" :colorText="colorPrimary" to="/uomo" leftRadius="true" width="83px" height="30px"/>
+        <Button name="BAMBINO" :bgColor="colorPrimary" colorText="white" to="/bambino" leftRadius="true" width="83px" height="30px"/>
       </div>
     </div>
 
@@ -119,7 +119,7 @@
       </div>
     </div>
 
-    <div class="w-[95%] mx-auto my-0 flex gap-10">
+    <div v-if="!open" class="w-[95%] mx-auto my-0 flex gap-10">
       <div class="left">
         <div class="filtri sottocategory">
           <div class="button items-center w-[74px] h-[31px] rounded-3xl flex justify-center cursor-pointer hover:scale-125"
@@ -197,7 +197,9 @@ import { useResponsiveButton } from '~/composables/useResponsiveButton';
 import { computed, ref, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router'
 import _ from 'lodash';
-
+definePageMeta({
+  layout: false, // Disabilita completamente il layout
+});
 const { screenWidth, buttonStyle, buttonWidth, buttonHeight, colorPrimary } = useResponsiveButton();
 
 const { data: categories, pending, error } = await useFetch('/api/categories');

@@ -1,6 +1,28 @@
 <script setup>
-// Componente per l'icona della borsa ingrandita
+import { useCartStore } from '@/stores/cartStore';
+import { watch, onMounted } from 'vue';
+
+// Inizializzazione dello store
+const cartStore = useCartStore();
+
+// Caricamento dei dati da localStorage quando il componente viene montato
+onMounted(() => {
+  cartStore.loadCartFromLocalStorage();
+});
+
+// Watch per monitorare le modifiche al carrello
+watch(
+  () => cartStore.cart,
+  (newCart) => {
+    console.log('Numero di elementi nel carrello:', newCart.length);
+  },
+  { deep: true }
+);
+
+// Proprietà per il colore
 const props = defineProps(['colorPrimary']);
+
+
 </script>
 
 <template>
@@ -41,7 +63,7 @@ const props = defineProps(['colorPrimary']);
         fill="white"
         font-weight="bold"
       >
-        3
+      {{ cartStore.cart.length }}
       </text>
     </svg>
   </div>

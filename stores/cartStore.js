@@ -2,73 +2,12 @@
 
 import { defineStore } from 'pinia'
 
-export const useStore = defineStore('mainStore', {
+export const useCartStore = defineStore('cartStore', {
   state: () => ({
-    item: [
-      {
-        id: 0,
-        name: 'jeans',
-        category: 'abbigliamento',
-        brand: 'diesel',
-        preferity: false,
-        promo: false,
-        price: 29.99,
-        photo: '',
-        quantity: 0,
-        desc: '',
-        cod_item: 366,
-        percentual_promo: 0
-      },
-      {
-        id: 1,
-        name: 'felpa',
-        category: 'abbigliamento',
-        brand: 'nike',
-        preferity: false,
-        promo: true,
-        price: 39.99,
-        photo: '',
-        quantity: 0,
-        desc: '',
-        cod_item: 123,
-        percentual_promo: 30
-      },
-      {
-        id: 2,
-        name: 'cappellino',
-        category: 'accessori',
-        brand: 'nike',
-        preferity: false,
-        promo: false,
-        price: 9.99,
-        photo: '',
-        quantity: 0,
-        desc: '',
-        cod_item: 258,
-        percentual_promo: 0
-      },
-      {
-        id: 3,
-        name: 'cappellino',
-        category: 'accessori',
-        brand: 'patagonia',
-        preferity: false,
-        promo: false,
-        price: 9.99,
-        photo: '',
-        quantity: 0,
-        desc: '',
-        cod_item: 511,
-        percentual_promo: 0
-      }
-    ],
     cart: [],
-    filteredItems: [],
-    flag_cart: false,
     total: 0,
-    flag_search: false,
-    flag_modale: false,
-    input: ''
+    input: '',
+    flag_cart: false,
   }),
 
   getters: {
@@ -76,26 +15,30 @@ export const useStore = defineStore('mainStore', {
   },
 
   actions: {
-    addtocart(cod_item) {
-      const cart_item = this.cart.find(item => item.cod_item === cod_item)
+    addtocart(item) {
+      if (!item || !item.codeItem) {
+        console.error('Invalid item passed to addtocart');
+        return;
+      }
+      const cart_item = this.cart.find(cartItem => cartItem.codeItem === item.codeItem);
       
       if (cart_item) {
-        cart_item.quantity++
-        localStorage.setItem('carrello', JSON.stringify(this.cart))
-        this.total = JSON.parse(localStorage.getItem('prezzototal')) || 0
+        cart_item.quantity++;
+        localStorage.setItem('carrello', JSON.stringify(this.cart));
+        this.total = JSON.parse(localStorage.getItem('prezzototal')) ;
       } else {
-        const item = this.item.find(item => item.cod_item === cod_item)
-        if (item) {
-          this.cart.push({ ...item, quantity: 1 })
-          localStorage.setItem('carrello', JSON.stringify(this.cart))
-          localStorage.setItem('prezzototal', JSON.stringify(this.total))
-          this.calculate_promo(cod_item)
-        }
+        this.cart.push({ ...item, quantity: 1 });
+        localStorage.setItem('carrello', JSON.stringify(this.cart));
+        this.total += item.price;
+        localStorage.setItem('prezzototal', JSON.stringify(this.total));
+        //this.calculate_promo(item.cod_item);
       }
     },
 
     removetocart(cod_item) {
-      const remove_item = this.cart.find(item => item.cod_item === cod_item)
+      console.log(cod_item);
+      
+      const remove_item = this.cart.find(item => item.codeItem === cod_item)
       if (remove_item && remove_item.quantity === 1) {
         const pos = this.cart.indexOf(remove_item)
         this.cart.splice(pos, 1)
@@ -110,6 +53,20 @@ export const useStore = defineStore('mainStore', {
         localStorage.removeItem('carrello')
         localStorage.removeItem('prezzototal')
       }
+    },
+
+    loadCartFromLocalStorage() {
+      const storedCart = localStorage.getItem('carrello');
+      if (storedCart) {
+        this.cart = JSON.parse(storedCart);
+        this.flag_cart = true;
+      } else {
+        this.flag_cart = false;
+      }
+    },
+    updateCart(cart) {
+      this.cart = cart;
+      localStorage.setItem('carrello', JSON.stringify(cart));
     },
 
     calculate_promo(cod_item) {

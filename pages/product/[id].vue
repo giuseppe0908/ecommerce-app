@@ -89,7 +89,10 @@
           <div class="disponibility">
             <p>Solo {1} disponibile!</p>
           </div>
-        </div>
+          <div class="buttons flex gap-4 mt-4">
+            <Button name="Acquista" bgColor="white" colorText="#5D758B" width="200px" height="50px" @click="addCart"/>
+          </div>  
+          </div>
       </div>
    </div>
 </template>
@@ -184,6 +187,9 @@ const changeMainImage = (image) => {
   currentMainImage.value = image;
 };
 
+const addCart = () => {
+  alert("Prodotto aggiunto al carrello!");
+};
   
   // Recupera l'ID dalla route e chiama fetchItemById
   onMounted(async () => {
