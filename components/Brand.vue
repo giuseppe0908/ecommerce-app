@@ -1,7 +1,60 @@
 <script setup>
+import brand from '../assets/img/brand.png';
+import logoNike from '../assets/img/logo/logoNike.png';
+import logoAdidas from '../assets/img/logo/logoAdidas.png';
+import logoCk from '../assets/img/logo/logoCk.png';
+import logoJordan from '../assets/img/logo/logoJordan.png';
+import logoChanel from '../assets/img/logo/logoChanel.png';
+import logoStarbucks from '../assets/img/logo/logoStarbucks.png';
+import logoPuma from '../assets/img/logo/logoPuma.png';
+import logoConverse from '../assets/img/logo/logoConverse.png';
+
     const props = defineProps(['colorPrimary'])
     const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
     const buttonHeight = ref('42px');
+    const brandLogos = [
+        {
+            name: 'Nike',
+            url: 'brand/nike',
+            src: logoNike,
+        },
+        {
+            name: 'Adidas',
+            url: 'brand/adidas',
+            src: logoAdidas,
+        },
+        {
+            name: 'Calvin Klein',
+            url: 'brand/calvin-klein',
+            src: logoCk,
+        },
+        {
+            name: 'Jordan',
+            url: 'brand/jordan',
+            src: logoJordan,
+        },
+        {
+            name: 'Chanel',
+            url: 'brand/chanel',
+            src: logoChanel,
+        },
+        {
+            name: 'Starbucks',
+            url: 'brand/starbucks',
+            src: logoStarbucks,
+        },
+        {
+            name: 'Puma',
+            url: 'brand/puma',
+            src: logoPuma,
+        },
+        {
+            name: 'Converse',
+            url: 'brand/converse',
+            src: logoConverse,
+        },
+    ]
+    console.log(brandLogos);
     
     onMounted(() => {
         if (process.client) {
@@ -17,10 +70,25 @@
 </script>
 <template>
     <section class="Brand w-full" >
-        <div class="img h-[40vh] w-full relative  md:h-[45vh]">
-            <img class="w-full h-full" src="https://plus.unsplash.com/premium_photo-1674273912680-14dc56e523b8?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="">
+        <div class="img-container h-[40vh] w-full relative  md:h-[53vh]">
+            <img class="w-full h-full " :src="brand" alt="">
             <div class="absolute top-8 md:top-12">
-                <Button name="BRAND" bgColor="white" :colorText="colorPrimary"  to="/Uomo" :leftRadius="false" :width="buttonWidth" :height="buttonHeight"/>
+                <Button name="BRAND" colorText="white" :bgColor="colorPrimary"  to="/Uomo" :leftRadius="false" :width="buttonWidth" :height="buttonHeight"/>
+            </div>
+        </div>
+        <div class="loghi h-[45vh] ">
+            <div class="carousel flex items-center h-full w-[95%] mx-auto justify-between overflow-x-scroll md:overflow-x-hidden">
+                <!-- <div class="left text-9xl"> < </div> -->
+                <div class="logo mx-3" v-for="(logo,index) in brandLogos" :key="index">
+                    <NuxtLink :to="logo.url" class="no-underline w-full">
+                        <div class="flex flex-col">
+                            <img :src="logo.src" :alt="logo.name" class="w-[100px] h-[100px]"/>
+                            <div class="text-center uppercase text-white bold">{{logo.name}}</div>
+                        </div>
+                    </NuxtLink>  
+
+                </div>
+                <!-- <div class="right text-9xl">></div> -->
             </div>
         </div>
     </section>
@@ -29,7 +97,14 @@
 
 .img img{
     border-bottom-right-radius: 35%;
+    background-size: cover; /* Adatta l'immagine all'elemento */
+    background-position: center; /* Centra l'immagine */
    
+}
+.img-container {
+  /* border-bottom-right-radius: 50% 20%; */
+
+  overflow: hidden;
 }
 /* image */
 /* img altezza da figma 427px pc  */

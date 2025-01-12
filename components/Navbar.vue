@@ -71,7 +71,9 @@ const openSearch = () => {
 
         <!-- Logo -->
         <div class="flex-shrink-0">
-          <NuxtLink to="/" class="text-xl font-bold text-gray-800">Logo</NuxtLink>
+          <NuxtLink to="/" class="">
+            <img src="../assets/img/logoGiudizioUniversale.png" alt="logo">
+          </NuxtLink>
         </div>
 
         <!-- Links desktop -->

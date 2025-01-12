@@ -7,7 +7,7 @@ const props = defineProps(['name', 'bgColor', 'colorText', 'to', 'leftRadius', '
             class="btn shadow-md hover:shadow-lg transition-shadow duration-200 flex items-center justify-center "
             :class="leftRadius ? '' : ' ml--30'"
             :style="{ backgroundColor: bgColor, width, height }">
-             <NuxtLink :to="to" class="no-underline w-full">
+            <NuxtLink :to="to" class="no-underline w-full">
             <span class="flex justify-center font-semibold" :style="{ color: colorText }">
                 <p 
                     :style="{

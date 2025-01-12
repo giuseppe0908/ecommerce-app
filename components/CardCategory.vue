@@ -57,15 +57,17 @@ onMounted(() => {
     });
   }
 });
+// src="https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg" 
+
 </script>
 
 <template>
-  <div class="categories min-w-[134px] md:max-w-[300px] mx-auto">
+  <div class="categories min-w-[134px] md:max-w-[300px]">
     <div class="card  w-full relative">
       <div class="img w-full h-[193px] md:h-[321px]">
         <img 
           class="w-full h-full" 
-          src="https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg" 
+          src="../assets/img/sportswear.png"
           :alt="name" 
           loading="lazy" 
         />
@@ -91,7 +93,7 @@ onMounted(() => {
 <style scoped>
 .categories {
   width: calc(25% - 40px);
-  padding: 30px 0px;
+  padding: 30px 10px;
 }
 .card {}
 .img img {
@@ -100,4 +102,7 @@ onMounted(() => {
 .btn-center {
   transform: translateX(-50%);
 }
+
+
+
 </style>

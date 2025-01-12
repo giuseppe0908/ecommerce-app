@@ -3,6 +3,8 @@ import { useFetch } from '#app';
 import Card from './Card.vue';
 import Button from './Button.vue';
 import { useProductStore } from '@/stores/productStore'
+import nuoviArriviImg from '../assets/img/nuoviArrivi.png';
+
 
 const productStore = useProductStore()
 const { data: newArrivals, pending, error } = await useFetch('/api/products/newArrivals');
@@ -26,9 +28,16 @@ const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
 </script>
 
 <template>
-    <div class="h-[60vh]">
-    <div class="mt-6">
+    <div class="">
+    <!-- <div class="mt-6">
         <Button name="NUOVI ARRIVI" bgColor="white" :colorText="productStore.colorPrimary"  to="/NewArrivi" :leftRadius="false" :width="buttonWidth" :height="buttonHeight" ml_46="46px" />
+    </div> -->
+
+    <div class="img h-[40vh] w-full relative  md:h-[53vh]">
+            <img class="w-full h-full" :src="nuoviArriviImg" alt="">
+            <div class="absolute top-8 md:top-12">
+                <Button name="NUOVI ARRIVI" bgColor="white" :colorText="productStore.colorPrimary"  to="/NewArrivi" :leftRadius="false" :width="buttonWidth" :height="buttonHeight" ml_46="46px" />
+            </div>
     </div>
 
     <div v-if="pending">Loading...</div>
@@ -52,5 +61,10 @@ const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
     </div>
 </template>
 <style scoped>
-
+.img img{
+    border-bottom-right-radius: 35%;
+    background-size: cover; /* Adatta l'immagine all'elemento */
+    background-position: center; /* Centra l'immagine */
+   
+}
 </style>

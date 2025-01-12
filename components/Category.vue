@@ -28,7 +28,7 @@
     <div v-if="pending">Caricamento...</div>
     <div v-else-if="error">Errore: {{ error }}</div>
     <section v-else
-      class="Category flex items-center overflow-x-scroll whitespace-nowrap mt-[9px] space-x-4 pr-4 md:overflow-x-hidden md:flex-wrap md:w-[85%]"
+      class="Category flex items-center overflow-x-scroll whitespace-nowrap mt-[9px]  pr-4 md:overflow-x-hidden md:flex-wrap md:w-[85%] md:mx-auto"
     >
         <CardCategory v-for="(category) in categories"
             :key="category.id"
