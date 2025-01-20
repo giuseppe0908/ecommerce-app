@@ -89,7 +89,7 @@ const svuota =()=>{
             </div>
            {{cartStore.total.toFixed(2) }} €
             <div class="button" v-if="cartStore.length !=0">
-                <button @click="cartStore.flag_cart = !cartStore.flag_cart"><RouterLink to="/ordine">Compra</RouterLink></button>
+                <button @click="cartStore.flag_cart = !cartStore.flag_cart"><RouterLink to="/order">Compra</RouterLink></button>
                 <button @click="svuota(), cartStore.flag_cart = !cartStore.flag_cart">Svuota</button>
             </div>
         </div>

@@ -33,7 +33,7 @@ const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
         <Button name="NUOVI ARRIVI" bgColor="white" :colorText="productStore.colorPrimary"  to="/NewArrivi" :leftRadius="false" :width="buttonWidth" :height="buttonHeight" ml_46="46px" />
     </div> -->
 
-    <div class="img h-[40vh] w-full relative  md:h-[53vh]">
+    <div class="img h-[40vh] w-full relative  md:h-[60vh]">
             <img class="w-full h-full" :src="nuoviArriviImg" alt="">
             <div class="absolute top-8 md:top-12">
                 <Button name="NUOVI ARRIVI" bgColor="white" :colorText="productStore.colorPrimary"  to="/NewArrivi" :leftRadius="false" :width="buttonWidth" :height="buttonHeight" ml_46="46px" />
@@ -43,7 +43,7 @@ const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
     <div v-if="pending">Loading...</div>
     <div v-else-if="error">Error loading new arrivals!</div>
     <section v-else 
-     class="NewArrivals pt-1 flex items-center overflow-x-scroll whitespace-nowrap mt-[15px] space-x-4 pr-4 md:overflow-x-hidden md:flex-wrap md:w-[95%]"
+     class="NewArrivals pt-1 flex items-center overflow-x-scroll whitespace-nowrap mt-[15px] space-x-4 pr-4 md:overflow-x-hidden md:flex-wrap md:w-[95%] md:h-[40vh]"
     >
         <Card v-for="product in newArrivals" :key="product.id"
             :id="product.id"

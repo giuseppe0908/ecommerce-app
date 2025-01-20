@@ -1,27 +1,3 @@
-<!-- <template>
-    <div>
-      <div class="buttons flex gap-2">
-        <Button name="DONNA" :bgColor="colorPrimary" colorText="white"  to="/donna" leftRadius="true" width="100px" height="30px"/>
-        <Button name="UOMO" bgColor="white" :colorText="colorPrimary" to="/uomo" leftRadius="true" width="100px" height="30px"/>
-        <Button name="BAMBINO" :bgColor="colorPrimary" colorText="white" to="/bambino" leftRadius="true" width="100px" height="30px"/>
-      </div>
-      <div class="navBar">
-
-      </div>
-      <div class="cronologia"></div>
-      <div class="container flex ">
-        <div class="imgVertical flex flex-col gap-2" v-for="(img, index) in currentImg" :key="index">
-        <img class="img square h-[140px] w-[135px] rounded-xl" :src="img" :alt="product.name" >
-        </div>
-        <div class="card h-[300px] w-[200px]">
-          <img class="w-full h-full" :src="currentImg[0]" alt="cnb">
-        </div>
-      </div>
-      
-
-    </div>
-  </template> -->
-
   <template>
     <div class="w-[95%] mx-auto my-0">    
       <div class="buttons flex gap-2 text-xs">

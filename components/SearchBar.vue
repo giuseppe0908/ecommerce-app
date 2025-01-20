@@ -18,7 +18,7 @@
       <!-- Input con spazio per l'icona -->
       <input
         type="text"
-        class="w-[210px] h-[20px] pl-10 pr-3 py-2 text-sm text-gray-700 placeholder-gray-400 border rounded-2xl "
+        class="w-[210px] h-[20px] pl-10 pr-3 py-2 text-sm text-gray-700 placeholder-gray-400 border rounded-2xl md:w-[377px]"
         placeholder="Ricerca..."
         :style="{ backgroundColor: productStore.colorPrimary }"
       />

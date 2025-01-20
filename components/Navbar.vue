@@ -72,24 +72,25 @@ const openSearch = () => {
         <!-- Logo -->
         <div class="flex-shrink-0">
           <NuxtLink to="/" class="">
-            <img src="../assets/img/logoGiudizioUniversale.png" alt="logo">
+            <img class="md:h-[50px]" src="../assets/img/logoGiudizioUniversale.png" alt="logo">
           </NuxtLink>
         </div>
 
         <!-- Links desktop -->
         <div class="hidden md:flex space-x-8">
-          <NuxtLink
+          <!-- <NuxtLink
             v-for="(link, index) in links"
             :key="index"
             :to="link.href"
             class="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
           >
             {{ link.label }}
-          </NuxtLink>
+          </NuxtLink> -->
+          <SearchBar />
         </div>
 
         <!-- Icons (User, Heart, Cart) -->
-        <div class="md:hidden flex space-x-2 items-center">
+        <div class=" flex space-x-2 items-center">
           <!-- User Icon -->
           <NuxtLink to="/profile" >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-[22px] w-[30px]" :fill="productStore.colorPrimary" id="user">

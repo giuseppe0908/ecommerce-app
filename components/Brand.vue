@@ -70,13 +70,13 @@ import logoConverse from '../assets/img/logo/logoConverse.png';
 </script>
 <template>
     <section class="Brand w-full" >
-        <div class="img-container h-[40vh] w-full relative  md:h-[53vh]">
+        <div class="img-container h-[40vh] w-full relative  md:h-[60vh]">
             <img class="w-full h-full " :src="brand" alt="">
             <div class="absolute top-8 md:top-12">
                 <Button name="BRAND" colorText="white" :bgColor="colorPrimary"  to="/Uomo" :leftRadius="false" :width="buttonWidth" :height="buttonHeight"/>
             </div>
         </div>
-        <div class="loghi h-[45vh] ">
+        <div class="loghi h-[40vh] ">
             <div class="carousel flex items-center h-full w-[95%] mx-auto justify-between overflow-x-scroll md:overflow-x-hidden">
                 <!-- <div class="left text-9xl"> < </div> -->
                 <div class="logo mx-3" v-for="(logo,index) in brandLogos" :key="index">

@@ -67,6 +67,7 @@ export default defineEventHandler(async (event) => {
         name: user.name,
         surname: user.surname,
         email: user.email,
+        role: user.role,
       },
       token, // Ritorna il token generato
     };

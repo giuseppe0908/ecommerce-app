@@ -23,6 +23,8 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 401, message: 'Utente non trovato' });
     }
 
+    console.log('Utente autenticato:', user.role);
+    
     // Restituisci i dati dell'utente
     return { id: user.id, name: user.name, role: user.role };
 
