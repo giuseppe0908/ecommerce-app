@@ -63,8 +63,8 @@ onMounted(() => {
 
 <template>
   <div class="categories min-w-[134px] md:max-w-[300px]">
-    <div class="card  w-full relative">
-      <div class="img w-full h-[193px] md:h-[321px]">
+    <div class="w-full relative">
+      <div class="img h-[193px] md:h-[321px]">
         <img 
           class="w-full h-full" 
           src="../assets/img/sportswear.png"
@@ -92,7 +92,7 @@ onMounted(() => {
 
 <style scoped>
 .categories {
-  width: calc(25% - 40px);
+  /* width: calc(25% - 40px); */
   padding: 30px 10px;
 }
 .card {}

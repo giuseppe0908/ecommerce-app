@@ -177,10 +177,11 @@
               :plus="product.plus"
               :price="product.price"
               :category="product.category"
+              :brand="product.brand"
               :colorPrimary="colorPrimary"
               colorSecondary="#00192F"
             /> 
-          </div>
+        </div>
         </div>
       </div>  
     </div>

@@ -9,8 +9,6 @@ import nuoviArriviImg from '../assets/img/nuoviArrivi.png';
 const productStore = useProductStore()
 const { data: newArrivals, pending, error } = await useFetch('/api/products/newArrivals');
 
-
-
 const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
     const buttonHeight = ref('42px');
     
@@ -43,7 +41,7 @@ const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
     <div v-if="pending">Loading...</div>
     <div v-else-if="error">Error loading new arrivals!</div>
     <section v-else 
-     class="NewArrivals pt-1 flex items-center overflow-x-scroll whitespace-nowrap mt-[15px] space-x-4 pr-4 md:overflow-x-hidden md:flex-wrap md:w-[95%] md:h-[40vh]"
+     class="NewArrivals pt-1 flex items-center overflow-x-scroll whitespace-nowrap mt-[15px] space-x-4 pr-4 md:overflow-x-hidden md:flex-wrap md:w-[95%] md:h-[50vh]"
     >
         <Card v-for="product in newArrivals" :key="product.id"
             :id="product.id"
@@ -53,6 +51,7 @@ const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
             :plus="product.plus"
             :price="product.price"
             :category="product.category"
+            :brand="product.brand"
             :colorPrimary="productStore.colorPrimary"
             :colorSecondary="productStore.colorSecondary"
             :codeItem="product.codeItem"

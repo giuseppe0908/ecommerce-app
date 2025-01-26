@@ -60,12 +60,12 @@
       <div
         class="hidden lg:flex lg:items-center lg:w-1/2 relative h-[400px] w-full"
       >
-        <div class="img flex">
+        <div class="img relative flex">
          <!-- Immagine 1 -->
          <img
           src="../assets/img/Banner/img1Banner.png"
           alt="Image 4"
-          class="w-[158px] h-[205px]   top-52 left-40 w-28 h-28 object-cover -rotate-6 z-10"
+          class="w-[158px] h-[205px] top-52 left-40 w-28 h-28 object-cover -rotate-6 z-10"
         />
         <!-- Immagine 2 -->
         <img

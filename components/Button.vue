@@ -14,10 +14,9 @@ const props = defineProps(['name', 'bgColor', 'colorText', 'to', 'leftRadius', '
                         marginLeft: ml_46 ? `${ml_46}` : (ml_25 ? `${ml_25}` : ''),
                         fontSize: size_13 ? `${size_13}` : ''
                     }"
-                    >
+                >
                     {{ name }}
                 </p>
-
             </span>
             </NuxtLink>  
         </div>

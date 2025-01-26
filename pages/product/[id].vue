@@ -24,7 +24,7 @@
           </div>
       
           <!-- Immagine principale -->
-          <div class="card w-[412px] h-[626px]">
+          <div class=" w-[412px] h-[605px]">
             <img
               class="w-full h-full rounded-xl"
               :src="currentMainImage"
