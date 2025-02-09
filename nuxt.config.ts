@@ -18,4 +18,9 @@ export default defineNuxtConfig({
   pinia: {
     storesDirs: ['./stores/**', './custom-folder/stores/**'],
   },
+  runtimeConfig: {
+    public: {
+      stripePublicKey: process.env.STRIPE_PUBLISHABLE_KEY, // Chiave pubblica lato client
+    },
+  },
 })

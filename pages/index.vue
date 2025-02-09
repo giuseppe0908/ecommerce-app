@@ -7,6 +7,7 @@
       <Brand :colorPrimary=categoryStore.colorPrimary />
       <NewArrivals />
       <Banner/>
+      <Cart v-if="cartStore.flag_cart" :colorPrimary=categoryStore.colorPrimary />
       <!-- <h1>Items Store</h1>
      
   
@@ -117,7 +118,10 @@
   import { useCategoryStore } from '@/stores/categoryStore'
 
   import { onMounted, ref } from 'vue'
-  
+  import Cart from '~/components/Cart.vue'
+  import { useCartStore } from '@/stores/cartStore';
+
+  const cartStore = useCartStore();
   const productStore = useProductStore()
   const categoryStore = useCategoryStore()
   const fetchProducts = () => {

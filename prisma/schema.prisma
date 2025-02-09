@@ -1,11 +1,9 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
 generator client {
   provider = "prisma-client-js"
-}
-
-// prisma/schema.prisma
-datasource db {
-  provider  = "postgresql"
-  url  	    = env("DATABASE_URL")
 }
 
 
@@ -25,10 +23,28 @@ model Product {
   percentualPromo  Float
   rating           Float?  
   description      String  
-  category         Category  @relation(fields: [categoryId], references: [id])
+  available_quantity Int 
+  category          Category       @relation(fields: [categoryId], references: [id])
+  productColors    ProductColor[] // Relazione esplicita con la tabella di join  category         Category  @relation(fields: [categoryId], references: [id])
   brand            Brand     @relation(fields: [brandId], references: [id])
   gender           Gender   @relation(fields: [genderId], references: [id]) // Relazione con Gender
   reviews          Review[]  // Relazione per le recensioni degli utenti
+  orders           OrderProduct[] // Relazione Many-to-Many tramite tabella intermedia
+}
+model Color {
+  id              Int            @id @default(autoincrement())
+  name            String
+  hex             String?
+  productColors   ProductColor[]  // Relazione opposta
+}
+
+model ProductColor {
+  productId Int
+  colorId   Int
+  product   Product @relation(fields: [productId], references: [id])
+  color     Color   @relation(fields: [colorId], references: [id])
+
+  @@id([productId, colorId]) // Chiave primaria composta se è una tabella di join
 }
 
 model Brand {
@@ -59,6 +75,9 @@ model User {
   surname  String
   email    String    @unique
   password String
+  address  String
+  number   String
+  newsletter Boolean ?
   orders   Order[]
   reviews  Review[] 
   role     Role      @default(USER)
@@ -73,7 +92,6 @@ model Token {
   token     String    @unique
   expiresAt DateTime
   createdAt DateTime  @default(now())
-
   @@index([userId])
 }
 
@@ -83,13 +101,22 @@ enum Role {
 }
 
 model Order {
-  id        Int       @id @default(autoincrement())
+  id        Int            @id @default(autoincrement())
   idUtente  Int
-  codeId    String
   price     Float
-  user      User      @relation(fields: [idUtente], references: [id])
+  user      User           @relation(fields: [idUtente], references: [id])
+  products  OrderProduct[] // Relazione Many-to-Many tramite tabella intermedia
 }
 
+model OrderProduct {
+  id        Int       @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int       @default(1) // Quantità del prodotto nell'ordine
+  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  @@unique([orderId, productId]) // Evita duplicati dello stesso prodotto nello stesso ordine
+}
 model Gender {
   id        Int       @id @default(autoincrement())
   name      String

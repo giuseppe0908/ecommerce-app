@@ -1,155 +1,97 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue';
 import { useCartStore } from '@/stores/cartStore';
 
 const cartStore = useCartStore();
+const props = defineProps(['colorPrimary']);
+const info = "Se il tuo ordine raggiunge 28,90 €, la tua spedizione è gratuita. Per i membri Plus, è sempre offerta.";
+const price_shipping = 4.95;
 
-const info= "Se il tuo ordine raggiunge 28,90 la tua spedizione è gratuita. Per i membri Plus, è sempre offerta"
-const price_shipping= 4.95
-
-const addquantity=(item)=>{
-    cartStore.addtocart(item)
+const addquantity = (item) => {
+    cartStore.addtocart(item);
     cartStore.total += item.price;
     localStorage.prezzototal = JSON.stringify(cartStore.total);
-}
-const removeQuantity=(item)=>{
-    cartStore.removetocart(item.codeItem); 
+};
+
+const removeQuantity = (item) => {
+    cartStore.removetocart(item.codeItem);
     cartStore.total -= item.price;
+};
 
-}
-
-//SVUOTA CARRELLO
-const svuota =()=>{
+const svuota = () => {
     localStorage.removeItem('carrello');
     localStorage.removeItem('prezzototal');
-    var length = cartStore.cart.length;
-    cartStore.cart.splice(0,length)
-    cartStore.total = 0 
-}
-        
+    cartStore.cart.splice(0, cartStore.cart.length);
+    cartStore.total = 0;
+};
 </script>
 
 <template>
-    <div class="cart" v-if="(cartStore.flag_cart)" >
-       <h3>Carrello</h3>
-       <div class="item" v-for="(item,index) in cartStore.cart" :key="index">
-        <div class="flex" >
-            <div class="photo">
-                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQwvYPYCtBxtKnwYC2Maa6PsNpOVmQ6_zjUNULVJl74DA&s" alt="">
-            </div>
-            <div class="desc">
-                <div class="brand">
-                    <p><b>{{ item.brand }}</b></p>
+    <div v-if="cartStore.flag_cart" class="cart rounded-2xl  fixed top-16 right-0 w-80 h-96 z-20 overflow-y-auto" :style="{ backgroundColor: props.colorPrimary }">
+        <h3 class="text-xs font-bold p-2 m-2 text-white ">Aggiunto con successo al tuo carrello</h3>
+        <div v-for="(item, index) in cartStore.cart" :key="index" class="item border border-black p-2 m-2">
+            <div class="flex">
+                <div class="photo w-24 h-40">
+                    <img class="w-full h-32 object-cover" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQwvYPYCtBxtKnwYC2Maa6PsNpOVmQ6_zjUNULVJl74DA&s" alt="Product Image">
                 </div>
-                <div class="name">
-                    <p>{{ item.name }}</p>
-                </div>
-                <!-- <div :class="(item.promo) ? 'price sbarrato':'price'" v-if="!item.promo">
-                    {{ item.price }}
-                </div>
-                <div class="price" v-else>
-                    {{ item.price}}
-                </div> -->
-                <div class="price">
-                    {{ item.price.toFixed(2) }}
-                </div>
-                <div class="color">
-                    <p>colore:{{  }}</p>
-                </div>
-                <div class="size">
-                    <p>Taglia: {{  }}</p>
-                </div>
-                <div class="quantity flex">
-                    <p>Quantità: {{ item.quantity }}</p>
-                    <p class="pr-2" @click="addquantity(item)">+</p>
-                    <p @click="removeQuantity(item)">-</p>
+                <div class="desc pl-5 text-left">
+                    <div class="brand -mt-4">
+                        <p class="font-bold  text-black">{{ item.brand.name }}</p>
+                    </div>
+                    <div class="name -mt-4 text-white">
+                        <p>{{ item.name }}</p>
+                    </div>
+                    <div class="price -mt-4 text-black">
+                        {{ item.price.toFixed(2) }} €
+                    </div>
+                    <div class="color -mt-4 text-white">
+                        <p>Colore: {{ item.color || 'N/A' }}</p>
+                    </div>
+                    <!-- <div class="size">
+                        <p>Taglia: {{ item.size || 'N/A' }}</p>
+                    </div> -->
+                    <div class="quantity flex items-center -mt-4 text-white">
+                       <p>Quantità: </p>
+                        <div class="circle rounded-full h-[20px] w-[20px] bg-gray-200 flex items-center justify-center ml-2 cursor-pointer" >
+                            <p class="text-black" @click="addquantity(item)">+</p>
+                        </div>
+                        <p class="ml-2">{{ item.quantity }}</p>
+                        <div class="circle rounded-full h-[20px] w-[20px] bg-gray-200 flex items-center justify-center ml-2 cursor-pointer">
+                            <p class="text-black" @click="removeQuantity(item)">-</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-       </div>
-       <div class="info-extra">
-            <div class="info">
-                <p>{{ info }}</p>
+        <div class="info-extra p-2">
+            <div class="info bg-gray-200 p-2 rounded">
+                <p class="text-sm">{{ info }}</p>
             </div>
-            <div class="shipping flex between" v-if="cartStore.total <= 28.89">
+            <div class="shipping flex justify-between mt-2" v-if="cartStore.total <= 28.89">
                 <div class="name">
                     <p>Spedizione</p>
                 </div>
                 <div class="value">
-                    <p>{{ price_shipping }}</p>
+                    <p>{{ price_shipping.toFixed(2) }} €</p>
                 </div>
             </div>
-            <div class="shipping flex between" v-else>
+            <div class="shipping flex justify-between mt-2" v-else>
                 <div class="name">
                     <p>Spedizione</p>
                 </div>
                 <div class="value">
-                    <p> 0.00 </p>
+                    <p>0.00 €</p>
                 </div>
             </div>
-           {{cartStore.total.toFixed(2) }} €
-            <div class="button" v-if="cartStore.length !=0">
-                <button @click="cartStore.flag_cart = !cartStore.flag_cart"><RouterLink to="/order">Compra</RouterLink></button>
-                <button @click="svuota(), cartStore.flag_cart = !cartStore.flag_cart">Svuota</button>
+            <div class="total mt-2 font-bold">
+                Totale: {{ cartStore.total.toFixed(2) }} €
+            </div>
+            <div class="button mt-4" v-if="cartStore.cart.length > 0">
+                <button class="bg-blue-500 text-white px-4 py-2 rounded mr-2 hover:bg-blue-600">
+                    <RouterLink to="/order">Compra</RouterLink>
+                </button>
+                <button @click="svuota" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Svuota</button>
             </div>
         </div>
     </div>
 </template>
-
-<style scoped>
-   .cart{
-    position: absolute;
-    height: 400px;
-    right: 0px;
-    border: 1px solid black;
-    width: 300px;
-    top: 64px;
-    z-index: 2;
-    text-align: center;
-    background-color: white;
-    overflow-y: auto;
-   }
-   .item{
-    border:1px solid black
-   }
-   .photo{
-    height: 160px;
-    width: 100px;
-   }
-   .photo img{
-    width: 100%;
-    height: 130px;
-    background-size: cover;
-   }
-   .price{
-    color: red;
-   }
-   .flex{
-    display: flex;
-   }
-
-   .between{
-    justify-content: space-between;
-   }
-   .info-extra{
-    width: 90%;
-    margin: 0 auto;
-    margin-top: 10px;
-   }
-   .info{
-   
-    background-color: lightgray;
-   }
-
-   /* @media screen and ( max-width: 768px){
-  
-    .cart{
-     right: 25px;
-    }
-   }
-   @media screen and ( max-width: 1000px){
-    .cart{
-        right: 30px;
-    } 
-}*/
-</style>

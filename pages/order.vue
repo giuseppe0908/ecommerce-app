@@ -6,8 +6,13 @@
 
     <form @submit.prevent="submitOrder">
       <div class="form-group">
-        <label for="name">Nome Completo</label>
+        <label for="name">Nome</label>
         <input type="text" id="name" v-model="order.name" required />
+      </div>
+
+      <div class="form-group">
+        <label for="surname">Cognome</label>
+        <input type="text" id="surname" v-model="order.surname" required />
       </div>
 
       <div class="form-group">
@@ -42,17 +47,62 @@
 <script setup>
 import { ref } from 'vue';
 
+// Recupera i prodotti dal localStorage
+const lsItems = JSON.parse(localStorage.getItem('carrello')) || [];
+// Estrai gli ID e le quantità dei prodotti
+const products = lsItems.map(item => ({ id: item.id, quantity: item.quantity }));
+// Recupera il prezzo totale e fai il cast a intero
+const prezzo = parseInt(localStorage.getItem('prezzototal'))
 const order = ref({
   name: '',
+  surname: '',
   address: '',
   email: '',
   phone: '',
   payment: 'credit-card',
+  products: products,
+  totalPrice: prezzo,
 });
 
-const submitOrder = () => {
-  // Logica per inviare l'ordine
+const submitOrder = async () => {
+  // Controlla che tutti i campi siano riempiti
+  if (!order.value.name.trim() || !order.value.surname.trim() || !order.value.address.trim() || !order.value.email.trim() || !order.value.phone.trim()) {
+    alert("Per favore, compila tutti i campi.");
+    return;
+  }
   console.log('Ordine inviato:', order.value);
+  try {
+    const response = await fetch("/api/order/order", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json", // Assicurati che il corpo sia interpretato come JSON
+      },
+      body: JSON.stringify(order.value), // Serializza il form come JSON
+    });
+    if (!response.ok) {
+      throw new Error('Errore durante l\'invio dell\'ordine');
+    }
+
+    const result = await response.json();
+    console.log('Ordine inviato con successo:', result);
+
+    // Resetta il carrello e l'ordine
+    localStorage.removeItem('carrello');
+    order.value = {
+      fullName: '',
+      address: '',
+      email: '',
+      phone: '',
+      payment: 'credit-card',
+      products: [],
+      totalPrice: 0,
+    };
+
+    alert('Ordine completato con successo!');
+  } catch (error) {
+    console.error('Errore:', error);
+    alert('Si è verificato un errore durante l\'invio dell\'ordine.');
+  }
 };
 </script>
 

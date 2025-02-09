@@ -73,7 +73,7 @@ import logoConverse from '../assets/img/logo/logoConverse.png';
         <div class="img-container h-[40vh] w-full relative  md:h-[60vh]">
             <img class="w-full h-full " :src="brand" alt="">
             <div class="absolute top-8 md:top-12">
-                <Button name="BRAND" colorText="white" :bgColor="colorPrimary"  to="/Uomo" :leftRadius="false" :width="buttonWidth" :height="buttonHeight"/>
+                <Button name="BRAND" textColor="white" :bgColor="colorPrimary"  to="/Uomo" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight"/>
             </div>
         </div>
         <div class="loghi h-[40vh] ">

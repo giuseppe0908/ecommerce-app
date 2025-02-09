@@ -3,18 +3,18 @@
         <img class="w-full h-full" src="../assets/img/jumbo.png" alt="jumbo">
         <div class="absolute top-[10px] lg:top-[50px]">
             <div class="pt-11">
-            <Button name="DONNA" :bgColor="colorPrimary" colorText="white"  to="/donna" :leftRadius="false" :width="buttonWidth" :height="buttonHeight"/>
+                <Button name="DONNA" :bgColor="colorPrimary" textColor="white"  to="/donna" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight"/>
             </div>
             <div class="mt-5 lg:mt-8">
-                <Button name="UOMO" bgColor="white" :colorText="colorPrimary"  to="/uomo" :leftRadius="false" :width="buttonWidth" :height="buttonHeight"/>
+                <Button name="UOMO" bgColor="white" :textColor="colorPrimary"  to="/uomo" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight"/>
             </div>
             <div class="mt-5 lg:mt-8 ">
-                <Button name="BAMBINO" :bgColor="colorPrimary" colorText="white"  to="/bambino" :leftRadius="false" :width="buttonWidth" :height="buttonHeight" ml_25="25px"/>
+                <Button name="BAMBINO" :bgColor="colorPrimary" textColor="white"  to="/bambino" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight" marginLeft="25px"/>
             </div>
         </div>
-        <div class="centrato absolute right-0"  >
-            <p>Tutto in un unico posto per uno shopping facile 
-                e veloce!</p>
+        <div class="centrato absolute left-44 title" >
+            <h1>Tutto in un unico posto per uno shopping facile 
+                e veloce!</h1>
         </div>
         
     </div>
@@ -54,14 +54,15 @@ import { computed } from 'vue';
 .centrato{
     top: 50%;
     transform: translateY(-50%);
-    p{
+   
+}
+.centrato p{
         font-weight: 900;
         color: #56768D;
         font-size: 17px;
         line-height: 21px;
         color: color(display-p3 0.365 0.459 0.545);
     }
-}
 img{
     /* border-bottom-right-radius: 110px; */
     /* border-bottom-right-radius: 50% 20%; */
@@ -71,7 +72,13 @@ img{
 /* Tutto in un unico posto per uno shopping facile e veloce! */
 
 
-
+.title{
+    font-weight: 900;
+    -webkit-text-stroke: 6px black;
+    font-size: 40px;
+    letter-spacing: 13px;
+    text-transform: uppercase;
+}
 
 
 

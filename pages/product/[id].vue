@@ -1,9 +1,9 @@
   <template>
     <div class="w-[95%] mx-auto my-0">    
-      <div class="buttons flex gap-2 text-xs">
-        <Button name="DONNA" :bgColor="colorPrimary" colorText="white"  to="/donna" leftRadius="true" width="100px" height="30px"/>
-        <Button name="UOMO" bgColor="white" :colorText="colorPrimary" to="/uomo" leftRadius="true" width="100px" height="30px"/>
-        <Button name="BAMBINO" :bgColor="colorPrimary" colorText="white" to="/bambino" leftRadius="true" width="100px" height="30px"/>
+      <div class="buttons flex gap-9 text-xs">
+        <Button name="DONNA" :bgColor="colorPrimary" textColor="white" to="/donna" applyNegativeMargin="false" width="83px" height="30px"/>
+        <Button name="UOMO" bgColor="white" :textColor="colorPrimary" to="/uomo" applyNegativeMargin="false" width="83px" height="30px"/>
+        <Button name="BAMBINO" :bgColor="colorPrimary" textColor="white" to="/bambino" applyNegativeMargin="false" width="83px" height="30px"/>
       </div>
       <div class="navBar">
 

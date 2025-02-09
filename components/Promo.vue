@@ -12,7 +12,7 @@ const props = defineProps(['colorPrimary'])
                     'right-[-56px] translate-x-3/4': true /* Schermo piccolo */
                 }"
             >
-            <Button name="PROMO" :bgColor="colorPrimary" colorText="white"  to="/Promo" :leftRadius="true" width="90px" height="42px" size_13="13px"/>
+            <Button name="PROMO" :bgColor="colorPrimary" textColor="white"  to="/Promo" :applyNegativeMargin="true" width="90px" height="42px" fontSize="13px"/>
             </div>
         </div>
     </section>

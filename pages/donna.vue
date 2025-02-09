@@ -37,9 +37,9 @@
               <Button 
                 :name="category.name" 
                 bgColor="white" 
-                :colorText="colorPrimary" 
+                :textColor="colorPrimary" 
                 :to="category.name" 
-                :leftRadius="true" 
+                :applyNegativeMargin="false" 
                 width="100%" 
                 :height="buttonHeight" 
               /> 
@@ -84,10 +84,10 @@
         </svg>
       </div>
 
-      <div class="buttons flex gap-2 text-xs ">
-        <Button name="DONNA" :bgColor="colorPrimary" colorText="white" to="/donna" leftRadius="true" width="83px" height="30px"/>
-        <Button name="UOMO" bgColor="white" :colorText="colorPrimary" to="/uomo" leftRadius="true" width="83px" height="30px"/>
-        <Button name="BAMBINO" :bgColor="colorPrimary" colorText="white" to="/bambino" leftRadius="true" width="83px" height="30px"/>
+      <div class="buttons flex gap-9">
+        <Button name="DONNA" :bgColor="colorPrimary" textColor="white" to="/donna" applyNegativeMargin="false" width="83px" height="30px" fontSize="12px"/>
+        <Button name="UOMO" bgColor="white" :textColor="colorPrimary" to="/uomo" applyNegativeMargin="false" width="83px" height="30px" fontSize="12px"/>
+        <Button name="BAMBINO" :bgColor="colorPrimary" textColor="white" to="/bambino" applyNegativeMargin="false" width="83px" height="30px" fontSize="12px" />
       </div>
     </div>
 
@@ -198,9 +198,9 @@ import { useResponsiveButton } from '~/composables/useResponsiveButton';
 import { computed, ref, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router'
 import _ from 'lodash';
-definePageMeta({
-  layout: false, // Disabilita completamente il layout
-});
+// definePageMeta({
+//   layout: false, // Disabilita completamente il layout
+// });
 const { screenWidth, buttonStyle, buttonWidth, buttonHeight, colorPrimary } = useResponsiveButton();
 
 const { data: categories, pending, error } = await useFetch('/api/categories');

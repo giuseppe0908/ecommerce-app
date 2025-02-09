@@ -1,0 +1,62 @@
+[
+    {
+        "name": "Maglietta Nike", 
+        "description": "Maglietta comoda e traspirante, ideale per un look casual.",
+        "price": 29,
+        "currency": "eur"
+    },
+    {
+        "name": "Pantaloni Sportivi Adidas", 
+        "description": "Pantaloni sportivi per attività fisica con tessuto elastico.",
+        "price": 49,
+        "currency": "eur"
+    },
+    {
+        "name": "Scarpe da Corsa Puma", 
+        "description": "Scarpe leggere e ammortizzate per la corsa.",
+        "price": 89,
+        "currency": "eur"
+    },
+    {
+        "name": "Giacca Reebok", 
+        "description": "Giacca calda e resistente, perfetta per le avventure all’aperto.",
+        "price": 99,
+        "currency": "eur"
+    },
+    {
+        "name": "Camicia Gucci",
+        "description": "Camicia elegante in cotone di alta qualità.",
+        "price": 120,
+        "currency": "eur"
+    },
+    {
+        "name": "Zaino Outdoor",
+        "description": "Zaino capiente e resistente per le avventure outdoor.",
+        "price": 59, 
+        "currency": "eur"
+    },
+    {
+        "name": "Polo Ralph Lauren",
+        "description": "Polo in cotone di alta qualità per un look casual e sofisticato.",
+        "price": 80, 
+        "currency": "eur"
+    },
+    {
+        "name": "Borsetta a Tracolla",
+        "description": "Borsetta elegante e pratica, perfetta per le uscite.",
+        "price": 199, 
+        "currency": "eur"
+    },
+    {
+        "name": "Felpa Puma",
+        "description": "Felpa calda e confortevole, ideale per i più piccoli.",
+        "price": 45, 
+        "currency": "eur"
+    },
+    {
+        "name": "Scarpe Eleganti Uomo",
+        "description": "Scarpe eleganti in pelle, perfette per un look formale.",
+        "price": 150, 
+        "currency": "eur"
+    }
+   ]

@@ -3,8 +3,10 @@ import { useCartStore } from '@/stores/cartStore'
 const cartStore = useCartStore()
 const props = defineProps(['id', 'name', 'img', 'promo', 'plus', 'price', 'category','brand','colorPrimary', 'colorSecondary', 'codeItem']);
 const { id, name, img, promo, plus, price, category, brand, colorPrimary, colorSecondary, codeItem } = props;
-const addcart = (product) => {
-   cartStore.addtocart(product)
+const addcart = (product, event) => {
+  event.preventDefault() // Blocca l'azione predefinita del link
+  event.stopPropagation() // Ferma la propagazione
+  cartStore.addtocart(product)
 }
 </script>
 
@@ -16,10 +18,10 @@ const addcart = (product) => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 10-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
             </svg>
         </div>
-        <div v-if="promo" class="btn btnPromo absolute left-1 top-1 flex items-center justify-center w-[60px] h-[15px] text-white"
-            :style="{backgroundColor: colorSecondary}"
+        <div v-if="promo" class="btn btnPromo absolute left-1 top-1 flex items-center justify-center w-[60px] h-[21px] text-white"
+            :style="{backgroundColor: colorSecondary, boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)' }"
         >
-            <p class="text-[12px]">PROMO</p>
+            <p class="text-[10px]">PROMO</p>
         </div>
         <div class="img h-[220px]">
             <img class=" w-full h-full" src="https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg" alt="">
@@ -42,7 +44,7 @@ const addcart = (product) => {
             >
                 <p>PLUS</p>
             </div>
-            <div class="cart" @click="addcart(props)">
+            <div class="cart" @click="addcart(props, $event)">
               <!-- <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" id="cart" class="h-[30px]" >
                 <path d="M8.5,19A1.5,1.5,0,1,0,10,20.5,1.5,1.5,0,0,0,8.5,19ZM19,16H7a1,1,0,0,1,0-2h8.49121A3.0132,3.0132,0,0,0,18.376,11.82422L19.96143,6.2749A1.00009,1.00009,0,0,0,19,5H6.73907A3.00666,3.00666,0,0,0,3.92139,3H3A1,1,0,0,0,3,5h.92139a1.00459,1.00459,0,0,1,.96142.7251l.15552.54474.00024.00506L6.6792,12.01709A3.00006,3.00006,0,0,0,7,18H19a1,1,0,0,0,0-2ZM17.67432,7l-1.2212,4.27441A1.00458,1.00458,0,0,1,15.49121,12H8.75439l-.25494-.89221L7.32642,7ZM16.5,19A1.5,1.5,0,1,0,18,20.5,1.5,1.5,0,0,0,16.5,19Z"></path>
               </svg> -->

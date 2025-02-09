@@ -79,9 +79,9 @@ onMounted(() => {
         <Button 
           :name="name" 
           bgColor="white" 
-          :colorText="colorPrimary" 
+          :textColor="colorPrimary" 
           :to="name" 
-          :leftRadius="true" 
+          :applyNegativeMargin="false" 
           :width="buttonWidth" 
           :height="buttonHeight" 
         />
