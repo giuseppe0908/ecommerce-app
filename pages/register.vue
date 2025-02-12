@@ -51,6 +51,30 @@
             />
           </div>
 
+           <!-- Address -->
+           <div>
+            <label for="address" class="block text-gray-700 font-medium">address</label>
+            <input
+              v-model="form.address"
+              id="address"
+              type="text"
+              placeholder="Inserisciil tuo indirizzo"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+
+           <!-- Number -->
+           <div>
+            <label for="number" class="block text-gray-700 font-medium">Number</label>
+            <input
+              v-model="form.number"
+              id="number"
+              type="text"
+              placeholder="Inserisci il tuo numero telefonico"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+
           <div class="flex">
             <input v-model="form.role" type="checkbox">
             <label for="">Admin</label>
@@ -78,12 +102,14 @@
     surname: "",
     email: "",
     password: "",
-    role: false // Imposta il ruolo come booleano per il checkbox
+    role: false, // Imposta il ruolo come booleano per il checkbox
+    address: "",
+    number: "",
   });
   
   const handleSubmit = async () => {
     // Controlla che tutti i campi siano riempiti
-    if (!form.name || !form.surname || !form.email || !form.password) {
+    if (!form.name || !form.surname || !form.email || !form.password || !form.address || !form.number) {
       alert("Per favore, compila tutti i campi.");
       return;
     }

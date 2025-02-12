@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-orange-600">
+  <div class="bg-orange-600" :class="{ 'opacity-50': showEditModal }">
     <div class="w-[95%] mx-auto">
       <h1>Lista di tutti i prodotti</h1>
       <div class="productGrid grid grid-cols-2 gap-8 containerGrid md:grid-cols-6">
@@ -14,6 +14,9 @@
             :category="product.category"
             colorPrimary="#5D758B"
             colorSecondary="#00192F"
+            :codeItem="product.codeItem"
+            :brand="product.brand"
+            :onCardClick="handleCardClick"
           />
           <div class="absolute top-2 right-2 flex gap-2">
             <button @click="editProduct(product)" class="bg-blue-500 text-white px-2 py-1 rounded">Modifica</button>
@@ -25,23 +28,8 @@
   </div>
 
   <!-- Modale per la modifica del prodotto -->
-  <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-    <!-- <div class="bg-white p-6 rounded">
-      <h2>Modifica Prodotto</h2>
-      <form @submit.prevent="updateProduct">
-        <div class="form-group">
-          <label for="name">Nome</label>
-          <input type="text" id="name" v-model="selectedProduct.name" required />
-        </div>
-        <div class="form-group">
-          <label for="price">Prezzo</label>
-          <input type="number" id="price" v-model="selectedProduct.price" required />
-        </div>
-        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Salva</button>
-        <button @click="closeEditModal" class="bg-gray-500 text-white px-4 py-2 rounded">Annulla</button>
-      </form>
-    </div> -->
-    <SigleProduct :product="selectedProduct" @close="closeEditModal" />
+  <div v-if="showEditModal" class="fixed fixed-overlay inset-0 flex items-center justify-center">
+    <SigleProduct :productprops="selectedProduct" @close="closeEditModal" />
   </div>
 
   <!-- Modale per la conferma dell'eliminazione -->
@@ -58,10 +46,10 @@
 import { ref } from 'vue';
 import { useFetch } from 'nuxt/app';
 import Card from '../components/Card.vue';
+import SigleProduct from '../components/SigleProduct.vue';
 
 const response = await useFetch('/api/products');
 const products = response.data.value;
-
 const showEditModal = ref(false);
 const showDeleteModal = ref(false);
 const selectedProduct = ref(null);
@@ -70,6 +58,34 @@ const productIdToDelete = ref(null);
 const editProduct = (product) => {
   selectedProduct.value = { ...product };
   showEditModal.value = true;
+};
+
+const closeEditModal = () => {
+  showEditModal.value = false;
+};
+
+const confirmDeleteProduct = (productId) => {
+  productIdToDelete.value = productId;
+  showDeleteModal.value = true;
+};
+
+const closeDeleteModal = () => {
+  showDeleteModal.value = false;
+};
+
+const deleteProduct = async () => {
+  // Logica per eliminare il prodotto
+  await fetch(`/api/products/${productIdToDelete.value}`, {
+    method: 'DELETE',
+  });
+  products.value = products.value.filter(product => product.id !== productIdToDelete.value);
+  closeDeleteModal();
+};
+
+const handleCardClick = (event) => {
+  // Blocca l'evento se necessario
+  event.preventDefault();
+  event.stopPropagation();
 };
 
 const updateProduct = async () => {
@@ -81,40 +97,10 @@ const updateProduct = async () => {
     },
     body: JSON.stringify(selectedProduct.value),
   });
-
-  if (response.ok) {
-    const updatedProduct = await response.json();
-    const index = products.value.findIndex(p => p.id === updatedProduct.id);
-    products.value[index] = updatedProduct;
-    closeEditModal();
-  }
-};
-
-const confirmDeleteProduct = (id) => {
-  productIdToDelete.value = id;
-  showDeleteModal.value = true;
-};
-
-const deleteProduct = async () => {
-  // Logica per eliminare il prodotto
-  const response = await fetch(`/api/products/${productIdToDelete.value}`, {
-    method: 'DELETE',
-  });
-
-  if (response.ok) {
-    products.value = products.value.filter(p => p.id !== productIdToDelete.value);
-    closeDeleteModal();
-  }
-};
-
-const closeEditModal = () => {
-  showEditModal.value = false;
-  selectedProduct.value = null;
-};
-
-const closeDeleteModal = () => {
-  showDeleteModal.value = false;
-  productIdToDelete.value = null;
+  const updatedProduct = await response.json();
+  const index = products.value.findIndex(product => product.id === updatedProduct.id);
+  products.value[index] = updatedProduct;
+  closeEditModal();
 };
 </script>
 
@@ -212,5 +198,15 @@ button {
 
 .rounded {
   border-radius: 0.375rem;
+}
+
+.fixed-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 10;
 }
 </style>

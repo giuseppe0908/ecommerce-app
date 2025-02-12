@@ -54,7 +54,6 @@ import logoConverse from '../assets/img/logo/logoConverse.png';
             src: logoConverse,
         },
     ]
-    console.log(brandLogos);
     
     onMounted(() => {
         if (process.client) {

@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   const prisma = new PrismaClient();
   
   const body = await readBody(event);
-  const { name, surname, email, password, role } = body;
+  const { name, surname, email, password, role , address, number } = body;
 console.log(body);
 
   console.log(email);
@@ -29,8 +29,10 @@ console.log(body);
       email,
       password: hashedPassword,
       role: userRole,
+      address,
+      number,
     },
   });
 
-  return { message: 'Registrazione completata', user: { name: user.name, role: user.role } };
+  return { message: 'Registrazione completata', user: { name: user.name, role: user.role, address: user.address, number: user.number } };
 });

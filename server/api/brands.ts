@@ -16,7 +16,6 @@ export default defineEventHandler(async (event) => {
     else if(method === 'POST') {
         // Se è una chiamata POST, puoi ad esempio creare un nuovo item
         const body = await readBody(event)
-        console.log(body);
          // Legge il body della richiesta
         const newBrand = await prisma.category.create({
             data: body,

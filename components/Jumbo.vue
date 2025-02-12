@@ -24,8 +24,14 @@
 <script setup>
 import Button from './Button.vue'
 import { computed } from 'vue';
+import { useFetch } from '#app';
     const props = defineProps(['colorPrimary'])
     const {colorPrimary} = props
+
+    const response = await useFetch('/api/stripe/products');
+   // const data = await response.json();
+   const products = response.data.value.data;
+    console.log(products.unit_ammount);
 
    // Variabile reattiva per la larghezza del bottone
     const buttonWidth = ref('142px'); // Impostazione predefinita per mobile

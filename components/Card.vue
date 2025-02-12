@@ -1,20 +1,45 @@
 <script setup>
 import { useCartStore } from '@/stores/cartStore'
 const cartStore = useCartStore()
-const props = defineProps(['id', 'name', 'img', 'promo', 'plus', 'price', 'category','brand','colorPrimary', 'colorSecondary', 'codeItem']);
+//const props = defineProps(['id', 'name', 'img', 'promo', 'plus', 'price', 'category','brand','colorPrimary', 'colorSecondary', 'codeItem']);
+const props = defineProps({
+  id: { type: Number, required: true },
+  name: { type: String, required: true },
+  img: { type: String, required: true },
+  promo: { type: Boolean, default: false },
+  plus: { type: Boolean, default: false },
+  price: { type: Number, required: true },
+  category: { type: Object, required: true },
+  brand: { type: Object, required: true },
+  colorPrimary: { type: String, required: true },
+  colorSecondary: { type: String, required: true },
+  codeItem: { type: String, required: true },
+  onCardClick: { type: Function, required: false },
+});
+
 const { id, name, img, promo, plus, price, category, brand, colorPrimary, colorSecondary, codeItem } = props;
 const addcart = (product, event) => {
   event.preventDefault() // Blocca l'azione predefinita del link
   event.stopPropagation() // Ferma la propagazione
   cartStore.addtocart(product)
 }
+
+const stopPropagation = (event) => {
+  event.stopPropagation(); // Ferma la propagazione
+};
+
+const handleCardClick = (event) => {
+  if (props.onCardClick) {
+    props.onCardClick(event);
+  }
+};
 </script>
 
 <template>
-  <nuxtLink :to="'/product/'+id" class="no-underline">
+  <nuxtLink :to="'/product/'+id" class="no-underline" @click="handleCardClick">
     <div class="card relative min-w-[150px] min-h-[193px] flex flex-col cursor-pointer">
         <div class="btnLike absolute right-2 top-2  text-gray-500 cursor-pointer">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-black border-2 border-black rounded-full p-1" :style="{ color:colorPrimary }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-black border-2 border-black rounded-full p-1" :style="{ color:colorPrimary }" fill="none" viewBox="0 0 24 24" stroke="currentColor" @click="stopPropagation">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 10-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
             </svg>
         </div>
