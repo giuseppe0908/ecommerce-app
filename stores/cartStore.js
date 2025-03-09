@@ -57,9 +57,11 @@ export const useCartStore = defineStore('cartStore', {
 
     loadCartFromLocalStorage() {
       const storedCart = localStorage.getItem('carrello');
+      const finalPrice = localStorage.getItem('prezzototal');
       if (storedCart) {
         this.cart = JSON.parse(storedCart);
         this.flag_cart = true;
+        this.total = JSON.parse(finalPrice);
       } else {
         this.flag_cart = false;
       }

@@ -48,7 +48,7 @@ const handleCardClick = (event) => {
         >
             <p class="text-[10px]">PROMO</p>
         </div>
-        <div class="img h-[220px]">
+        <div class="img h-[220px] ">
             <img class=" w-full h-full" src="https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg" alt="">
         </div>
         <div class="descriptions text-white h-48">
@@ -83,10 +83,10 @@ const handleCardClick = (event) => {
 
 
 <style>
- .card {
+ /* .card {
   width: calc(13% - 10px);
   margin: 10px 10px;
-}
+} */
 
 .img img {
   border-radius: 13px;

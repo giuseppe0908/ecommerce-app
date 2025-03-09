@@ -9,6 +9,10 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
+  routeRules: {
+    '/admin/**': { middleware: 'auth' },
+    '/dashboard': { middleware: 'auth' }
+  },
   // store: true,
   modules: [
     '@pinia/nuxt',

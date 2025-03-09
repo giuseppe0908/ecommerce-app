@@ -31,8 +31,8 @@ const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
         <Button name="NUOVI ARRIVI" bgColor="white" :colorText="productStore.colorPrimary"  to="/NewArrivi" :leftRadius="false" :width="buttonWidth" :height="buttonHeight" ml_46="46px" />
     </div> -->
 
-    <div class="img h-[40vh] w-full relative  md:h-[60vh]">
-            <img class="w-full h-full" :src="nuoviArriviImg" alt="">
+    <div class="img h-[40vh] w-full relative  md:h-[55vh]">
+            <img class="w-full h-full bg" :src="nuoviArriviImg" alt="">
             <div class="absolute top-8 md:top-12">
                 <Button name="NUOVI ARRIVI" bgColor="white" :textColor="productStore.colorPrimary"  to="/NewArrivi" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight" marginLeft="29px" />
             </div>
@@ -41,7 +41,7 @@ const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
     <div v-if="pending">Loading...</div>
     <div v-else-if="error">Error loading new arrivals!</div>
     <section v-else 
-     class="NewArrivals pt-1 flex items-center overflow-x-scroll whitespace-nowrap mt-[15px] space-x-4 pr-4 md:overflow-x-hidden md:flex-wrap md:w-[95%] md:h-[40vh]"
+     class="NewArrivals pt-1 flex items-center overflow-x-scroll whitespace-nowrap mt-[15px] space-x-4 pr-4 md:overflow-x-hidden md:flex-wrap md:w-[95%] md:h-[55vh]"
     >
         <Card v-for="product in newArrivals" :key="product.id"
             :id="product.id"
@@ -59,11 +59,16 @@ const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
     </section >
     </div>
 </template>
-<style scoped>
-.img img{
-    border-bottom-right-radius: 35%;
+<style >
+.img .bg{
+    /* border-bottom-right-radius: 35%; */
     background-size: cover; /* Adatta l'immagine all'elemento */
     background-position: center; /* Centra l'immagine */
+
+
+    background-position: center;
+    border-bottom-right-radius: 22% 58%;
+    overflow: hidden;
    
 }
 </style>

@@ -26,7 +26,7 @@ const props = defineProps(['colorPrimary']);
 </script>
 
 <template>
-  <div class="flex">
+  <div class="flex cursor-pointer">
     <!-- Icona della borsa -->
     <svg
       xmlns="http://www.w3.org/2000/svg"

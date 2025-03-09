@@ -47,7 +47,21 @@ import { ref } from 'vue';
 import { useFetch } from 'nuxt/app';
 import Card from '../components/Card.vue';
 import SigleProduct from '../components/SigleProduct.vue';
+import { useAuthStore } from '~/stores/authStore'
 
+definePageMeta({
+  middleware: [
+    'auth',   // Controlla autenticazione
+  ]
+})
+const authStore = useAuthStore()
+
+// Verifica l'autenticazione all'avvio dell'app
+onMounted(() => {  
+  authStore.initialize()
+  console.log('authStore', authStore.token);
+  
+})
 const response = await useFetch('/api/products');
 const products = response.data.value;
 const showEditModal = ref(false);

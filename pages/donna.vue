@@ -1,5 +1,5 @@
 <template>
-  <div class="container">
+  <div class="w-[95%]">
     <!-- TOGGLE MENU -->
     <div v-if="open" class="menu bg-[#5D758B] min-h-screen min-w-[95vw]  text-white">
       <!-- Tabs -->
@@ -49,12 +49,12 @@
       </div>
     </div>
 
-    <div v-if="!open" class="menu-toggle w-[95%] mx-auto my-0 flex gap-6 text-black items-center">
+    <div v-if="!open" class="menu-toggle w-[95%] mx-auto my-0  pl-16 flex gap-6 text-black items-center">
       <!-- Mobile menu button -->
       <div
         @click="toggleMenu"
         type="button"
-        class="menu-button"
+        class="md:hidden inline-flex items-center justify-center  pr-2 rounded-md text-gray-800 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         aria-controls="mobile-menu"
         aria-expanded="false"
       >
@@ -119,7 +119,7 @@
       </div>
     </div>
 
-    <div v-if="!open" class="w-[95%] mx-auto my-0 flex gap-10">
+    <div v-if="!open" class="w-[95%] mx-auto my-0 flex gap-10 pl-2">
       <div class="left">
         <div class="filtri sottocategory">
           <div class="button items-center w-[74px] h-[31px] rounded-3xl flex justify-center cursor-pointer hover:scale-125"
@@ -403,23 +403,13 @@ onMounted(() => {
 .menu-toggle {
   /* Styles for the menu toggle */
 }
-.menu-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  color: #1f2937;
-  hover-color: #111827;
-  focus-outline: none;
-  focus-ring: 2px solid #6366f1;
-}
+
 .category-link {
   font-size: 18px;
   cursor: pointer;
   font-weight: bold;
   /* scale: 1.25; */
-  padding-left: 0.25rem;
+  padding-left: 0.5rem;
 }
 .active-filters {
   /* Styles for active filters */
@@ -428,7 +418,7 @@ onMounted(() => {
   color: #3b82f6;
   font-size: 1.125rem;
   cursor: pointer;
-  padding: 0.25rem 0.75rem;
+  padding-left: 0.5rem ;
   transition: color 0.2s;
   hover-color: #4b5563;
 }

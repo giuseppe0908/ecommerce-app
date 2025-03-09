@@ -3,7 +3,11 @@ import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecret'; // Usa la chiave segreta dal file .env
+
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET non configurato');
+}
 
 export default defineEventHandler(async (event) => {
   const method = event.node.req.method;
@@ -29,11 +33,12 @@ export default defineEventHandler(async (event) => {
 
     // Genera il token JWT
     const token = jwt.sign(
-      { userId: user.id, role: user.role },
+      { id: user.id, role: user.role },
       JWT_SECRET,
-      { expiresIn: '1m' }  // Scadenza di 1 ora
+      { expiresIn: '24h' }  // Scadenza di 1 giorno
     );
 
+    const ONE_DAY = 24 * 60 * 60 * 1000; // 24 ore in millisecondi
     // Trova se esiste già un token per questo utente
     const existingToken = await prisma.token.findFirst({
         where: { userId: user.id },
@@ -45,7 +50,7 @@ export default defineEventHandler(async (event) => {
         where: { id: existingToken.id },  // Usa l'id del token esistente per l'aggiornamento
         data: {
           token,  // Aggiorna il token
-          expiresAt: new Date(Date.now() + 60 * 1000),  // Imposta una nuova scadenza (1 minuto)
+          expiresAt: new Date(Date.now() + ONE_DAY),  // Imposta una nuova scadenza (24 ore)
         },
       });
     } else {
@@ -54,7 +59,7 @@ export default defineEventHandler(async (event) => {
         data: {
           userId: user.id,
           token,
-          expiresAt: new Date(Date.now() + 60 * 1000), // Scadenza tra 1 ora
+          expiresAt: new Date(Date.now() + ONE_DAY), // Scadenza tra 1 ora
         },
       });
     }

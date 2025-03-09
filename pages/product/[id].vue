@@ -1,9 +1,9 @@
   <template>
     <div class="w-[95%] mx-auto my-0">    
-      <div class="buttons flex gap-9 text-xs">
-        <Button name="DONNA" :bgColor="colorPrimary" textColor="white" to="/donna" applyNegativeMargin="false" width="83px" height="30px"/>
-        <Button name="UOMO" bgColor="white" :textColor="colorPrimary" to="/uomo" applyNegativeMargin="false" width="83px" height="30px"/>
-        <Button name="BAMBINO" :bgColor="colorPrimary" textColor="white" to="/bambino" applyNegativeMargin="false" width="83px" height="30px"/>
+      <div class="buttons flex gap-4 text-xs">
+        <Button name="DONNA" :bgColor="colorPrimary" textColor="white" to="/donna"  width="100px" height="30px" fontSize="15px"/>
+        <Button name="UOMO" bgColor="white" :textColor="colorPrimary" to="/uomo" width="100px" height="30px" fontSize="15px"/>
+        <Button name="BAMBINO" :bgColor="colorPrimary" textColor="white" to="/bambino"  width="100px" height="30px" fontSize="15px"/>
       </div>
       <div class="navBar">
 
@@ -66,7 +66,7 @@
             <p>Solo {1} disponibile!</p>
           </div>
           <div class="buttons flex gap-4 mt-4">
-            <Button name="Acquista" bgColor="white" colorText="#5D758B" width="200px" height="50px" @click="addCart"/>
+            <Button name="Acquista" bgColor="white" colorText="#5D758B" width="200px" height="50px" @click="addCart" to="/checkout"/>
           </div>  
           </div>
       </div>
@@ -85,9 +85,8 @@
   const colorPrimary = "#5D758B";
 
   const productId = route.params.id
-    const { data } = await useFetch(`/api/products/${productId}`);
-    product.value = data.value || [];
-    console.log(data.value);
+  const { data } = await useFetch(`/api/products/${productId}`);
+  product.value = data.value || [];
   
   // const img = ref([
   //   {

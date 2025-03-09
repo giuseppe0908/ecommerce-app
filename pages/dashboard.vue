@@ -13,7 +13,7 @@
       </div>
     </div>
     <p>Tempo rimanente: {{ formatTime(timeRemaining) }}</p>
-    <nuxt-link to="/admin/allProducts">Visualizza Prodotti</nuxt-link>
+
 
     <button @click="handleLogout" class="mt-4 px-4 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">
       Logout
@@ -21,6 +21,7 @@
 
     <div v-if="user.role === 'ADMIN'">
       <h2>Funzionalità Admin</h2>
+      <nuxt-link to="/admin/allProducts">Visualizza Prodotti</nuxt-link>
       <div class="tabs flex gap-2 mb-5">
         <button class="py-3 px-5" @click="activeTab = 'products'" :class="{ active: activeTab === 'products' }">Gestione Prodotti</button>
         <button class="py-3 px-5" @click="activeTab = 'users'" :class="{ active: activeTab === 'users' }">Gestione Utenti</button>
@@ -48,12 +49,23 @@ import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import ProductManagement from './components/Managment/ProductManagement.vue';
 import UserManagement from './components/Managment/UserManagement.vue';
+import { useAuthStore } from '~/stores/authStore'
+import { navigateTo } from 'nuxt/app';
+
+definePageMeta({
+  middleware: [
+    'auth',   // Controlla autenticazione
+  ]
+})
+
+const authStore = useAuthStore()
 
 
 const user = ref(null);
 const activeTab = ref('');
 const router = useRouter();
 const totalDuration =5 * 60 * 1000; // 5 minuti in millisecondi
+// const totalDuration =60 * 1000; 
 const timeRemaining = ref(totalDuration); // Tempo rimanente
 let interval = null;
 
@@ -61,24 +73,25 @@ async function fetchUser() {
   const token = localStorage.getItem('authToken');
 
   if (!token) {
-    router.push('/login');
+    // router.push('/login');
+    navigateTo('/login')
     return;
   }
 
   try {
     const response = await fetch('/api/auth/me', {
       headers: {
-        Authorization: `Bearer ${token}`,
-      },
+        'Authorization': `Bearer ${token}`
+      }
     });
 
     if (response.ok) {
       user.value = await response.json();
     } else {
-      router.push('/login');
+      navigateTo('/login')  
     }
   } catch (error) {
-    router.push('/login');
+    navigateTo('/login')
   }
 }
 
@@ -102,8 +115,9 @@ const formatTime = (time) => {
 const handleLogout = () => {
   // Logica per il logout
   user.value = null;
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('user');
+  // localStorage.removeItem('authToken');
+  // localStorage.removeItem('user');
+  authStore.logout();
   router.push('/login');
 };
 
@@ -127,9 +141,11 @@ const handleUserActivity = () => {
 };
 
 onMounted(() => {
+  
   fetchUser();
   startTimer();
-
+  //INIZIALIZZO LO STORE  
+  authStore.initialize()
   window.addEventListener('mousemove', handleUserActivity);
   window.addEventListener('click', handleUserActivity);
   window.addEventListener('keydown', handleUserActivity);

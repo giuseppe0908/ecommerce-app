@@ -25,3 +25,4 @@ logs
 
 prisma\schema.prisma
 prisma/migrations/migration_lock.toml
+prisma/migrations 

@@ -1,4 +1,8 @@
 <script setup>
+import { useResponsiveButton } from '~/composables/useResponsiveButton';
+const { screenWidth, buttonStyle, buttonWidth, buttonHeight, colorPrimary } = useResponsiveButton();
+console.log( buttonStyle, buttonWidth, buttonHeight);
+
 const props = defineProps(['colorPrimary'])
 
 </script>
@@ -12,7 +16,7 @@ const props = defineProps(['colorPrimary'])
                     'right-[-56px] translate-x-3/4': true /* Schermo piccolo */
                 }"
             >
-            <Button name="PROMO" :bgColor="colorPrimary" textColor="white"  to="/Promo" :applyNegativeMargin="true" width="90px" height="42px" fontSize="13px"/>
+            <Button name="PROMO" :bgColor="colorPrimary" textColor="white"  to="/Promo" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight" fontSize="13px"/>
             </div>
         </div>
     </section>

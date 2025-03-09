@@ -1,43 +1,41 @@
 <script setup>
-    import CardCategory from './CardCategory.vue'
-    import { useCategoryStore } from '@/stores/categoryStore'
-    import { useAsyncData } from '#app';
-    import { useFetch } from '#app';
-  const categoryStore = useCategoryStore()
-  const { data: categories, pending, error } = await useFetch('/api/categories');
-// //3) Carica le categorie dal server prima del rendering
-//   const { data: categories, pending, error } = await useAsyncData('categories', async () => {
-//     const response = await fetch('/api/categories');
+import { ref } from 'vue';
+import { useFetch } from '#app';
+import { useCategoryStore } from '@/stores/categoryStore';
+import CardCategory from './CardCategory.vue';
 
-//     return response.json();
-//   });
-  categoryStore.categories = categories
- //1) Usa useAsyncData per caricare i dati lato server
-// await useAsyncData('categories', async () => {
-//   await categoryStore.fetchCategories()
-  
-//   return categoryStore.categories
-// })
-//2) onMounted(async () => {
-//     await categoryStore.fetchCategories()
-//     isLoading.value = false
-// })
+const categoryStore = useCategoryStore();
+const isLoading = ref(true);
+const error = ref(null);
+
+const { data: categories, pending, error: fetchError } = await useFetch('/api/categories', {
+  key: 'categories', // Chiave univoca per la cache
+  initialCache: false, // Disabilita la cache iniziale (opzionale)
+});
+
+if (fetchError.value) {
+  error.value = fetchError.value;
+} else {
+  categoryStore.categories = categories.value;
+}
+
+isLoading.value = false;
 </script>
 
 <template>
-    <div v-if="pending">Caricamento...</div>
-    <div v-else-if="error">Errore: {{ error }}</div>
-    <section v-else
-      class="Category flex items-center overflow-x-scroll whitespace-nowrap mt-[9px]  pr-4 md:overflow-x-hidden md:flex-wrap md:w-[85%] md:mx-auto"
-    >
-        <CardCategory v-for="(category) in categories"
-            :key="category.id"
-            :id="category.id"
-            :name="category.name"
-            :img="category.images[0]?.imageUrl"
-            :colorPrimary="category.colorPrimary"
-        /> 
-    </section>
+  <div v-if="pending">Caricamento...</div>
+  <div v-else-if="error">Errore: {{ error }}</div>
+  <section v-else
+    class="Category flex items-center overflow-x-scroll whitespace-nowrap mt-[9px] pr-4 md:overflow-x-hidden md:flex-wrap md:w-[85%] md:mx-auto"
+  >
+    <CardCategory v-for="(category) in categories"
+      :key="category.id"
+      :id="category.id"
+      :name="category.name"
+      :img="category.images[0]?.imageUrl"
+      :colorPrimary="category.colorPrimary"
+    /> 
+  </section>
 </template>
 <style scoped>
 .Category::-webkit-scrollbar {

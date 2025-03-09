@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useCartStore } from '@/stores/cartStore';
+import Button from './Button.vue';
 
 const cartStore = useCartStore();
 const props = defineProps(['colorPrimary']);
@@ -24,6 +25,14 @@ const svuota = () => {
     cartStore.cart.splice(0, cartStore.cart.length);
     cartStore.total = 0;
 };
+
+onMounted(() => {
+  if(localStorage.getItem('carrello')){
+    cartStore.total = JSON.parse(localStorage.getItem('prezzototal'));
+  }
+});
+
+
 </script>
 
 <template>
@@ -88,7 +97,8 @@ const svuota = () => {
             </div>
             <div class="button mt-4" v-if="cartStore.cart.length > 0">
                 <button class="bg-blue-500 text-white px-4 py-2 rounded mr-2 hover:bg-blue-600">
-                    <RouterLink to="/order">Compra</RouterLink>
+                    <!-- <RouterLink to="/order">Compra</RouterLink> -->
+                    <Button name="ACQUISTA ORA" bgColor="white" textColor="black" to="/order" applyNegativeMargin="false" width="150px" height="50px" fontSize="13px"/>
                 </button>
                 <button @click="svuota" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Svuota</button>
             </div>

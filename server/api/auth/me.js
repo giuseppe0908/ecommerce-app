@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
 
     // Verifica che l'utente esista nel database
     const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
+      where: { id: decoded.id },
     });
 
     if (!user) {

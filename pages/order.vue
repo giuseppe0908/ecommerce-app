@@ -88,6 +88,7 @@ const submitOrder = async () => {
 
     // Resetta il carrello e l'ordine
     localStorage.removeItem('carrello');
+    localStorage.removeItem('prezzototal');
     order.value = {
       fullName: '',
       address: '',

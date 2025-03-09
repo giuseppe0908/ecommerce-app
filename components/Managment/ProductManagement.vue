@@ -37,14 +37,45 @@
     { id: 2, name: 'Prodotto 2', price: 20 },
   ]);
   
-  const newProduct = ref({ name: '', price: 0 });
+  const newProduct = ref({
+    name: 'ciao',
+    categoryId: 3,
+    brandId: 3,
+    genderId: 1,
+    favorite: true,
+    promo: false,
+    plus: true,
+    newArrival: true,
+    price: 29.99,
+    photo: 'https://images.pexels.com/photos/4041689/pexels-photo-4041689.jpeg',
+    codeItem: 'CXc233',
+    percentualPromo: 10,
+    rating: 4.5,
+    available_quantity: 10,
+    description: 'ciao'
+  });
   const showAddProductForm = ref(false);
   
-  const addProduct = () => {
-    const newId = products.value.length ? products.value[products.value.length - 1].id + 1 : 1;
-    products.value.push({ ...newProduct.value, id: newId });
-    newProduct.value = { name: '', price: 0 };
-    showAddProductForm.value = false;
+  const addProduct = async () => {
+    try {
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newProduct.value)
+      });
+  
+      if (!response.ok) {
+        throw new Error('Errore nella creazione del prodotto');
+      }
+  
+      const result = await response.json();
+      console.log('Prodotto creato:', result);
+      showAddProductForm.value = false;
+    } catch (error) {
+      console.error('Errore:', error);
+    }
   };
   
   const editProduct = (product) => {

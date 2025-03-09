@@ -1,8 +1,9 @@
 <template>
     <div class="jumbo relative bg-no-repeat w-full h-[320px] md:h-[700px]">
         <img class="w-full h-full" src="../assets/img/jumbo.png" alt="jumbo">
-        <div class="absolute top-[10px] lg:top-[50px]">
-            <div class="pt-11">
+        <!-- <div class="absolute top-[10px] lg:top-[50px]"> -->
+        <div class="centrato absolute">    
+            <div class="">
                 <Button name="DONNA" :bgColor="colorPrimary" textColor="white"  to="/donna" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight"/>
             </div>
             <div class="mt-5 lg:mt-8">
@@ -12,7 +13,7 @@
                 <Button name="BAMBINO" :bgColor="colorPrimary" textColor="white"  to="/bambino" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight" marginLeft="25px"/>
             </div>
         </div>
-        <div class="centrato absolute left-44 title" >
+        <div class="centrato absolute left-48 title text-[20px] md:w-[50%]" >
             <h1>Tutto in un unico posto per uno shopping facile 
                 e veloce!</h1>
         </div>
@@ -27,11 +28,12 @@ import { computed } from 'vue';
 import { useFetch } from '#app';
     const props = defineProps(['colorPrimary'])
     const {colorPrimary} = props
-
-    const response = await useFetch('/api/stripe/products');
+    
+    //STRIPE
    // const data = await response.json();
-   const products = response.data.value.data;
-    console.log(products.unit_ammount);
+//    const response = await useFetch('/api/stripe/products');
+//    const products = response.data.value ;
+//     console.log(products);
 
    // Variabile reattiva per la larghezza del bottone
     const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
@@ -81,7 +83,6 @@ img{
 .title{
     font-weight: 900;
     -webkit-text-stroke: 6px black;
-    font-size: 40px;
     letter-spacing: 13px;
     text-transform: uppercase;
 }

@@ -107,10 +107,10 @@ const sendOrderConfirmationEmail = async (email, name, order, products, password
   const styleImg = 'width: 100px; height: 100px; border-radius: 25%;';
   const productDetails = product_Single.map((p, index) => {
     const quantity = products[index].quantity;
-    return `<li style="display:flex;justify-content: space-between; align-items:center">
-              <img style="${styleImg}" src="${p.photo}" alt="${p.name}" />
-              <p><b>${p.name} x ${quantity}</b></p>
-              <p>€${p.price}</p>
+    return `<li style="display:flex;justify-content: space-between; justify-content: flex-start">
+              <img style="${styleImg}; margin-left: -100px" src="${p.photo}" alt="${p.name}" />
+              <p><b>${p.name} x${quantity}</b></p>
+              <p style="margin-left:_5px">€${p.price}</p>
             </li>`;
   }).join('\n');  const passwordMessage = password ? `\n\nLa tua password è: ${password}` : '';
   const mailOptions = {
