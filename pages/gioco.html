@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulatore di Volo Semplificato V2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #87CEEB; font-family: 'Arial', sans-serif; }
+        canvas { display: block; }
+        #ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Permette di cliccare "attraverso" l'overlay */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+        }
+        #score {
+            top: 20px;
+            left: 20px;
+            position: absolute;
+            font-size: 1.5rem; /* 24px */
+            font-weight: bold;
+        }
+         #altitude { /* Nuovo elemento per l'altitudine */
+            top: 50px;
+            left: 20px;
+            position: absolute;
+            font-size: 1.2rem; /* 19px */
+            font-weight: bold;
+        }
+        #message-box {
+            display: none; /* Nascosto di default */
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px 40px;
+            border-radius: 10px;
+            text-align: center;
+            pointer-events: auto; /* Permette interazione con il bottone */
+            margin-top: 20%;
+        }
+        #message-box h2 {
+            margin-bottom: 10px;
+            font-size: 2rem; /* 32px */
+        }
+         #message-box p {
+            margin-bottom: 20px;
+            font-size: 1.2rem; /* 19px */
+        }
+        #message-box button {
+            padding: 10px 20px;
+            font-size: 1rem; /* 16px */
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+         #message-box button:hover {
+             background-color: #45a049;
+         }
+        #controls-info {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem; /* 14px */
+        }
+    </style>
+</head>
+<body>
+    <div id="ui-overlay">
+        <div id="score">Punteggio: 0</div>
+        <div id="altitude">Altitudine: 0 m</div> <div id="message-box">
+            <h2>Game Over!</h2>
+            <p id="final-score">Sei sopravvissuto per 0 secondi.</p>
+            <button id="restart-button">Ricomincia</button>
+        </div>
+        <div id="controls-info">
+            Usa Freccia Su/Giù per beccheggio (pitch), Freccia Sinistra/Destra per rollio (roll). Contrasta la gravità!
+        </div>
+    </div>
+
+    <canvas id="game-canvas"></canvas>
+
+    <script>
+        // Assicura che lo script venga eseguito dopo il caricamento completo della pagina
+        window.onload = function() {
+
+            // --- Variabili Globali ---
+            let scene, camera, renderer;
+            let plane; // Gruppo che rappresenta l'aereo
+            const obstacles = []; // Array per contenere gli ostacoli (edifici)
+            let gameSpeed = 0.3; // Velocità di avanzamento base dell'aereo
+            const gravity = 0.004; // Forza di gravità costante verso il basso
+            let score = 0;
+            let gameStartTime = Date.now();
+            let isGameOver = false;
+            let animationFrameId; // Per poter fermare l'animazione
+            const obstacleSpawnDistance = 400; // Distanza a cui generare nuovi ostacoli
+            const obstacleDespawnDistance = 50; // Distanza dietro cui rimuovere ostacoli
+            const initialObstacleCount = 50; // Numero di ostacoli iniziali
+            const worldSize = 1000; // Dimensione dell'area di gioco per gli ostacoli
+
+            // Input del giocatore
+            const keys = {
+                ArrowUp: false,
+                ArrowDown: false,
+                ArrowLeft: false,
+                ArrowRight: false
+            };
+
+            // Elementi UI
+            const scoreElement = document.getElementById('score');
+            const altitudeElement = document.getElementById('altitude'); // Nuovo elemento UI
+            const messageBox = document.getElementById('message-box');
+            const finalScoreElement = document.getElementById('final-score');
+            const restartButton = document.getElementById('restart-button');
+
+            // --- Funzione di Inizializzazione ---
+            function init() {
+                isGameOver = false;
+                score = 0;
+                gameStartTime = Date.now();
+                obstacles.length = 0; // Svuota l'array degli ostacoli
+                gameSpeed = 0.3; // Resetta velocità
+                messageBox.style.display = 'none'; // Nascondi il messaggio di game over
+
+                // 1. Scena
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x87CEEB); // Colore cielo
+                scene.fog = new THREE.Fog(0x87CEEB, 150, 500); // Nebbia un po' più lontana
+
+                // 2. Camera
+                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                // La camera verrà posizionata dietro l'aereo nell'animate loop
+
+                // 3. Renderer
+                renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game-canvas'), antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.shadowMap.enabled = true;
+
+                // 4. Luci
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
+                directionalLight.position.set(50, 100, 50); // Posizione del sole più alta
+                directionalLight.castShadow = true;
+                directionalLight.shadow.mapSize.width = 1024;
+                directionalLight.shadow.mapSize.height = 1024;
+                directionalLight.shadow.camera.near = 0.5;
+                directionalLight.shadow.camera.far = 500; // Aumenta la portata delle ombre
+                 // Definisci l'area delle ombre per coprire meglio la zona di gioco
+                directionalLight.shadow.camera.left = -200;
+                directionalLight.shadow.camera.right = 200;
+                directionalLight.shadow.camera.top = 200;
+                directionalLight.shadow.camera.bottom = -200;
+                scene.add(directionalLight);
+                // const helper = new THREE.CameraHelper( directionalLight.shadow.camera ); // Debug ombre
+                // scene.add( helper );
+
+
+                // 5. Aereo (Forma Composta)
+                plane = createAirplane(); // Usa la nuova funzione
+                plane.position.set(0, 10, 0); // Posizione iniziale leggermente sollevata
+                scene.add(plane);
+
+                // 6. Piano Terra (Molto più grande)
+                const groundGeometry = new THREE.PlaneGeometry(worldSize * 2, worldSize * 2); // Dimensioni molto grandi
+                const groundMaterial = new THREE.MeshPhongMaterial({ color: 0x668866, side: THREE.DoubleSide }); // Verde scuro
+                const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+                ground.rotation.x = -Math.PI / 2; // Ruota per essere orizzontale
+                ground.position.y = -10; // Posiziona sotto la scena iniziale
+                ground.receiveShadow = true; // Riceve ombre
+                scene.add(ground);
+
+                // 7. Aggiungi ostacoli iniziali (statici nel mondo)
+                for (let i = 0; i < initialObstacleCount; i++) {
+                    addObstacle(); // Aggiungi ostacoli in posizioni fisse
+                }
+
+                // 8. Event Listener
+                window.addEventListener('keydown', handleKeyDown);
+                window.addEventListener('keyup', handleKeyUp);
+                window.addEventListener('resize', handleResize);
+                restartButton.addEventListener('click', startGame);
+
+                // Avvia il loop di gioco
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                }
+                animate();
+            }
+
+             // --- Funzione per creare l'aereo ---
+            function createAirplane() {
+                const airplaneGroup = new THREE.Group();
+
+                // Materiali
+                const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0xaaaaaa }); // Grigio metallico
+                const wingMaterial = new THREE.MeshPhongMaterial({ color: 0xcccccc }); // Grigio più chiaro
+                const tailMaterial = new THREE.MeshPhongMaterial({ color: 0xbbbbbb });
+
+                // Fusoliera (Cilindro)
+                const fuselageGeometry = new THREE.CylinderGeometry(0.5, 0.4, 5, 16); // raggio sup, raggio inf, altezza, segmenti
+                const fuselage = new THREE.Mesh(fuselageGeometry, bodyMaterial);
+                fuselage.rotation.z = Math.PI / 2; // Orienta orizzontalmente
+                fuselage.castShadow = true;
+                airplaneGroup.add(fuselage);
+
+                // Ali (Box sottili)
+                const wingGeometry = new THREE.BoxGeometry(8, 0.2, 1.5); // larghezza, spessore, profondità
+                const mainWing = new THREE.Mesh(wingGeometry, wingMaterial);
+                mainWing.position.y = 0; // Allineato verticalmente con la fusoliera
+                mainWing.position.z = -0.5; // Leggermente indietro sulla fusoliera
+                mainWing.castShadow = true;
+                airplaneGroup.add(mainWing);
+
+                // Coda Orizzontale (Stabilizzatore)
+                const tailWingGeometry = new THREE.BoxGeometry(3, 0.15, 1);
+                const tailWing = new THREE.Mesh(tailWingGeometry, wingMaterial);
+                tailWing.position.z = 2.2; // Posizionato alla fine della fusoliera
+                tailWing.position.y = 0.3; // Leggermente sopra la linea della fusoliera
+                tailWing.castShadow = true;
+                airplaneGroup.add(tailWing);
+
+                // Coda Verticale (Timone)
+                const rudderGeometry = new THREE.BoxGeometry(0.15, 1.2, 0.8);
+                const rudder = new THREE.Mesh(rudderGeometry, tailMaterial);
+                rudder.position.z = 2.3; // Alla fine della fusoliera
+                rudder.position.y = 0.8; // Sopra lo stabilizzatore orizzontale
+                rudder.castShadow = true;
+                airplaneGroup.add(rudder);
+
+                // Aggiungi un helper per visualizzare il bounding box (per debug collisioni)
+                // const airplaneBoxHelper = new THREE.BoxHelper(airplaneGroup, 0xffff00);
+                // scene.add(airplaneBoxHelper); // Aggiungilo alla scena principale, non al gruppo
+
+                return airplaneGroup;
+            }
+
+
+            // --- Funzioni di Gioco ---
+
+            // Aggiunge un ostacolo (edificio cubo) in posizione fissa nel mondo
+            function addObstacle(positionZ = null) {
+                const buildingHeight = Math.random() * 80 + 20; // Altezza casuale tra 20 e 100
+                const buildingWidth = Math.random() * 15 + 5; // Larghezza casuale
+                const buildingDepth = Math.random() * 15 + 5; // Profondità casuale
+
+                const geometry = new THREE.BoxGeometry(buildingWidth, buildingHeight, buildingDepth);
+                const material = new THREE.MeshPhongMaterial({ color: Math.random() * 0xffffff }); // Colore casuale
+                const obstacle = new THREE.Mesh(geometry, material);
+
+                // Posizionamento casuale nel mondo
+                obstacle.position.x = (Math.random() - 0.5) * worldSize; // Posizione X casuale ampia
+                // Se positionZ non è fornito, posiziona casualmente davanti all'area iniziale
+                obstacle.position.z = positionZ !== null ? positionZ : (Math.random() - 1) * (worldSize / 2) - 50 ;
+                obstacle.position.y = (buildingHeight / 2) - 10; // Appoggia sul "terreno" a y = -10
+
+                obstacle.castShadow = true;
+                obstacle.receiveShadow = true;
+
+                obstacles.push(obstacle);
+                scene.add(obstacle);
+            }
+
+            // Gestione Input
+            function handleKeyDown(event) {
+                if (keys.hasOwnProperty(event.key)) {
+                    keys[event.key] = true;
+                }
+            }
+
+            function handleKeyUp(event) {
+                if (keys.hasOwnProperty(event.key)) {
+                    keys[event.key] = false;
+                }
+            }
+
+            // Ridimensionamento Finestra
+            function handleResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            // Controllo Collisioni (semplificato usando Bounding Boxes)
+            function checkCollisions() {
+                 // Crea il bounding box dell'aereo (gruppo)
+                const planeBox = new THREE.Box3().setFromObject(plane);
+
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    const obstacle = obstacles[i];
+                    const obstacleBox = new THREE.Box3().setFromObject(obstacle);
+
+                    if (planeBox.intersectsBox(obstacleBox)) {
+                        return true; // Collisione rilevata
+                    }
+                }
+                // Collisione con il terreno
+                if (plane.position.y <= -9.5) { // Considera l'altezza dell'aereo
+                    return true;
+                }
+
+                return false; // Nessuna collisione
+            }
+
+             // Gestione Ostacoli (Rimozione e Generazione)
+            function manageObstacles() {
+                let addedObstacles = 0;
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    const obstacle = obstacles[i];
+                    const distanceToPlane = plane.position.distanceTo(obstacle.position);
+                    const directionToPlane = new THREE.Vector3().subVectors(plane.position, obstacle.position).normalize();
+                    const planeForward = new THREE.Vector3(0, 0, -1).applyQuaternion(plane.quaternion); // Direzione avanti aereo
+
+                    // Rimuovi ostacoli molto dietro l'aereo
+                    if (obstacle.position.z > plane.position.z + obstacleDespawnDistance) {
+                         scene.remove(obstacle);
+                         obstacles.splice(i, 1);
+                         addedObstacles++; // Segna che dobbiamo aggiungerne uno nuovo
+                    }
+                }
+                 // Aggiungi nuovi ostacoli lontano davanti se ne abbiamo rimossi
+                 for(let i = 0; i < addedObstacles; i++) {
+                     const spawnZ = plane.position.z - obstacleSpawnDistance - (Math.random() * 100); // Davanti all'aereo
+                     addObstacle(spawnZ);
+                 }
+            }
+
+
+            // Game Over
+            function gameOver() {
+                isGameOver = true;
+                cancelAnimationFrame(animationFrameId); // Ferma il loop di gioco
+                finalScoreElement.textContent = `Sei sopravvissuto per ${Math.floor(score)} secondi.`;
+                messageBox.style.display = 'flex'; // Mostra il messaggio
+            }
+
+            // Avvia/Riavvia il gioco
+            function startGame() {
+                 // Rimuovi tutti gli ostacoli dalla scena e dall'array
+                obstacles.forEach(obstacle => scene.remove(obstacle));
+                obstacles.length = 0;
+
+                // Rimuovi l'aereo precedente se esiste
+                if (plane) {
+                    scene.remove(plane);
+                }
+
+                // Reinizializza lo stato e la scena
+                init();
+            }
+
+
+            // --- Loop di Animazione ---
+            function animate() {
+                if (isGameOver) return; // Interrompi se game over
+
+                animationFrameId = requestAnimationFrame(animate); // Richiama il prossimo frame
+
+                const deltaTime = (Date.now() - gameStartTime) / 1000; // Tempo trascorso in secondi
+                score = deltaTime; // Punteggio basato sul tempo
+
+                // Aggiorna Punteggio e Altitudine UI
+                scoreElement.textContent = `Punteggio: ${Math.floor(score)}`;
+                altitudeElement.textContent = `Altitudine: ${Math.max(0, Math.floor(plane.position.y + 10))} m`; // Altitudine dal suolo (y=-10)
+
+
+                // --- Movimento Aereo ---
+                const pitchSpeed = 0.008; // Velocità di beccheggio
+                const rollSpeed = 0.05;  // Velocità di rollio
+                const yawSpeed = 0.01;   // Velocità di imbardata (opzionale, non usata con frecce)
+
+                // 1. Applica Gravità
+                plane.position.y -= gravity;
+
+                // 2. Applica Controlli Utente (Rotazioni)
+                // Beccheggio (Pitch) - Asse X locale
+                if (keys.ArrowUp) {
+                    plane.rotateX(pitchSpeed);
+                }
+                if (keys.ArrowDown) {
+                    plane.rotateX(-pitchSpeed);
+                }
+                 // Rollio (Roll) - Asse Z locale (perché l'aereo è orientato lungo Z globale inizialmente)
+                 // ATTENZIONE: L'asse di rollio è l'asse che passa per il muso e la coda.
+                 // Se l'aereo è stato creato con la fusoliera lungo l'asse Y del gruppo,
+                 // il rollio sarebbe attorno all'asse Y locale.
+                 // Nel nostro caso (fusoliera lungo X del gruppo, poi ruotato), il rollio è attorno a Z locale.
+                if (keys.ArrowLeft) {
+                    plane.rotateZ(rollSpeed);
+                }
+                if (keys.ArrowRight) {
+                    plane.rotateZ(-rollSpeed);
+                }
+
+                // 3. Calcola Spinta e Resistenza/Portanza (Molto Semplificato)
+                // Vettore avanti locale (dipende da come è stato costruito l'aereo nel gruppo)
+                // Se la fusoliera punta lungo +X nel gruppo, il vettore avanti è (1,0,0)
+                const forwardVector = new THREE.Vector3(1, 0, 0);
+                forwardVector.applyQuaternion(plane.quaternion); // Trasforma in coordinate globali
+
+                // La "portanza" contrasta la gravità in base all'angolo di pitch (molto irrealistico!)
+                // Un pitch positivo (muso su) dovrebbe generare portanza
+                const pitchAngle = plane.rotation.x; // Angolo di beccheggio
+                const lift = Math.sin(pitchAngle) * gameSpeed * 0.5; // Semplice lift basato su pitch
+                plane.position.y += Math.max(0, lift); // Aggiungi lift (solo positivo)
+
+                // 4. Applica Movimento in Avanti
+                plane.position.add(forwardVector.multiplyScalar(gameSpeed));
+
+                // 5. Smorzamento Rotazioni (ritorno leggero al centro)
+                plane.rotation.x *= 0.99; // Smorza pitch
+                plane.rotation.z *= 0.98; // Smorza rollio
+
+
+                // --- Gestione Ostacoli ---
+                manageObstacles();
+
+                // --- Aggiorna Camera ---
+                // Posiziona la camera dietro e leggermente sopra l'aereo
+                const cameraOffset = new THREE.Vector3(-8, 3, 0); // Offset rispetto all'aereo (dietro, sopra)
+                const cameraTargetPosition = cameraOffset.applyQuaternion(plane.quaternion); // Ruota l'offset con l'aereo
+                cameraTargetPosition.add(plane.position); // Aggiungi la posizione dell'aereo
+
+                camera.position.lerp(cameraTargetPosition, 0.1); // Muovi la camera fluidamente
+                // Fai guardare la camera leggermente davanti all'aereo per vedere dove si sta andando
+                const lookAtTarget = new THREE.Vector3(5, 0, 0).applyQuaternion(plane.quaternion).add(plane.position);
+                camera.lookAt(lookAtTarget);
+
+
+                // --- Controlla Collisioni ---
+                if (checkCollisions()) {
+                    gameOver();
+                }
+
+                // --- Renderizza la scena ---
+                renderer.render(scene, camera);
+            }
+
+            // --- Avvio Iniziale ---
+            init(); // Chiama la funzione di inizializzazione per la prima volta
+        };
+    </script>
+</body>
+</html>
