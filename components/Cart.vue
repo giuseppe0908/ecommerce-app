@@ -41,7 +41,7 @@ onMounted(() => {
         <div v-for="(item, index) in cartStore.cart" :key="index" class="item border border-black p-2 m-2">
             <div class="flex">
                 <div class="photo w-24 h-40">
-                    <img class="w-full h-32 object-cover" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQwvYPYCtBxtKnwYC2Maa6PsNpOVmQ6_zjUNULVJl74DA&s" alt="Product Image">
+                    <img class="w-full h-32 object-cover rounded-xl" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQwvYPYCtBxtKnwYC2Maa6PsNpOVmQ6_zjUNULVJl74DA&s" alt="Product Image">
                 </div>
                 <div class="desc pl-5 text-left">
                     <div class="brand -mt-4">

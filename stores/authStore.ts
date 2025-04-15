@@ -1,5 +1,8 @@
 import { defineStore } from 'pinia'
 import { useRouter } from 'vue-router'
+import { jwtDecode } from 'jwt-decode'
+import { useWishlistStore } from './wishlistStore'
+
 export const useAuthStore = defineStore('authStore', {
   state: () => ({
     user: null as null | { id: string; email: string; role: string },
@@ -11,7 +14,34 @@ export const useAuthStore = defineStore('authStore', {
   getters: {
     isLoggedIn: (state) => !!state.token,
     isAdmin: (state) => state.user?.role === 'ADMIN',
-    isAuthenticated: (state) => !!state.token && !!state.user
+    isAuthenticated: (state) => !!state.token && !!state.user,
+    // Add token expiration checker
+    isTokenExpired: (state) => {
+      if (!state.token) return true
+      
+      try {
+        const decoded = jwtDecode(state.token)
+        const currentTime = Date.now() / 1000
+        
+        // Check if token is expired
+        return decoded.exp < currentTime
+      } catch (error) {
+        console.error('Error decoding token:', error)
+        return true
+      }
+    },
+    // Get token expiry time
+    tokenExpiryTime: (state) => {
+      if (!state.token) return null
+      
+      try {
+        const decoded = jwtDecode(state.token)
+        return decoded.exp
+      } catch (error) {
+        console.error('Error getting token expiry:', error)
+        return null
+      }
+    }
   },
 
   actions: {
@@ -54,11 +84,72 @@ export const useAuthStore = defineStore('authStore', {
       this.error = null
       localStorage.removeItem('authToken')
       localStorage.removeItem('user')
+      
+      // Clear wishlist data when user logs out
+      const wishlistStore = useWishlistStore()
+      if (wishlistStore) {
+        wishlistStore.wishlist = []
+      }
     },
 
+    // Add refresh token method
+    async refreshToken() {
+      if (!this.token) return false
+      
+      try {
+        const response = await fetch('/api/refresh-token', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.token}`
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to refresh token')
+        }
+
+        const data = await response.json()
+        
+        this.token = data.token
+        // Update localStorage
+        localStorage.setItem('authToken', data.token)
+        
+        return true
+      } catch (error) {
+        console.error('Error refreshing token:', error)
+        this.logout()
+        return false
+      }
+    },
+
+    // Metodo per pulire i token scaduti nel database
+    async cleanupExpiredTokens() {
+      try {
+        const response = await fetch('/api/cleanup-tokens')
+        const data = await response.json()
+        console.log('Token cleanup result:', data)
+        return data.success
+      } catch (error) {
+        console.error('Error cleaning up tokens:', error)
+        return false
+      }
+    },
+
+    // Enhanced checkAuth to verify token expiration
     async checkAuth() {
-      //if (!this.token) return false
-// QUI ABBIAMO IL TOKEN CORRETTO ERROR IN VERIFYTOKEN 500
+      if (!this.token) return false
+      
+      // Check if token is expired
+      if (this.isTokenExpired) {
+        console.log('Token is expired, attempting to refresh...')
+        const refreshed = await this.refreshToken()
+        if (!refreshed) {
+          // Pulisci i token scaduti nel database
+          await this.cleanupExpiredTokens()
+          this.logout()
+          return false
+        }
+      }
         
       try {
         const response = await fetch('/api/verify/token', {
@@ -72,9 +163,9 @@ export const useAuthStore = defineStore('authStore', {
         }
         console.log("puoi accededere");
         return true
-        
-        
       } catch (error) {
+        // Pulisci i token scaduti nel database
+        await this.cleanupExpiredTokens()
         this.logout()
         return false
       }

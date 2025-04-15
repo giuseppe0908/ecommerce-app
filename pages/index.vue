@@ -8,6 +8,7 @@
       <NewArrivals />
       <Banner/>
       <Cart v-if="cartStore.flag_cart" :colorPrimary=categoryStore.colorPrimary />
+      <Prova />
       <!-- <h1>Items Store</h1>
      
   
@@ -108,6 +109,7 @@
     </div> 
   </template>
   <script setup>
+  import Prova from '~/components/Prova.vue'
   import Jumbo from '~/components/Jumbo.vue'
   import Category from '~/components/Category.vue'
   import Promo from '~/components/Promo.vue'

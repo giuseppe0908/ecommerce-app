@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useProductStore } from '@/stores/productStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useWishlistStore } from '@/stores/wishlistStore'
 import SearchBar from './SearchBar.vue'
 import { useCartStore } from '@/stores/cartStore'
 import { navigateTo } from '#app'
@@ -9,6 +10,7 @@ import { navigateTo } from '#app'
 const authStore = useAuthStore()
 const cartStore = useCartStore()
 const productStore = useProductStore()
+const wishlistStore = useWishlistStore()
 
 // Stato
 const isOpen = ref(false)
@@ -125,7 +127,7 @@ onMounted(() => {
 
         <!-- Links desktop -->
         <div class="hidden md:flex space-x-8">
-          <SearchBar />
+          <SearchBar pl="82px"/>
         </div>
 
         <!-- Icons (User, Heart, Cart) -->
@@ -182,7 +184,7 @@ onMounted(() => {
                   Profilo
                 </NuxtLink>
                 <button 
-                  @click="authStore.logout()"
+                  @click="authStore.logout(); navigateTo('/login') "
                   class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                 >
                   Logout
@@ -191,17 +193,8 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- Heart Icon -->
-          <NuxtLink to="/favorites" class="text-gray-800">
-            <svg 
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-[22px] w-[30px] cursor-pointer"
-              :style="{ fill: productStore.colorPrimary }"
-              viewBox="0 0 1792 1792"
-            >
-              <path d="M896 1664q-26 0-44-18l-624-602q-10-8-27.5-26T145 952.5 77 855 23.5 734 0 596q0-220 127-344t351-124q62 0 126.5 21.5t120 58T820 276t76 68q36-36 76-68t95.5-68.5 120-58T1314 128q224 0 351 124t127 344q0 221-229 450l-623 600q-18 18-44 18z" />
-            </svg>
-          </NuxtLink>
+          <!-- Heart Icon (Wishlist) -->
+          <WishlistIcon :colorPrimary="productStore.colorPrimary" />
 
           <!-- Cart Icon -->
           <div 
@@ -227,11 +220,12 @@ onMounted(() => {
         </NuxtLink>
       </div>
     </div>
+    <div class="flex justify-center" v-if="searchBar">
+      <SearchBar />
+    </div>
   </nav>
 
-  <div class="flex justify-center" v-if="searchBar">
-    <SearchBar />
-  </div>
+ 
 </template>
 
 <style scoped>

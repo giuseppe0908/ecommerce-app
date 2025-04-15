@@ -23,6 +23,8 @@ logs
 .env.*
 !.env.example
 
-prisma\schema.prisma
+# Prisma
+# Non ignorare schema.prisma
 prisma/migrations/migration_lock.toml
-prisma/migrations 
+# Se vuoi ignorare tutte le migrazioni, decommenta la riga seguente
+# prisma/migrations/

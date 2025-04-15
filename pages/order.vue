@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 
 // Recupera i prodotti dal localStorage
 const lsItems = JSON.parse(localStorage.getItem('carrello')) || [];
@@ -62,6 +62,38 @@ const order = ref({
   payment: 'credit-card',
   products: products,
   totalPrice: prezzo,
+});
+
+// Funzione per controllare se l'utente è registrato e compilare i campi
+const checkUserData = () => {
+  if (process.client) {
+    // Controlla se esiste un utente nel localStorage
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        // Compila i campi del form con i dati dell'utente
+        order.value.name = user.name || '';
+        order.value.surname = user.surname || '';
+        order.value.email = user.email || '';
+        // Se l'utente ha un indirizzo salvato, compila anche quello
+        if (user.address) {
+          order.value.address = user.address;
+        }
+        // Se l'utente ha un numero di telefono salvato, compila anche quello
+        if (user.number) {
+          order.value.phone = user.number;
+        }
+      } catch (error) {
+        console.error('Errore nel parsing dei dati utente:', error);
+      }
+    }
+  }
+};
+
+// Esegui il controllo quando il componente viene montato
+onMounted(() => {
+  checkUserData();
 });
 
 const submitOrder = async () => {

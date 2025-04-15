@@ -1,46 +1,90 @@
 <template>
-  <div v-if="user">
-    <h1>Benvenuto, {{ user.name }}</h1>
-    <p>Ruolo: {{ user.role }}</p>
-
-    <!-- Barra del tempo rimanente -->
-    <div class="progress-bar-container">
-      <div class="progress-bar">
-        <div
-          :class="progressBarClass"
-          :style="{ width: `${progress}%` }"
-        ></div>
+  <div class="dashboard-container max-w-7xl mx-auto px-4 py-8">
+    <div v-if="user">
+      <!-- Header Section -->
+      <div class="dashboard-header mb-8">
+        <h1 class="text-3xl font-bold mb-2">Benvenuto, {{ user.name }}</h1>
+        <p class="text-gray-600">Ruolo: {{ user.role }}</p>
+        
+        <!-- Session Timer -->
+        <div class="session-timer mt-4">
+          <div class="progress-bar-container w-full md:w-1/2 bg-gray-200 rounded-full h-4 overflow-hidden">
+            <div
+              :class="progressBarClass"
+              :style="{ width: `${progress}%` }"
+              class="h-full transition-all duration-300"
+            ></div>
+          </div>
+          <p class="text-sm text-gray-500 mt-1">Sessione attiva: {{ formatTime(timeRemaining) }}</p>
+        </div>
+      </div>
+      
+      <!-- Admin Dashboard -->
+      <div v-if="user.role === 'ADMIN'" class="admin-dashboard">
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 class="text-xl font-bold mb-4">Pannello di Amministrazione</h2>
+          <div class="flex flex-wrap gap-4">
+            <NuxtLink 
+              to="/admin/allProducts" 
+              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Gestione Prodotti
+            </NuxtLink>
+            <button 
+              @click="activeTab = 'users'" 
+              class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              Gestione Utenti
+            </button>
+          </div>
+          
+          <div class="mt-6">
+            <div v-if="activeTab === 'products'">
+              <ProductManagement />
+            </div>
+            <div v-if="activeTab === 'users'">
+              <UserManagement />
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- User Dashboard -->
+      <div v-else class="user-dashboard grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- User Profile -->
+          <UserProfile :userData="user" />
+          
+          <!-- Order History -->
+          <OrderHistory :userId="user.id" :userData="user" />
+        </div>
+        
+        <!-- Right Column -->
+        <div class="space-y-6">
+          <!-- Wishlist Management -->
+          <WishlistManagement />
+          
+          <!-- Product Recommendations -->
+          <ProductRecommendations :userId="user.id" />
+        </div>
+      </div>
+      
+      <!-- Logout Button -->
+      <div class="mt-8 text-center">
+        <button 
+          @click="handleLogout" 
+          class="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+        >
+          Logout
+        </button>
       </div>
     </div>
-    <p>Tempo rimanente: {{ formatTime(timeRemaining) }}</p>
-
-
-    <button @click="handleLogout" class="mt-4 px-4 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">
-      Logout
-    </button>
-
-    <div v-if="user.role === 'ADMIN'">
-      <h2>Funzionalità Admin</h2>
-      <nuxt-link to="/admin/allProducts">Visualizza Prodotti</nuxt-link>
-      <div class="tabs flex gap-2 mb-5">
-        <button class="py-3 px-5" @click="activeTab = 'products'" :class="{ active: activeTab === 'products' }">Gestione Prodotti</button>
-        <button class="py-3 px-5" @click="activeTab = 'users'" :class="{ active: activeTab === 'users' }">Gestione Utenti</button>
-      </div>
-
-      <div v-if="activeTab === 'products'">
-        <ProductManagement />
-      </div>
-      <div v-if="activeTab === 'users'">
-        <UserManagement />
-      </div>
-
+    
+    <!-- Loading State -->
+    <div v-else class="flex justify-center items-center h-64">
+      <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
     </div>
-    <div v-else>
-      <h2>Funzionalità Utente</h2>
-    </div>
-  </div>
-  <div v-else>
-    <p>Caricamento...</p>
   </div>
 </template>
 
@@ -51,6 +95,12 @@ import ProductManagement from './components/Managment/ProductManagement.vue';
 import UserManagement from './components/Managment/UserManagement.vue';
 import { useAuthStore } from '~/stores/authStore'
 import { navigateTo } from 'nuxt/app';
+
+// Import dashboard components
+import UserProfile from '~/components/Dashboard/UserProfile.vue';
+import OrderHistory from '~/components/Dashboard/OrderHistory.vue';
+import WishlistManagement from '~/components/Dashboard/WishlistManagement.vue';
+import ProductRecommendations from '~/components/Dashboard/ProductRecommendations.vue';
 
 definePageMeta({
   middleware: [
@@ -70,29 +120,23 @@ const timeRemaining = ref(totalDuration); // Tempo rimanente
 let interval = null;
 
 async function fetchUser() {
-  const token = localStorage.getItem('authToken');
-
-  if (!token) {
-    // router.push('/login');
-    navigateTo('/login')
+  // Use the auth store user data instead of making a separate API call
+  if (authStore.user) {
+    user.value = {
+      id: authStore.user.id,
+      name: authStore.user.email, // Using email as name if name is not available
+      role: authStore.user.role,
+      email: authStore.user.email,
+      // Add additional user fields that might be needed by components
+      address: authStore.user.address || '',
+      number: authStore.user.number || '',
+      surname: authStore.user.surname || ''
+    };
     return;
   }
-
-  try {
-    const response = await fetch('/api/auth/me', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (response.ok) {
-      user.value = await response.json();
-    } else {
-      navigateTo('/login')  
-    }
-  } catch (error) {
-    navigateTo('/login')
-  }
+  
+  // If no user in auth store, redirect to login
+  navigateTo('/login');
 }
 
 // Calcolo della percentuale di progresso
@@ -115,8 +159,6 @@ const formatTime = (time) => {
 const handleLogout = () => {
   // Logica per il logout
   user.value = null;
-  // localStorage.removeItem('authToken');
-  // localStorage.removeItem('user');
   authStore.logout();
   router.push('/login');
 };
@@ -141,56 +183,49 @@ const handleUserActivity = () => {
 };
 
 onMounted(() => {
+  // Initialize auth store first
+  authStore.initialize();
   
+  // Then fetch user data
   fetchUser();
   startTimer();
-  //INIZIALIZZO LO STORE  
-  authStore.initialize()
+  
   window.addEventListener('mousemove', handleUserActivity);
   window.addEventListener('click', handleUserActivity);
   window.addEventListener('keydown', handleUserActivity);
+});
 
-  onUnmounted(() => {
-    clearInterval(interval);
-    window.removeEventListener('mousemove', handleUserActivity);
-    window.removeEventListener('click', handleUserActivity);
-    window.removeEventListener('keydown', handleUserActivity);
-  });
+onUnmounted(() => {
+  clearInterval(interval);
+  window.removeEventListener('mousemove', handleUserActivity);
+  window.removeEventListener('click', handleUserActivity);
+  window.removeEventListener('keydown', handleUserActivity);
 });
 </script>
 
 <style scoped>
-.progress-bar-container {
-  width: 50%; /* Modifica la larghezza della barra di progresso */
-  margin: 0 auto; /* Centra la barra di progresso */
+.dashboard-container {
+  min-height: calc(100vh - 80px);
 }
 
-.progress-bar {
-  width: 100%;
-  height: 20px;
-  background-color: #e0e0e0;
-  border-radius: 10px;
-  overflow: hidden;
+.session-timer {
+  transition: all 0.3s ease;
 }
 
-.progress-bar div {
-  height: 100%;
-  transition: width 0.5s ease;
+.tabs button {
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 4px;
 }
 
-.bg-green-500 {
-  background-color: #48bb78; /* Verde */
-}
-
-.bg-yellow-500 {
-  background-color: #ecc94b; /* Giallo */
-}
-
-.bg-red-500 {
-  background-color: #f56565; /* Rosso */
-}
-button.active {
+.tabs button.active {
   background-color: #007bff;
   color: white;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header h1 {
+    font-size: 1.75rem;
+  }
 }
 </style>

@@ -31,37 +31,48 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 401, message: 'Credenziali errate' });
     }
 
-    // Genera il token JWT
+    // Genera il token JWT con payload minimale per ridurre la dimensione
     const token = jwt.sign(
-      { id: user.id, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '24h' }  // Scadenza di 1 giorno
+      { 
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour expiration
+      },
+      JWT_SECRET
     );
 
     const ONE_DAY = 24 * 60 * 60 * 1000; // 24 ore in millisecondi
-    // Trova se esiste già un token per questo utente
-    const existingToken = await prisma.token.findFirst({
+    
+    try {
+      // Trova se esiste già un token per questo utente
+      const existingToken = await prisma.token.findFirst({
         where: { userId: user.id },
-    });
+      });
 
-    if (existingToken) {
-      // Se esiste, aggiorna il record del token
-      await prisma.token.update({
-        where: { id: existingToken.id },  // Usa l'id del token esistente per l'aggiornamento
-        data: {
-          token,  // Aggiorna il token
-          expiresAt: new Date(Date.now() + ONE_DAY),  // Imposta una nuova scadenza (24 ore)
-        },
-      });
-    } else {
-      // Se non esiste, crea un nuovo record per il token
-      await prisma.token.create({
-        data: {
-          userId: user.id,
-          token,
-          expiresAt: new Date(Date.now() + ONE_DAY), // Scadenza tra 1 ora
-        },
-      });
+      if (existingToken) {
+        // Se esiste, aggiorna il record del token
+        await prisma.token.update({
+          where: { id: existingToken.id },
+          data: {
+            token,
+            expiresAt: new Date(Date.now() + ONE_DAY),
+          },
+        });
+      } else {
+        // Se non esiste, crea un nuovo record per il token
+        await prisma.token.create({
+          data: {
+            userId: user.id,
+            token,
+            expiresAt: new Date(Date.now() + ONE_DAY),
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Errore nel salvataggio del token:', error);
+      // Continua comunque, anche se non riusciamo a salvare il token nel DB
+      // L'utente potrà comunque usare il token restituito
     }
 
     return {

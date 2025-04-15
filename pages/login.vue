@@ -55,6 +55,11 @@
         Non hai un account?
         <NuxtLink to="/register" class="text-indigo-600 hover:underline">Registrati</NuxtLink>
       </p>
+       <!-- Link Pagina  reset password -->
+       <p class="mt-4 text-center text-sm text-gray-600">
+         recupera Password
+        <NuxtLink to="/forgotPassword" class="text-indigo-600 hover:underline">forgoutPassword</NuxtLink>
+      </p>
     </div>
     <!-- Aggiungi dopo il form -->
 <div v-if="error" class="mt-4 p-3 bg-red-100 text-red-700 rounded-md">

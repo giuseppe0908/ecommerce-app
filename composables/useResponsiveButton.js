@@ -10,8 +10,9 @@ export function useResponsiveButton() {
   const colorPrimary = categoryStore.colorPrimary;
 
   const updateButtonDimensions = () => {
+    // Aumentato le dimensioni per desktop
     buttonWidth.value = screenWidth.value >= 1024 ? '100%' : '106px';
-    buttonHeight.value = screenWidth.value >= 1024 ? '64px' : '42px';
+    buttonHeight.value = screenWidth.value >= 1024 ? '72px' : '42px'; // Aumentato da 64px a 72px
   };
 
   const updateButtonStyle = () => {
@@ -19,6 +20,7 @@ export function useResponsiveButton() {
       buttonStyle.value = {
         left: '50%',
         width: '95%',
+        fontSize: '1.2rem', // Aggiunto font size più grande per desktop
       };
     } else {
       buttonStyle.value = {

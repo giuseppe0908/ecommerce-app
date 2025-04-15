@@ -1,10 +1,11 @@
 <template>
-    <div class="w-full flex justify-center">
-      <div class="relative" ref="searchContainer">
+    <div class="w-full flex justify-center "
+      :style="{paddingLeft: props.pl}">
+      <div class="relative flex items-center" ref="searchContainer">
         <!-- Icona SVG a Sinistra -->
       <svg 
         @click="handleSearch"
-        class="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 cursor-pointer"
+        class="absolute left-3  transform -translate-y-1/2 h-5 w-5 text-gray-400 cursor-pointer"
         xmlns="http://www.w3.org/2000/svg" 
         viewBox="0 0 24 24"
         id="search"
@@ -25,7 +26,7 @@
         :style="{ backgroundColor: productStore.colorPrimary }"
       />
       <!-- Risultati della ricerca -->
-      <div v-if="showResults && hasResults" class="absolute w-full mt-1 bg-white rounded-md shadow-lg z-50">
+      <div v-if="showResults && hasResults" class="absolute w-full mt-1 bg-white rounded-md shadow-lg z-50" style="top: 100%">
         <!-- Prodotti -->
         <div v-if="searchStore.searchResults.products.length > 0" class="py-2">
           <div class="px-4 py-1 text-xs text-gray-500">Prodotti</div>
@@ -63,6 +64,8 @@
   import { useRouter } from 'vue-router'
   import { onClickOutside } from '@vueuse/core'  // Aggiungi questa importaziones
   
+  const props = defineProps(['pl'])
+  console.log(props)
   const router = useRouter()
   const productStore = useProductStore()
   const searchStore = useSearchStore()

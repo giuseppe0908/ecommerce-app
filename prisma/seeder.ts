@@ -312,27 +312,45 @@ async function main() {
   const hashedPassword1 = await bcrypt.hash('password123', 10);
   const hashedPassword2 = await bcrypt.hash('password456', 10);
 
-  await prisma.user.createMany({
-    data: [
-      {
+  const users = await Promise.all([
+    prisma.user.create({
+      data: {
         name: 'Mario',
         surname: 'Rossi',
         email: 'mario@example.com',
         address: 'Via Roma 123',
         number: '123456789',
         password: hashedPassword1,
-      },
-      {
+      }
+    }),
+    prisma.user.create({
+      data: {
         name: 'Giulia',
         surname: 'Verdi',
         email: 'giulia@example.com',
         address: 'Via Roma 123',
         number: '123456789',
         password: hashedPassword2,
-      },
+      }
+    })
+  ]);
+
+  // ===================== PREFERITI =====================
+  // Aggiungi alcuni prodotti ai preferiti per gli utenti
+  await prisma.favorite.createMany({
+    data: [
+      // Preferiti per Mario
+      { userId: users[0].id, productId: products[0].id }, // Maglietta Nike
+      { userId: users[0].id, productId: products[2].id }, // Scarpe da Corsa Puma
+      { userId: users[0].id, productId: products[5].id }, // Zaino Outdoor
+      
+      // Preferiti per Giulia
+      { userId: users[1].id, productId: products[1].id }, // Pantaloni Sportivi Adidas
+      { userId: users[1].id, productId: products[4].id }, // Camicia Gucci
+      { userId: users[1].id, productId: products[7].id }, // Borsetta a Tracolla
     ],
   });
-
+  
   console.log('✅ Seeder completato con successo!');
 }
 

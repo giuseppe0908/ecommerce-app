@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   devtools: { enabled: true },
-  css: ['@/assets/css/main.css'],
+  css: ['@/assets/css/main.css', 'vue-toastification/dist/index.css'],
   postcss: {
     plugins: {
       tailwindcss: {},
@@ -27,4 +27,7 @@ export default defineNuxtConfig({
       stripePublicKey: process.env.STRIPE_PUBLISHABLE_KEY, // Chiave pubblica lato client
     },
   },
+  plugins: [
+    '~/plugins/token-cleanup.js'
+  ],
 })

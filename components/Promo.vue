@@ -1,53 +1,64 @@
 <script setup>
 import { useResponsiveButton } from '~/composables/useResponsiveButton';
 const { screenWidth, buttonStyle, buttonWidth, buttonHeight, colorPrimary } = useResponsiveButton();
-console.log( buttonStyle, buttonWidth, buttonHeight);
 
-const props = defineProps(['colorPrimary'])
-
+const props = defineProps(['colorPrimary']);
 </script>
 
 <template>
-    <section class="Promo h-[50vh] md:h-[100vh] bg-white relative">
-        <div class="imgPromo h-[70%] w-[85%]  md:w-[73%] centrato absolute">
-            <div class="centrato absolute "
+    <section class="Promo h-[50vh] md:h-[100vh] bg-white relative overflow-hidden">
+        <div class="imgPromo h-[70%] w-[85%] md:w-[70%] centrato absolute transition-all duration-300 hover:shadow-lg">
+            <div class="centrato absolute"
                 :class="{
-                    'md:right-[-45px] md:translate-x-1/2': true,
-                    'right-[-56px] translate-x-3/4': true /* Schermo piccolo */
+                    'md:right-[-148px] md:translate-x-1/2 md:w-[227px]': screenWidth >= 768,
+                    'right-[-56px] translate-x-3/4': screenWidth < 768
                 }"
             >
-            <Button name="PROMO" :bgColor="colorPrimary" textColor="white"  to="/Promo" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight" fontSize="13px"/>
+                <Button 
+                    name="PROMO" 
+                    :bgColor="colorPrimary" 
+                    textColor="white"  
+                    to="/Promo" 
+                    :applyNegativeMargin="true" 
+                    :width="buttonWidth" 
+                    :height="buttonHeight" 
+                    fontSize="22px"
+                />
             </div>
         </div>
+        <div class="promo-overlay absolute inset-0 bg-gradient-to-r from-transparent to-white opacity-20 pointer-events-none"></div>
     </section>
 </template>
+
 <style scoped>
 .imgPromo{
     background-image: url("../assets/img/promo.png");
     background-size: cover; /* Adatta l'immagine all'elemento */
     background-position: center; /* Centra l'immagine */
-    /* border-top-right-radius: 50%;
-    border-bottom-right-radius: 50%; */
-
+    transition: transform 0.3s ease;
 }
+
+.imgPromo:hover {
+    transform: translateY(-50%) scale(1.02);
+}
+
 .centrato{
     top: 50%;
     transform: translateY(-50%);
 }
-#ellipse {
-    float: left;
-      width: 150px;
-      height: 150px;
-      margin: 20px;
-      shape-outside: circle(50% at 30%);
-      clip-path: circle(50% at 0%);
-      background: lightblue;
-            z-index: 3;
-    }
+
 @media (max-width: 769px) {
     .imgPromo {
         border-top-right-radius: 120px;
         border-bottom-right-radius: 120px;
+    }
+}
+
+@media (min-width: 770px) {
+    .imgPromo {
+        border-top-right-radius: 200px;
+        border-bottom-right-radius: 200px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     }
 }
 </style>

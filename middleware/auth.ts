@@ -1,11 +1,16 @@
 import { defineNuxtRouteMiddleware, navigateTo } from 'nuxt/app'
 import { useAuthStore } from '~/stores/authStore'
 
-export default defineNuxtRouteMiddleware((to) => {
+export default defineNuxtRouteMiddleware(async (to, from) => {
+  // Salta il middleware se siamo già sulla pagina di login per evitare loop di reindirizzamento
+  if (to.path === '/login') {
+    return
+  }
+
   const authStore = useAuthStore()
 
-  // Inizializza lo store se necessario
-  if (!authStore.token && process.client) {
+   // Inizializza lo store se necessario
+   if (!authStore.token && process.client) {
     authStore.initialize()
   }
 
@@ -19,7 +24,7 @@ export default defineNuxtRouteMiddleware((to) => {
 
   const requiresAuth = ['/dashboard', '/profile']
   const publicRoutes = ['/', '/login', '/register']
-  
+
   // Verifica se è una rotta admin
   const isAdminRoute = (path: string) => path.startsWith('/admin')
 
@@ -35,14 +40,39 @@ export default defineNuxtRouteMiddleware((to) => {
       return navigateTo('/dashboard')
     }
   }
-
-  // Protezione rotte autenticate
-  if (requiresAuth.includes(to.path) && !authStore.token) {
-    console.log('Accesso negato: autenticazione richiesta')
+  
+  // Se non autenticato, reindirizza al login
+  if (!authStore.isAuthenticated) {
+    return navigateTo('/login')
+  }
+  
+  // Verifica se il token è scaduto o in scadenza (entro 5 minuti)
+  if (authStore.isTokenExpired) {
+    console.log('Token scaduto, tentativo di aggiornamento...')
+    const refreshed = await authStore.refreshToken()
+    
+    if (!refreshed) {
+      // Aggiornamento fallito, reindirizza al login
+      return navigateTo('/login')
+    }
+  } else if (authStore.tokenExpiryTime) {
+    // Verifica prossima scadenza (entro 5 minuti)
+    const currentTime = Date.now() / 1000
+    const fiveMinutesInSeconds = 5 * 60
+    
+    if (authStore.tokenExpiryTime - currentTime < fiveMinutesInSeconds) {
+      console.log('Token in scadenza imminente, aggiornamento...')
+      await authStore.refreshToken()
+    }
+  }
+  
+  // Verifica validità token con il backend
+  const isValid = await authStore.checkAuth()
+  if (!isValid) {
     return navigateTo('/login')
   }
 
-  // Redirect da rotte pubbliche se autenticato
+  // Reindirizzamento da rotte pubbliche se autenticato
   if (publicRoutes.includes(to.path) && authStore.token) {
     console.log('Reindirizzamento: utente già autenticato')
     return navigateTo('/dashboard')

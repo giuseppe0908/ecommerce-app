@@ -30,6 +30,7 @@ model Product {
   gender           Gender   @relation(fields: [genderId], references: [id]) // Relazione con Gender
   reviews          Review[]  // Relazione per le recensioni degli utenti
   orders           OrderProduct[] // Relazione Many-to-Many tramite tabella intermedia
+  favoritedBy      Favorite[] // Relazione con gli utenti che hanno messo il prodotto nei preferiti
 }
 model Color {
   id              Int            @id @default(autoincrement())
@@ -80,19 +81,32 @@ model User {
   newsletter Boolean ?
   orders   Order[]
   reviews  Review[] 
+  favorites Favorite[] // Relazione con i preferiti
   role     Role      @default(USER)
   createdAt DateTime @default(now())
   tokens    Token[]   // Relazione con i token
+  resetTokens     ResetToken[] 
+
 }
 
 model Token {
   id        Int       @id @default(autoincrement())
   userId    Int
   user      User      @relation(fields: [userId], references: [id])
-  token     String    @unique
+  token     String     @db.Text // Utilizzo del tipo Text per lunghezza illimitatas
   expiresAt DateTime
   createdAt DateTime  @default(now())
   @@index([userId])
+  @@index([token(length: 255)]) // Creiamo un indice sulla prima parte del token
+}
+
+model ResetToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @unique
+  expiresAt DateTime // Scadenza del token
+  createdAt DateTime @default(now())
 }
 
 enum Role {
@@ -125,11 +139,26 @@ model Gender {
 }
 
 model Review {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   productId Int
   userId    Int
-  rating    Float     // Valutazione da parte dell'utente
-  comment   String?   // Commento facoltativo dell'utente
+  rating    Int
+  comment   String
+  // Add this field
+  createdAt DateTime @default(now())
   product   Product   @relation(fields: [productId], references: [id])
   user      User      @relation(fields: [userId], references: [id])
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, productId]) // Evita duplicati dello stesso prodotto per lo stesso utente
+  @@index([userId])
+  @@index([productId])
 }

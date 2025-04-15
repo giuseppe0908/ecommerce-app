@@ -41,7 +41,7 @@ const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
     <div v-if="pending">Loading...</div>
     <div v-else-if="error">Error loading new arrivals!</div>
     <section v-else 
-     class="NewArrivals pt-1 flex items-center overflow-x-scroll whitespace-nowrap mt-[15px] space-x-4 pr-4 md:overflow-x-hidden md:flex-wrap md:w-[95%] md:h-[55vh]"
+     class="NewArrivals w-[95%] mx-auto pt-1 flex items-center overflow-x-scroll whitespace-nowrap mt-[15px] space-x-4 pr-4 md:overflow-x-hidden md:flex-wrap md:w-[95%] md:h-[55vh]"
     >
         <Card v-for="product in newArrivals" :key="product.id"
             :id="product.id"
