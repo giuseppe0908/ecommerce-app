@@ -4,9 +4,7 @@ const prisma = new PrismaClient();
 
 export default defineEventHandler(async (event) => {
   try {
-    const id = event.context.params?.id;
-    console.log(id);
-    
+    const id = event.context.params?.id;    
     if (!id) {
       throw createError({
         statusCode: 400,
@@ -29,7 +27,7 @@ export default defineEventHandler(async (event) => {
         statusCode: 404,
         message: 'Prodotto non trovato'
       });
-    }
+    }    
     
     // Trova prodotti correlati basati su categoria, brand o genere
     // Esclude il prodotto corrente e limita a 8 risultati
@@ -60,6 +58,9 @@ export default defineEventHandler(async (event) => {
       take: 8
     });
     
+    console.log(relatedProducts);
+
+
     // Calcola un punteggio di rilevanza per ogni prodotto correlato
     const scoredProducts = relatedProducts.map(product => {
       let relevanceScore = 0;

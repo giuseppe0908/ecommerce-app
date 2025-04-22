@@ -99,14 +99,26 @@
       </div>
       
       <!-- Prodotti correlati -->
-      <div class="related-products mt-12 border-t pt-6">
-        <RelatedProducts 
-          :productId="productId" 
-          :categoryId="product?.category?.id" 
-          :brandId="product?.brand?.id"
-          :colorPrimary="colorPrimary"
-          :colorSecondary="colorSecondary"
-        />
+      <div class="related-products mt-12 border-t pt-6" v-if="relatedProducts && relatedProducts.length > 0">
+        <div class="products-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
+          <Card 
+            v-for="(product, index) in relatedProducts.slice(0, 4)"
+            :key="index"
+            :id="product.id" 
+            :category="product.category" 
+            :brand="product.brand"
+            :name="product.name"
+            :photo="product.photo"
+            :description="product.description"
+            :price="product.price"
+            :plus="product.plus"
+            :promo="product.promo"
+            :codeItem="product.codeItem"
+            :colorPrimary="colorPrimary"
+            :colorSecondary="colorSecondary"
+          />
+        </div>
+        
       </div>
     </div>
 </template>
@@ -290,7 +302,11 @@
       // Carica prodotti correlati
       const { data: relatedData } = await useFetch(`/api/products/related/${productId}`);
       if (relatedData.value) {
-        relatedProducts.value = relatedData.value.slice(0, 4); // Limita a 4 prodotti correlati
+       // relatedProducts.value = relatedData.value.slice(0, 4); // Limita a 4 prodotti correlati  
+       console.log(relatedData.value);
+        relatedProducts.value = relatedData.value;
+        console.log(relatedProducts.value);
+              
       } else {
         // Prodotti correlati di fallback se l'API non restituisce dati
         relatedProducts.value = [
@@ -299,14 +315,14 @@
             name: 'Prodotto correlato 1',
             price: 59.99,
             brand: { name: 'Brand A' },
-            image: 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg'
+            photo: 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg'
           },
           {
             id: '2',
             name: 'Prodotto correlato 2',
             price: 79.99,
             brand: { name: 'Brand B' },
-            image: 'https://imgs.search.brave.com/rPdVLd8LhZ-b_HmtxgmpQR21h2o4wvWQdZFTs0_B-DA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/c29sZGlvbmxpbmUu/aXQvcGljdHVyZXMv/MjAxOS8wOC8xMi9w/aWF6emEtYWZmYXJp/LW1pbGFuby5qcGVn'
+            photo: 'https://imgs.search.brave.com/rPdVLd8LhZ-b_HmtxgmpQR21h2o4wvWQdZFTs0_B-DA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/c29sZGlvbmxpbmUu/aXQvcGljdHVyZXMv/MjAxOS8wOC8xMi9w/aWF6emEtYWZmYXJp/LW1pbGFuby5qcGVn'
           }
         ];
       }

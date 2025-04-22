@@ -3,35 +3,43 @@ import { ref, onMounted } from 'vue';
 import Card from './Card.vue';
 
 const props = defineProps({
-  productId: { type: Number, required: true },
+  id: { type: Number, required: true },
   categoryId: { type: Number, required: true },
   brandId: { type: Number, required: true },
   colorPrimary: { type: String, required: true },
   colorSecondary: { type: String, required: true },
+  name: { type: String, required: true },
+  description: { type: String, required: true },
+  price: { type: Number, required: true },
+  photo: { type: String, required: true },
+  promo: { type: Boolean, default: false },
+  plus: { type: Boolean, default: false },
+  codeItem: { type: String, required: true },
   limit: { type: Number, default: 4 }
 });
+
 
 const relatedProducts = ref([]);
 const loading = ref(true);
 const error = ref(null);
 
 onMounted(async () => {
-  try {
-    // Fetch related products based on same category or brand, excluding current product
-    const response = await fetch(`/api/products/related?productId=${props.productId}&categoryId=${props.categoryId}&brandId=${props.brandId}&limit=${props.limit}`);
+  // try {
+  //   // Fetch related products based on same category or brand, excluding current product
+  //   const response = await fetch(`/api/products/related?productId=${props.productId}&categoryId=${props.categoryId}&brandId=${props.brandId}&limit=${props.limit}`);
     
-    if (!response.ok) {
-      throw new Error('Failed to fetch related products');
-    }
+  //   if (!response.ok) {
+  //     throw new Error('Failed to fetch related products');
+  //   }
     
-    const data = await response.json();
-    relatedProducts.value = data;
-  } catch (err) {
-    error.value = err.message;
-    console.error('Error fetching related products:', err);
-  } finally {
-    loading.value = false;
-  }
+  //   const data = await response.json();
+  //   relatedProducts.value = data;
+  // } catch (err) {
+  //   error.value = err.message;
+  //   console.error('Error fetching related products:', err);
+  // } finally {
+  //   loading.value = false;
+  // }
 });
 </script>
 
@@ -39,7 +47,7 @@ onMounted(async () => {
   <div class="related-products-container">
     <h3 class="text-2xl font-semibold mb-6">Prodotti correlati</h3>
     
-    <div v-if="loading" class="loading-indicator flex justify-center py-8">
+    <!-- <div v-if="loading" class="loading-indicator flex justify-center py-8">
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" :style="{ borderColor: colorPrimary }"></div>
     </div>
     
@@ -49,22 +57,22 @@ onMounted(async () => {
     
     <div v-else-if="relatedProducts.length === 0" class="no-products text-gray-500 text-center py-4">
       Nessun prodotto correlato disponibile
-    </div>
+    </div> -->
     
-    <div v-else class="products-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div class="products-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       <Card 
-        v-for="product in relatedProducts" 
+        v-for="product in props" 
         :key="product.id"
         :id="product.id"
         :name="product.name"
-        :img="product.img"
+        :img="product.photo"
         :price="product.price"
         :promo="product.promo"
         :plus="product.plus"
         :category="product.category"
         :brand="product.brand"
-        :colorPrimary="colorPrimary"
-        :colorSecondary="colorSecondary"
+        :colorPrimary="product.colorPrimary"
+        :colorSecondary="product.colorSecondary"
         :codeItem="product.codeItem"
       />
     </div>
