@@ -1,6 +1,7 @@
 <script setup>
 import { useCartStore } from '@/stores/cartStore'
 import { useWishlistStore } from '@/stores/wishlistStore'
+import { useToast } from 'vue-toastification'
 
 const cartStore = useCartStore()
 const wishlistStore = useWishlistStore()
@@ -26,6 +27,12 @@ const addcart = (product, event) => {
   event.preventDefault() // Blocca l'azione predefinita del link
   event.stopPropagation() // Ferma la propagazione
   cartStore.addtocart(product)
+  const toast = useToast();
+  toast.success('Prodotto aggiunto al carrello!', {
+    position: 'top-right',
+    duration: 3000
+  });
+  
 }
 
 // Add to wishlist function
