@@ -18,19 +18,22 @@ export default defineEventHandler(async (event) => {
     }
 
     // Se non ci sono dati in cache, esegui la query al database
-    console.time('fetchCategories');
-    const categories = await prisma.category.findMany({
-      include: {
-        images: true,
-      },
-    });
-    console.timeEnd('fetchCategories');
+    try {
+      const categories = await prisma.category.findMany({
+        include: {
+          images: true,
+        },
+      });
+      console.timeEnd('fetchCategories');
+       // Salva i dati in cache
+      cache.set(cacheKey, categories);
+      console.log('Dati salvati in cache');
+      return categories;
+    } catch (error) {
+      console.timeEnd('fetchCategories'); // Fine anche in caso di errore
+      throw createError({ statusCode: 500, statusMessage: 'Errore nel recupero delle categorie' });
+    }
 
-    // Salva i dati in cache
-    cache.set(cacheKey, categories);
-    console.log('Dati salvati in cache');
-
-    return categories;
   } else if (method === 'POST') {
     const body = await readBody(event);
     console.log(body);

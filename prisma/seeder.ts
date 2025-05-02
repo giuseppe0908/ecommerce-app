@@ -11,7 +11,7 @@ async function main() {
   const white = await prisma.color.create({ data: { name: 'White', hex: '#FFFFFF' } });
   const green = await prisma.color.create({ data: { name: 'Green', hex: '#00FF00' } });
 
-  // ===================== CATEGORIE =====================
+  // ===================== CATEGORIE E SUB CATEGORIE=====================
   const casual = await prisma.category.create({ data: { name: 'Casuale' } });
   const sport = await prisma.category.create({ data: { name: 'Sport' } });
   const formale = await prisma.category.create({ data: { name: 'Formale' } });
@@ -19,6 +19,33 @@ async function main() {
   const scarpe = await prisma.category.create({ data: { name: 'Scarpe' } });
   const borse = await prisma.category.create({ data: { name: 'Borse' } });
   const accessori = await prisma.category.create({ data: { name: 'Accessori' } });
+  const promo = await prisma.category.create({ data: { name: 'Promo' } });
+  const abbigliamento = await prisma.category.create({ data: { name: 'Abbigliamento' } });
+
+  const camicia = await prisma.subCategory.create({
+    data: { name: 'Camice', categoryId: formale.id },
+  });
+
+  const sportt = await prisma.subCategory.create({
+    data: { name: 'Sport', categoryId: sport.id },
+  });
+
+  const orologi = await prisma.subCategory.create({
+    data: { name: 'Orologi', categoryId: accessori.id },
+  });
+
+  const gioielli = await prisma.subCategory.create({
+    data: { name: 'Gioielli', categoryId: accessori.id },
+  });
+
+  const felpe = await prisma.subCategory.create({
+    data: { name: 'Felpe', categoryId: casual.id },
+  });
+
+  const giacca = await prisma.subCategory.create({
+    data: { name: 'Giacche', categoryId: formale.id },
+  });
+
 
   // ===================== BRAND =====================
   const nike = await prisma.brand.create({ data: { name: 'Nike' } });
@@ -32,6 +59,43 @@ async function main() {
   const donna = await prisma.gender.create({ data: { name: 'Donna' } });
   const bambini = await prisma.gender.create({ data: { name: 'Bambini' } });
   const unisex = await prisma.gender.create({ data: { name: 'Unisex' } });
+
+  // ===================== FEATURES PER CATEGORIA =====================
+  const materiale = await prisma.feature.create({
+    data: {
+      name: 'Materiale',
+      type: 'select',
+      options: ['Cotone', 'Poliestere'],
+      categoryId: abbigliamento.id,
+    },
+  });
+
+  const taglia = await prisma.feature.create({
+    data: {
+      name: 'Taglia',
+      type: 'select',
+      options: ['S', 'M', 'L', 'XL'],
+      categoryId: abbigliamento.id,
+    },
+  });
+
+  const numero = await prisma.feature.create({
+    data: {
+      name: 'Numero',
+      type: 'select',
+      options: ['40', '41', '42'],
+      categoryId: scarpe.id,
+    },
+  });
+
+  const tipoScarpa = await prisma.feature.create({
+    data: {
+      name: 'Tipo',
+      type: 'select',
+      options: ['Running', 'Casual', 'Elegante'],
+      categoryId: scarpe.id,
+    },
+  });
 
   // ===================== IMMAGINI CATEGORIE =====================
   await prisma.categoryImage.createMany({
@@ -50,215 +114,270 @@ async function main() {
     ],
   });
 
-  // ===================== PRODOTTI CON COLORI =====================
+  // ===================== PRODOTTI CON SOTTOCATEGORIE E FEATURES =====================
   const products = [
     // Prodotto 1: Maglietta Nike
     await prisma.product.create({
       data: {
         name: 'Maglietta Nike',
-        categoryId: casual.id,
+        categoryId: abbigliamento.id,
+        subCategoryId: camicia.id,
         brandId: nike.id,
         genderId: uomo.id,
-        favorite: true,
-        promo: false,
-        plus: true,
-        newArrival: true,
         price: 29.99,
+        promo: true,
+        percentualPromo: 20,
+        rating: 4.0,
+        available_quantity: 5,
+        plus: false,
+        newArrival: true,
         photo: 'https://images.pexels.com/photos/4041689/pexels-photo-4041689.jpeg',
         codeItem: 'NK1234',
-        percentualPromo: 10,
-        rating: 4.5,
-        available_quantity: 10,
         description: 'Maglietta comoda e traspirante, ideale per un look casual.',
+        features: {
+          create: [
+            { featureId: materiale.id, value: 'Cotone' },
+            { featureId: taglia.id, value: 'M' }
+          ]
+        }
       },
     }),
-
     // Prodotto 2: Pantaloni Sportivi Adidas
     await prisma.product.create({
       data: {
         name: 'Pantaloni Sportivi Adidas',
-        categoryId: sport.id,
+        categoryId: abbigliamento.id,
+        subCategoryId: sportt.id,
         brandId: adidas.id,
         genderId: donna.id,
-        favorite: false,
-        promo: true,
-        plus: false,
-        newArrival: false,
         price: 49.99,
-        photo: 'https://images.pexels.com/photos/2430671/pexels-photo-2430671.jpeg',
-        codeItem: 'AD5678',
+        promo: true,
         percentualPromo: 20,
         rating: 4.0,
         available_quantity: 5,
-        description: 'Pantaloni sportivi per attività fisica con tessuto elastico.',
+        plus: false,
+        newArrival: true,
+        photo: 'https://images.pexels.com/photos/2430671/pexels-photo-2430671.jpeg',
+        codeItem: 'AD5678',
+        description: 'Pantaloni sportivi elasticizzati per allenamenti intensi.',
+        features: {
+          create: [
+            { featureId: materiale.id, value: 'Poliestere' },
+            { featureId: taglia.id, value: 'L' }
+          ]
+        }
       },
     }),
-
     // Prodotto 3: Scarpe da Corsa Puma
     await prisma.product.create({
       data: {
         name: 'Scarpe da Corsa Puma',
         categoryId: scarpe.id,
+        subCategoryId: sportt.id,
         brandId: puma.id,
         genderId: uomo.id,
-        favorite: false,
-        promo: false,
+        price: 89.99,
+        promo: true,
+        percentualPromo: 20,
+        rating: 4.0,
+        available_quantity: 5,
         plus: false,
         newArrival: true,
-        price: 89.99,
         photo: 'https://images.pexels.com/photos/267242/pexels-photo-267242.jpeg',
         codeItem: 'PM1122',
-        percentualPromo: 15,
-        rating: 4.8,
-        available_quantity: 7,
         description: 'Scarpe leggere e ammortizzate per la corsa.',
+        features: {
+          create: [
+            { featureId: numero.id, value: '42' },
+            { featureId: tipoScarpa.id, value: 'Running' }
+          ]
+        }
       },
     }),
-
     // Prodotto 4: Giacca Reebok
     await prisma.product.create({
       data: {
         name: 'Giacca Reebok',
         categoryId: outdoor.id,
+        subCategoryId: giacca.id,
         brandId: reebok.id,
         genderId: bambini.id,
+        price: 99.99,
         favorite: true,
-        promo: true,
+        promo: false,
+        percentualPromo: 0,
+        rating: 4.0,
+        available_quantity: 1,
         plus: true,
         newArrival: false,
-        price: 99.99,
         photo: 'https://images.pexels.com/photos/2112644/pexels-photo-2112644.jpeg',
         codeItem: 'RB3344',
-        percentualPromo: 25,
-        rating: 4.2,
-        available_quantity: 3,
         description: 'Giacca calda e resistente, perfetta per le avventure all’aperto.',
+        features: {
+          create: [
+            { featureId: materiale.id, value: 'Nylon' },
+            { featureId: taglia.id, value: 'XS' }
+          ]
+        }
       },
     }),
-
     // Prodotto 5: Camicia Gucci
     await prisma.product.create({
       data: {
         name: 'Camicia Gucci',
-        categoryId: formale.id,
+        categoryId: abbigliamento.id,
+        subCategoryId: camicia.id,
         brandId: gucci.id,
         genderId: donna.id,
+        price: 120.0,
         favorite: false,
         promo: true,
         plus: true,
         newArrival: false,
-        price: 120.0,
         photo: 'https://images.pexels.com/photos/1493088/pexels-photo-1493088.jpeg',
         codeItem: 'GC5566',
         percentualPromo: 30,
         rating: 4.9,
         available_quantity: 2,
         description: 'Camicia elegante in cotone di alta qualità.',
+        features: {
+          create: [
+            { featureId: materiale.id, value: 'Cotone' },
+            { featureId: taglia.id, value: 'S' }
+          ]
+        }
       },
     }),
-
     // Prodotto 6: Zaino Outdoor
     await prisma.product.create({
       data: {
         name: 'Zaino Outdoor',
         categoryId: outdoor.id,
+        subCategoryId: sportt.id, 
         brandId: reebok.id,
         genderId: unisex.id,
-        favorite: true,
-        promo: false,
+        price: 59.99,
         plus: false,
         newArrival: true,
-        price: 59.99,
         photo: 'https://images.pexels.com/photos/2112908/pexels-photo-2112908.jpeg',
         codeItem: 'OU7766',
+        promo: true,
         percentualPromo: 15,
         rating: 4.6,
         available_quantity: 8,
         description: 'Zaino capiente e resistente per le avventure outdoor.',
+        features: {
+          create: [
+            { featureId: materiale.id, value: 'Nylon' },
+          ]
+        }
       },
     }),
-
     // Prodotto 7: Polo Ralph Lauren
     await prisma.product.create({
       data: {
         name: 'Polo Ralph Lauren',
-        categoryId: casual.id,
+        categoryId: abbigliamento.id,
+        subCategoryId: camicia.id,
         brandId: gucci.id,
         genderId: uomo.id,
+        price: 80.0,
         favorite: false,
-        promo: true,
+        promo: false,
         plus: true,
         newArrival: false,
-        price: 80.0,
         photo: 'https://images.pexels.com/photos/1513023/pexels-photo-1513023.jpeg',
         codeItem: 'RL7890',
-        percentualPromo: 25,
+        percentualPromo: 0,
         rating: 4.7,
         available_quantity: 1,
         description: 'Polo in cotone di alta qualità per un look casual e sofisticato.',
+        features: {
+          create: [
+            { featureId: materiale.id, value: 'Cotone' },
+            { featureId: taglia.id, value: 'M' }
+          ]
+        }
       },
     }),
-
     // Prodotto 8: Borsetta a Tracolla
     await prisma.product.create({
       data: {
         name: 'Borsetta a Tracolla',
         categoryId: borse.id,
+        subCategoryId: orologi.id,
         brandId: gucci.id,
         genderId: donna.id,
+        price: 199.99,
         favorite: true,
-        promo: true,
+        promo: false,
         plus: true,
         newArrival: true,
-        price: 199.99,
         photo: 'https://images.pexels.com/photos/179909/pexels-photo-179909.jpeg',
         codeItem: 'BG0987',
-        percentualPromo: 10,
+        percentualPromo: 0,
         rating: 4.9,
         available_quantity: 4,
         description: 'Borsetta elegante e pratica, perfetta per le uscite.',
+        features: {
+          create: [
+            { featureId: materiale.id, value: 'Pelle' },
+          ]
+        }
       },
     }),
-
     // Prodotto 9: Felpa Puma
     await prisma.product.create({
       data: {
         name: 'Felpa Puma',
-        categoryId: casual.id,
+        categoryId: abbigliamento.id,
+        subCategoryId: felpe.id,
         brandId: puma.id,
         genderId: bambini.id,
+        price: 45.99,
         favorite: true,
         promo: true,
         plus: false,
         newArrival: false,
-        price: 45.99,
         photo: 'https://images.pexels.com/photos/197845/pexels-photo-197845.jpeg',
         codeItem: 'PU5673',
         percentualPromo: 15,
         rating: 4.4,
         available_quantity: 6,
         description: 'Felpa calda e confortevole, ideale per i più piccoli.',
+        features: {
+          create: [
+            { featureId: materiale.id, value: 'Cotone' },
+            { featureId: taglia.id, value: 'XS' }
+          ]
+        }
       },
     }),
-
     // Prodotto 10: Scarpe Eleganti Uomo
     await prisma.product.create({
       data: {
         name: 'Scarpe Eleganti Uomo',
         categoryId: scarpe.id,
+        subCategoryId: sportt.id,
         brandId: gucci.id,
         genderId: uomo.id,
+        price: 150.0,
         favorite: false,
         promo: false,
         plus: true,
         newArrival: true,
-        price: 150.0,
         photo: 'https://images.pexels.com/photos/298863/pexels-photo-298863.jpeg',
         codeItem: 'SE3245',
         percentualPromo: 20,
         rating: 4.8,
-        available_quantity: 9,  
+        available_quantity: 9,
         description: 'Scarpe eleganti in pelle, perfette per un look formale.',
+        features: {
+          create: [
+            { featureId: numero.id, value: '43' },
+            { featureId: tipoScarpa.id, value: 'Elegante' }
+          ]
+        }
       },
     }),
   ];
@@ -266,47 +385,30 @@ async function main() {
   // ===================== ASSOCIAZIONE COLORI =====================
   await prisma.productColor.createMany({
     data: [
-      // Prodotto 1: Maglietta Nike
+      // Mappatura migliorata per evitare errori
       { productId: products[0].id, colorId: red.id },
       { productId: products[0].id, colorId: black.id },
-
-      // Prodotto 2: Pantaloni Sportivi Adidas
       { productId: products[1].id, colorId: blue.id },
       { productId: products[1].id, colorId: white.id },
-
-      // Prodotto 3: Scarpe da Corsa Puma
       { productId: products[2].id, colorId: white.id },
       { productId: products[2].id, colorId: green.id },
-
-      // Prodotto 4: Giacca Reebok
       { productId: products[3].id, colorId: black.id },
       { productId: products[3].id, colorId: red.id },
-
-      // Prodotto 5: Camicia Gucci
       { productId: products[4].id, colorId: white.id },
       { productId: products[4].id, colorId: blue.id },
-
-      // Prodotto 6: Zaino Outdoor
       { productId: products[5].id, colorId: green.id },
       { productId: products[5].id, colorId: black.id },
-
-      // Prodotto 7: Polo Ralph Lauren
       { productId: products[6].id, colorId: blue.id },
       { productId: products[6].id, colorId: white.id },
-
-      // Prodotto 8: Borsetta a Tracolla
       { productId: products[7].id, colorId: black.id },
       { productId: products[7].id, colorId: red.id },
-
-      // Prodotto 9: Felpa Puma
       { productId: products[8].id, colorId: red.id },
       { productId: products[8].id, colorId: blue.id },
-
-      // Prodotto 10: Scarpe Eleganti Uomo
       { productId: products[9].id, colorId: black.id },
-      { productId: products[9].id, colorId: green.id }, // Aggiungi il marrone se necessario
+      { productId: products[9].id, colorId: green.id },
     ],
   });
+
 
   // ===================== UTENTI =====================
   const hashedPassword1 = await bcrypt.hash('password123', 10);

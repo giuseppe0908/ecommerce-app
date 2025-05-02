@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
+  
   const filters = {
     ...(query.category && { categoryId: parseInt(query.category, 10) }),
     ...(query.brand && { brandId: parseInt(query.brand, 10) }),
@@ -14,6 +15,8 @@ export default defineEventHandler(async (event) => {
       },
     }),
   };
+ 
+  
   const method = event.node.req.method;
     if (method === 'GET') {
       // Verifica se i filtri sono vuoti
@@ -32,7 +35,7 @@ export default defineEventHandler(async (event) => {
             brand: true,
             gender: true,
           },
-        });        
+        });    
         return products
         
     }

@@ -5,13 +5,13 @@
         </div>
         <div class="centrato absolute ">    
             <div class="">
-                <Button name="DONNA" :bgColor="colorPrimary" textColor="white" to="product/gender/donna"  :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight"/>
+                <Button name="DONNA" :bgColor="colorPrimary" textColor="white" to="product?gender=donna"  :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight"/>
             </div>
             <div class="mt-5 lg:mt-8">
-                <Button name="UOMO" bgColor="white" :textColor="colorPrimary"  to="product/gender/uomo" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight"/>
+                <Button name="UOMO" bgColor="white" :textColor="colorPrimary"  to="product?gender=/uomo" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight"/>
             </div>
             <div class="mt-5 lg:mt-8 ">
-                <Button name="BAMBINO" :bgColor="colorPrimary" textColor="white"  to="product/gender/bambini" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight" marginLeft="25px"/>
+                <Button name="BAMBINO" :bgColor="colorPrimary" textColor="white"  to="product?gender=bambini" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight" marginLeft="25px"/>
             </div>
         </div>
         <div class="centrato absolute left-48 title text-[20px] md:w-[50%]" >

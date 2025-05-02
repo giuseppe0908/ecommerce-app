@@ -1,10 +1,14 @@
-datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
-}
 generator client {
   provider = "prisma-client-js"
 }
+
+// prisma/schema.prisma
+datasource db {
+  provider  = "postgresql"
+  url  	    = env("DATABASE_URL")
+}
+
+
 
 model Product {
   id               Int       @id @default(autoincrement())
@@ -12,7 +16,7 @@ model Product {
   categoryId       Int
   brandId          Int
   genderId         Int
-  favorite         Boolean
+  favorite         Boolean?
   promo            Boolean
   plus             Boolean  
   newArrival       Boolean   
@@ -23,7 +27,10 @@ model Product {
   rating           Float?  
   description      String  
   available_quantity Int 
-  category          Category       @relation(fields: [categoryId], references: [id])
+  subCategoryId Int?
+  features         ProductFeature[] 
+  subCategory      SubCategory? @relation(fields: [subCategoryId], references: [id])
+  category         Category       @relation(fields: [categoryId], references: [id])
   productColors    ProductColor[] // Relazione esplicita con la tabella di join  category         Category  @relation(fields: [categoryId], references: [id])
   brand            Brand     @relation(fields: [brandId], references: [id])
   gender           Gender   @relation(fields: [genderId], references: [id]) // Relazione con Gender
@@ -53,11 +60,21 @@ model Brand {
   products Product[]
 }
 
+model SubCategory {
+  id          Int      @id @default(autoincrement())
+  name        String
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
+  products    Product[] // Se i prodotti appartengono direttamente a una sottocategoria
+}
+
 model Category {
   id            Int             @id @default(autoincrement())
   name          String
   images        CategoryImage[]  // Relazione con le immagini per genere
   products      Product[]        // Relazione con i prodotti appartenenti alla categoria
+  subCategories SubCategory[]   // Nuova relazione verso le sottocategorie
+  features      Feature[]
 }
 
 model CategoryImage {
@@ -67,6 +84,25 @@ model CategoryImage {
   categoryId   Int
   category     Category    @relation(fields: [categoryId], references: [id])
   gender       Gender      @relation(fields: [genderId], references: [id])
+}
+
+model Feature {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  type        String    // 'text', 'select', 'range' (per UI)
+  category    Category? @relation(fields: [categoryId], references: [id])
+  categoryId  Int?
+  products    ProductFeature[]
+  options     String[]  // Per type 'select' es: ["S", "M", "L"]
+}
+
+model ProductFeature {
+  productId  Int
+  featureId  Int
+  value      String
+  product    Product @relation(fields: [productId], references: [id])
+  feature    Feature @relation(fields: [featureId], references: [id])
+  @@id([productId, featureId])
 }
 
 model User {
@@ -96,7 +132,7 @@ model Token {
   expiresAt DateTime
   createdAt DateTime  @default(now())
   @@index([userId])
-  @@index([token(length: 255)]) // Creiamo un indice sulla prima parte del token
+  @@index([token]) // Creiamo un indice sulla prima parte del token
 }
 
 model ResetToken {
