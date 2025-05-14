@@ -188,6 +188,7 @@
               :id="product.id"
               :name="product.name"
               :img="product.photo"
+              :codeItem="product.codeItem"
               :promo="product.promo"
               :plus="product.plus"
               :price="product.price"
@@ -340,16 +341,22 @@ const activeFilters = computed(() => {
     });
   }
 
-  // mantiene url costante e modifica solo il sesso
-    const getGenderQuery=(gender) => {
-    return {
-        path: route.path,
-        query: {
-        ...route.query,
-        gender: gender?.toLowerCase() || undefined
-        }
+  // Update the getGenderQuery function to return a string URL
+  const getGenderQuery = (gender) => {
+    const queryParams = new URLSearchParams();
+    
+    // Add gender parameter
+    queryParams.append('gender', gender.toLowerCase());
+    
+    // Preserve other query parameters
+    for (const [key, value] of Object.entries(route.query)) {
+      if (key !== 'gender') {
+        queryParams.append(key, value);
+      }
     }
-    }
+    
+    return `/product?${queryParams.toString()}`;
+  }
   
   // Toggle menu
   const open = ref(false);

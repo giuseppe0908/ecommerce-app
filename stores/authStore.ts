@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { useRouter } from 'vue-router'
+import { navigateTo } from 'nuxt/app'
 import { jwtDecode } from 'jwt-decode'
 import { useWishlistStore } from './wishlistStore'
 
@@ -45,6 +46,22 @@ export const useAuthStore = defineStore('authStore', {
   },
 
   actions: {
+
+    async loginWithGitHub() {
+      try {
+        if (process.client) {
+          window.location.href =  '/api/auth/github'
+        }
+      } catch (error: any) {
+        this.handleAuthError(error)
+      }
+    },
+    handleAuthError(error: any) {
+      console.error('Auth error:', error)
+      this.error = error.message || 'Authentication error'
+      this.logout()
+      navigateTo('/login?error=auth_failed')
+    },
 
     async login(email: string, password: string) {
       this.isLoading = true
@@ -160,6 +177,10 @@ export const useAuthStore = defineStore('authStore', {
 
         if (!response.ok) {
           throw new Error('Token non valido')
+        }
+        const data = await response.json()
+        if(!this.user){
+          this.user = data.user 
         }
         console.log("puoi accededere");
         return true

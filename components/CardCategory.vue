@@ -80,7 +80,7 @@ onMounted(() => {
           :name="name" 
           bgColor="white" 
           :textColor="colorPrimary" 
-          :to="name" 
+          :to="`/product?category=${encodeURIComponent(name)}`"
           :applyNegativeMargin="false" 
           :width="buttonWidth" 
           :height="buttonHeight" 

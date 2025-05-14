@@ -45,9 +45,10 @@ export default defineEventHandler(async (event) => {
         });
       }
 
+      const userId = parseInt(decoded.sub, 10);
       // Verifica che l'utente esista
       const user = await prisma.user.findUnique({
-        where: { id: decoded.sub }
+        where: { id: userId }
       });
 
       if (!user) {

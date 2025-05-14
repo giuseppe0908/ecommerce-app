@@ -25,7 +25,12 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       stripePublicKey: process.env.STRIPE_PUBLISHABLE_KEY, // Chiave pubblica lato client
+      githubClientId: process.env.GITHUB_CLIENT_ID,
     },
+    githubClientId: process.env.GITHUB_CLIENT_ID,
+    githubClientSecret: process.env.GITHUB_CLIENT_SECRET,
+    githubCallbackUrl: process.env.GITHUB_CALLBACK_URL,
+    jwtSecret: process.env.JWT_SECRET,
   },
   plugins: [
     '~/plugins/token-cleanup.js'

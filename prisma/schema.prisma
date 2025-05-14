@@ -1,14 +1,10 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
 generator client {
   provider = "prisma-client-js"
 }
-
-// prisma/schema.prisma
-datasource db {
-  provider  = "postgresql"
-  url  	    = env("DATABASE_URL")
-}
-
-
 
 model Product {
   id               Int       @id @default(autoincrement())
@@ -93,7 +89,7 @@ model Feature {
   category    Category? @relation(fields: [categoryId], references: [id])
   categoryId  Int?
   products    ProductFeature[]
-  options     String[]  // Per type 'select' es: ["S", "M", "L"]
+  options     String?  // Per type 'select' es: ["S", "M", "L"]
 }
 
 model ProductFeature {
@@ -107,13 +103,14 @@ model ProductFeature {
 
 model User {
   id       Int       @id @default(autoincrement())
-  name     String
-  surname  String
+  name     String?
+  surname  String?
   email    String    @unique
-  password String
-  address  String
-  number   String
+  password String?
+  address  String?
+  number   String?
   newsletter Boolean ?
+  githubId     String?   @unique
   orders   Order[]
   reviews  Review[] 
   favorites Favorite[] // Relazione con i preferiti
@@ -132,7 +129,7 @@ model Token {
   expiresAt DateTime
   createdAt DateTime  @default(now())
   @@index([userId])
-  @@index([token]) // Creiamo un indice sulla prima parte del token
+  @@index([token(length: 255)]) // Creiamo un indice sulla prima parte del token
 }
 
 model ResetToken {

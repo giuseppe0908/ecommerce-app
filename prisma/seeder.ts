@@ -65,7 +65,7 @@ async function main() {
     data: {
       name: 'Materiale',
       type: 'select',
-      options: ['Cotone', 'Poliestere'],
+      options: JSON.stringify(['Cotone', 'Poliestere']), 
       categoryId: abbigliamento.id,
     },
   });
@@ -74,7 +74,7 @@ async function main() {
     data: {
       name: 'Taglia',
       type: 'select',
-      options: ['S', 'M', 'L', 'XL'],
+      options: JSON.stringify(['S', 'M', 'L', 'XL']),
       categoryId: abbigliamento.id,
     },
   });
@@ -83,7 +83,7 @@ async function main() {
     data: {
       name: 'Numero',
       type: 'select',
-      options: ['40', '41', '42'],
+      options: JSON.stringify(['40', '41', '42']),
       categoryId: scarpe.id,
     },
   });
@@ -92,7 +92,7 @@ async function main() {
     data: {
       name: 'Tipo',
       type: 'select',
-      options: ['Running', 'Casual', 'Elegante'],
+      options: JSON.stringify(['Running', 'Casual', 'Elegante']),
       categoryId: scarpe.id,
     },
   });
