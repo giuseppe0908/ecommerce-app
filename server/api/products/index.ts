@@ -4,16 +4,20 @@ const prisma = new PrismaClient();
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   
+  // Costruisci il filtro di prezzo in modo più flessibile
+  let priceFilter = {};
+  if (query.priceMin) {
+    priceFilter = { ...priceFilter, gte: parseFloat(query.priceMin as string) };
+  }
+  if (query.priceMax) {
+    priceFilter = { ...priceFilter, lte: parseFloat(query.priceMax as string) };
+  }
+  
   const filters = {
-    ...(query.category && { categoryId: parseInt(query.category, 10) }),
-    ...(query.brand && { brandId: parseInt(query.brand, 10) }),
-    ...(query.gender && { genderId: parseInt(query.gender, 10) }),
-    ...(query.priceMin && query.priceMax && {
-      price: {
-        gte: parseFloat(query.priceMin),
-        lte: parseFloat(query.priceMax),
-      },
-    }),
+    ...(query.category && { categoryId: parseInt(query.category as string, 10) }),
+    ...(query.brand && { brandId: parseInt(query.brand as string, 10) }),
+    ...(query.gender && { genderId: parseInt(query.gender as string, 10) }),
+    ...(Object.keys(priceFilter).length > 0 && { price: priceFilter }),
   };
  
   

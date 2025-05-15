@@ -125,7 +125,7 @@
         </div>
   
         <div class="right">
-          <div class="flex relative items-center">
+          <div class="flex relative">
             <div 
               class="button items-center w-[74px] h-[31px] rounded-3xl flex justify-center cursor-pointer hover:scale-125"
               @click="openModal"
@@ -140,7 +140,7 @@
   
             <transition name="slide-in-right">
               <div v-if="openfilters" class="filter-container">
-                <div class="modal absolute left-[90px] h-auto rounded-xl flex gap-4" style="width: 300px;">
+                <div class="flex gap-2" >
                   <div 
                     v-for="(filter, index) in filtri"
                     :key="index"
@@ -151,29 +151,50 @@
                       border: !openfilters ? `1px solid ${colorPrimary}` : 'none'
                     }"
                   > 
-                    <p>{{ filter.name }}</p>
+                    <p @click="openModalFilter(filter.name)">{{ filter.name }}</p>
                   </div>
                 </div>
   
-                <div v-if="selected" class="price-filter-container absolute left-[90px] top-[50px] bg-white p-4 rounded-xl shadow-lg">
+                <div v-if="prezzo" class="price-filter-container left-[90px] top-[50px] bg-white p-4 rounded-xl shadow-lg">
                   <div class="price-filter mb-6">
                     <h3 class="font-semibold mb-2">Prezzo</h3>
-                    <div class="flex items-center space-x-2">
-                      <input 
-                        type="number" 
-                        v-model.number="priceMin" 
-                        placeholder="Min" 
-                        class="w-1/2 p-2 border rounded"
-                        min="0"
-                      >
-                      <span>-</span>
-                      <input 
-                        type="number" 
-                        v-model.number="priceMax" 
-                        placeholder="Max" 
-                        class="w-1/2 p-2 border rounded"
-                        min="0"
-                      >
+                    <div class="price-range-container">
+                      <div class="values-display flex justify-between mb-2">
+                        <span>€{{ priceMin || minPrice }}</span>
+                        <span>€{{ priceMax || maxPrice }}</span>
+                      </div>
+                      <div class="range-slider">
+                        <div class="range-slider-track"></div>
+                        <div class="range-slider-progress" :style="{
+                          left: `${((priceMin - minPrice) / (maxPrice - minPrice)) * 100}%`,
+                          width: `${((priceMax - priceMin) / (maxPrice - minPrice)) * 100}%`
+                        }"></div>
+                        <input 
+                          type="range" 
+                          v-model.number="priceMin" 
+                          :min="minPrice" 
+                          :max="maxPrice"
+                          class="range-slider-min"
+                          @input="validatePriceRange"
+                        >
+                        <input 
+                          type="range" 
+                          v-model.number="priceMax" 
+                          :min="minPrice" 
+                          :max="maxPrice"
+                          class="range-slider-max"
+                          @input="validatePriceRange"
+                        >
+                      </div>
+                      <div class="flex justify-center mt-4">
+                        <button 
+                          @click="applyPriceFilter"
+                          class="apply-filter-btn px-4 py-2 rounded-lg text-white"
+                          :style="{ backgroundColor: colorPrimary }"
+                        >
+                          Applica Filtro
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -201,9 +222,9 @@
         </div>
       </div>
     </div>
-  </template>
+</template>
   
-  <script setup>
+<script setup>
   import { useRoute, useRouter } from 'vue-router';
   import { ref, computed, onMounted, watch } from 'vue';
   
@@ -219,6 +240,7 @@
   const { data: brands } = await useFetch('/api/brands');
   // Stato prodotti e ricerca
   const products = ref([]);
+  const prezzo = ref(false);
   const searchQuery = ref('');
   const priceMin = ref(null);
   const priceMax = ref(null);
@@ -329,6 +351,13 @@ const activeFilters = computed(() => {
     priceMin.value = null;
     priceMax.value = null;
   }
+
+
+  const openModalFilter = (name) => {
+    if(name.toLowerCase() === "prezzo"){ 
+      prezzo.value =!prezzo.value;
+    }
+  }
   
   // Cambia categoria
   function setCategory(category) {
@@ -370,13 +399,66 @@ const activeFilters = computed(() => {
   const selected = ref(false);
   const filtri = ref([
     { name: "Colore", value: "" },
-    { name: "Taglia", value: "" }
+    { name: "Taglia", value: "" },
+    { name: "Prezzo", value: "" }
   ]);
   
   function openModal() {
     openfilters.value = !openfilters.value;
     selected.value = openfilters.value;
   }
+
+  // Calcolo prezzo minimo e massimo
+  const minPrice = computed(() => {
+  if (!products.value || products.value.length === 0) return 0;
+  return products.value.reduce((min, product) => 
+    product.price < min ? product.price : min, Infinity);
+  });
+
+  const maxPrice = computed(() => {
+  if (!products.value || products.value.length === 0) return 1000; // valore predefinito
+  return products.value.reduce((max, product) => 
+    product.price > max ? product.price : max, -Infinity);
+  });
+
+  // Validazione range prezzi
+  const validatePriceRange = () => {
+    // Assicurati che priceMin non sia maggiore di priceMax
+    if (priceMin.value > priceMax.value) {
+      priceMin.value = priceMax.value;
+    }
+    
+    // Assicurati che priceMax non sia minore di priceMin
+    if (priceMax.value < priceMin.value) {
+      priceMax.value = priceMin.value;
+    }
+  };
+  
+  // Applica filtro prezzo all'URL
+  const applyPriceFilter = () => {
+    const newQuery = { ...route.query };
+    
+    // Aggiungi i parametri di prezzo solo se sono stati impostati
+    if (priceMin.value !== null && priceMin.value !== minPrice.value) {
+      newQuery.priceMin = priceMin.value.toString();
+    } else {
+      delete newQuery.priceMin;
+    }
+    
+    if (priceMax.value !== null && priceMax.value !== maxPrice.value) {
+      newQuery.priceMax = priceMax.value.toString();
+    } else {
+      delete newQuery.priceMax;
+    }
+    
+    // Aggiorna l'URL con i nuovi parametri
+    router.replace({ query: newQuery });
+    
+    // Chiudi il filtro prezzo
+    prezzo.value = false;
+  };
+
+  
 
   // Watch per triggerare fetch al cambio di query
 watch(() => route.query, () => {
@@ -392,8 +474,7 @@ onMounted(() => {
   fetchProducts();
 });
   
-
-  </script>
+</script>
 
   
   <style scoped>
@@ -420,6 +501,9 @@ onMounted(() => {
   }
   .menu-toggle {
     /* Styles for the menu toggle */
+  }
+  .filter-container {
+    margin-left: 10px;
   }
   
   .category-link {
@@ -455,5 +539,54 @@ onMounted(() => {
   
   .slide-in-right-leave-active {
     animation: slide-in-right 0.5s ease-out reverse;
+  }
+  
+  /* Stili per gli slider */
+  .slider {
+    -webkit-appearance: none;
+    height: 4px;
+    background: #d3d3d3;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    border-radius: 2px;
+  }
+  
+  .slider:hover {
+    opacity: 1;
+  }
+  
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #5D758B;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  }
+  
+  .slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #5D758B;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  }
+  
+  .min-slider {
+    z-index: 2;
+  }
+  
+  .max-slider {
+    z-index: 1;
+  }
+  
+  .apply-filter-btn:hover {
+    opacity: 0.9;
   }
   </style>
