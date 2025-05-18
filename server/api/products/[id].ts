@@ -20,8 +20,10 @@ const productSchema = z.object({
   percentualPromo: z.number().min(0).max(100).optional(),
   rating: z.number().min(0).max(5).optional(),
   description: z.string().optional(),
-  available_quantity: z.number().int().min(0).optional()
+  available_quantity: z.number().int().min(0).optional(),
+  subCategoryId: z.number().int().positive()
 });
+
 
 export default defineEventHandler(async (event) => {
   const method = event.node.req.method;
@@ -46,7 +48,6 @@ export default defineEventHandler(async (event) => {
   } else if (method === 'PUT') {
     // Aggiorna un product specifico tramite ID
     const body = await readBody(event);
-    
     // Validate input data with Zod
     const parsed = productSchema.safeParse(body);
     if (!parsed.success) {

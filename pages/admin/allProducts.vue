@@ -29,7 +29,7 @@
 
   <!-- Modale per la modifica del prodotto -->
   <div v-if="showEditModal" class="fixed fixed-overlay inset-0 flex items-center justify-center">
-    <SigleProduct :productprops="selectedProduct" @close="closeEditModal" />
+    <SingleProduct :productprops="selectedProduct" @close="closeEditModal" />
   </div>
 
   <!-- Modale per la conferma dell'eliminazione -->
@@ -46,7 +46,7 @@
 import { ref } from 'vue';
 import { useFetch } from 'nuxt/app';
 import Card from '../components/Card.vue';
-import SigleProduct from '../components/SigleProduct.vue';
+import SingleProduct from '../components/SingleProduct.vue';
 import { useAuthStore } from '~/stores/authStore'
 
 definePageMeta({

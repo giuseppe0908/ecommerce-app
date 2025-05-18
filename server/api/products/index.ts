@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
+  console.log(query);
   
   // Costruisci il filtro di prezzo in modo più flessibile
   let priceFilter = {};
@@ -12,14 +13,18 @@ export default defineEventHandler(async (event) => {
   if (query.priceMax) {
     priceFilter = { ...priceFilter, lte: parseFloat(query.priceMax as string) };
   }
+
   
   const filters = {
-    ...(query.category && { categoryId: parseInt(query.category as string, 10) }),
-    ...(query.brand && { brandId: parseInt(query.brand as string, 10) }),
-    ...(query.gender && { genderId: parseInt(query.gender as string, 10) }),
+    ...(query.category && !isNaN(parseInt(query.category as string, 10)) && { categoryId: parseInt(query.category as string, 10) }),
+    ...(query.brand && !isNaN(parseInt(query.brand as string, 10)) && { brandId: parseInt(query.brand as string, 10) }),
+    ...(query.gender && !isNaN(parseInt(query.gender as string, 10)) && { genderId: parseInt(query.gender as string, 10) }),
+    ...(query.newArrivals === 'true' && { newArrival: true }),
+    ...(query.promo && !isNaN(parseInt(query.promo as string, 10)) && { promoId: parseInt(query.promo as string, 10) }),
     ...(Object.keys(priceFilter).length > 0 && { price: priceFilter }),
   };
- 
+  
+  // Rimuovi il log problematico che causa l'errore
   
   const method = event.node.req.method;
     if (method === 'GET') {

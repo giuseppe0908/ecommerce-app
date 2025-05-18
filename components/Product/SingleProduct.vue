@@ -1,6 +1,10 @@
 <template>
   <div class="w-[95%] mx-auto my-0">
+   
     <div class="buttons flex gap-2 text-xs">
+      <div class="undo bg-white w-[60px] h-[30px] flex items-center justify-center">
+        <p @click="emit('close');" class="text-xl">X</p>
+      </div>
       <Button name="DONNA" :bgColor="colorPrimary" colorText="white" to="/donna" leftRadius="true" width="100px" height="30px" />
       <Button name="UOMO" bgColor="white" :colorText="colorPrimary" to="/uomo" leftRadius="true" width="100px" height="30px" />
       <Button name="BAMBINO" :bgColor="colorPrimary" colorText="white" to="/bambino" leftRadius="true" width="100px" height="30px" />
@@ -100,7 +104,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Button from '../components/Button.vue';
 
-
+const emit = defineEmits(['close']); // Definiamo l'emit
 const route = useRoute();
 const router = useRouter();
 
@@ -185,26 +189,50 @@ const changeMainImage = (image) => {
 const newOtherImage = ref('');
 const showEditModal = ref(false);
 
-// const fetchProduct = async () => {
-//   const response = await fetch(`/api/products/${productId}`);
-//   if (response.ok) {
-//     product.value = await response.json();
-//   }
-//   console.log(product.value);
-// };
-
 const updateProduct = async () => {
+  const productDataToUpdate = {
+    name: product.value.name,
+    price: Number(product.value.price), // Assicurati che il prezzo sia un numero
+    categoryId: product.value.category.id, // Invia solo l'ID della categoria
+    brandId: product.value.brand.id, // Invia solo l'ID del brand
+    genderId: product.value.gender.id, // Invia solo l'ID del genere
+    favorite: product.value.favorite === null ? false : Boolean(product.value.favorite), // Converti null in false o usa il valore booleano
+    promo: Boolean(product.value.promo),
+    plus: Boolean(product.value.plus),
+    newArrival: Boolean(product.value.newArrival),
+    photo: product.value.photo ? product.value.photo.replace(/[`']/g, '').trim() : undefined, // Pulisci l'URL e invia undefined se vuoto/null
+    codeItem: product.value.codeItem,
+    percentualPromo: product.value.percentualPromo === null ? undefined : Number(product.value.percentualPromo),
+    rating: product.value.rating === null ? undefined : Number(product.value.rating),
+    description: product.value.description,
+    available_quantity: product.value.available_quantity === null ? undefined : Number(product.value.available_quantity),
+    subCategoryId: product.value.subCategoryId,
+  };
+
+  // Rimuovi le chiavi con valore undefined per evitare problemi con Zod .optional()
+  Object.keys(productDataToUpdate).forEach(key => {
+    if (productDataToUpdate[key] === undefined) {
+      delete productDataToUpdate[key];
+    }
+  });
+
+
   const response = await fetch(`/api/products/${productId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(product.value),
+    body: JSON.stringify(productDataToUpdate),
   });
 
   if (response.ok) {
     alert('Prodotto aggiornato con successo!');
-    router.push('/admin/allproducts');
+    //router.push('/admin/allproducts');
+    emit('close'); // Emettiamo l'evento close dopo il successo
+  } else {
+    const errorData = await response.json();
+    console.error("Errore durante l'aggiornamento:", errorData);
+    alert(`Errore durante l'aggiornamento del prodotto: ${errorData.message || response.statusText}`);
   }
 };
 
@@ -249,6 +277,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.undo{
+  border-radius: 50px;
+}
 .edit-product-container {
   max-width: 600px;
   margin: 0 auto;

@@ -108,7 +108,7 @@
   }
   
   const navigateToBrand = (brand) => {
-    router.push(`/brand/${brand.id}`)
+    router.push(`product?brand=${brand.name}`)
     showResults.value = false
     search.value = ''
   }

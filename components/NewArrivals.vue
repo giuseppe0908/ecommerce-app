@@ -34,7 +34,7 @@ const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
     <div class="img h-[40vh] w-full relative  md:h-[55vh]">
             <img class="w-full h-full bg" :src="nuoviArriviImg" alt="">
             <div class="absolute top-8 md:top-12">
-                <Button name="NUOVI ARRIVI" bgColor="white" :textColor="productStore.colorPrimary"  to="/NewArrivi" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight" marginLeft="29px" />
+                <Button name="NUOVI ARRIVI" bgColor="white" :textColor="productStore.colorPrimary"  to="product?NewArrivals=true" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight" marginLeft="29px" />
             </div>
     </div>
 

@@ -15,42 +15,42 @@ import logoConverse from '../assets/img/logo/logoConverse.png';
     const brandLogos = [
         {
             name: 'Nike',
-            url: 'brand/nike',
+            url: '/product?brand=nike',
             src: logoNike,
         },
         {
             name: 'Adidas',
-            url: 'brand/adidas',
+            url: '/product?brand=adidas',
             src: logoAdidas,
         },
         {
             name: 'Calvin Klein',
-            url: 'brand/calvin-klein',
+            url: '/product?brand=calvin-klein',
             src: logoCk,
         },
         {
             name: 'Jordan',
-            url: 'brand/jordan',
+            url: '/product?brand=jordan',
             src: logoJordan,
         },
         {
             name: 'Chanel',
-            url: 'brand/chanel',
+            url: '/product?brand=chanel',
             src: logoChanel,
         },
         {
             name: 'Starbucks',
-            url: 'brand/starbucks',
+            url: '/product?brand=starbucks',
             src: logoStarbucks,
         },
         {
             name: 'Puma',
-            url: 'brand/puma',
+            url: '/product?brand=puma',
             src: logoPuma,
         },
         {
             name: 'Converse',
-            url: 'brand/converse',
+            url: '/product?brand=converse',
             src: logoConverse,
         },
     ]
@@ -87,7 +87,6 @@ import logoConverse from '../assets/img/logo/logoConverse.png';
                     </NuxtLink>  
 
                 </div>
-                <!-- <div class="right text-9xl">></div> -->
             </div>
         </div>
     </section>
