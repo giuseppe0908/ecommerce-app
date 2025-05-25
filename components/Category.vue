@@ -42,7 +42,7 @@ isLoading.value = false;
     display: none; /* Chrome, Safari, Opera */
 }
 .Category{
-    margin-top: 30px;
+    margin-top: 100px;
     padding-bottom: 57px;
     padding-left: 10px;
     /* margin: 0 auto; */

@@ -55,7 +55,7 @@ const handleCardClick = (event) => {
 
 <template>
   <nuxtLink :to="'/product/'+id" class="no-underline" @click="handleCardClick">
-    <div class="card relative min-w-[150px] min-h-[193px] flex flex-col cursor-pointer">
+    <div class="card relative w-[162px] min-h-[193px] flex flex-col cursor-pointer">
         <div class="btnLike absolute right-2 top-2 text-gray-500 cursor-pointer" @click="toggleWishlist">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-black border-2 border-black rounded-full p-1" 
                :style="{ color: colorPrimary }" 

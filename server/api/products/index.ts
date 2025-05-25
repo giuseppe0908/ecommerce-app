@@ -20,7 +20,8 @@ export default defineEventHandler(async (event) => {
     ...(query.brand && !isNaN(parseInt(query.brand as string, 10)) && { brandId: parseInt(query.brand as string, 10) }),
     ...(query.gender && !isNaN(parseInt(query.gender as string, 10)) && { genderId: parseInt(query.gender as string, 10) }),
     ...(query.newArrivals === 'true' && { newArrival: true }),
-    ...(query.promo && !isNaN(parseInt(query.promo as string, 10)) && { promoId: parseInt(query.promo as string, 10) }),
+    ...(query.promo  === 'true' && { promo: true }),
+    ...(query.plus  === 'true' && { plus: true }),
     ...(Object.keys(priceFilter).length > 0 && { price: priceFilter }),
   };
   

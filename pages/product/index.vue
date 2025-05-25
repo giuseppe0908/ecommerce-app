@@ -314,6 +314,8 @@
     const qPriceMin = route.query.priceMin;
     const qPriceMax = route.query.priceMax;
     const qNewArrivals = route.query.newArrivals;
+    const qpromo = route.query.promo;
+    const qplus = route.query.plus;
     
     if (qPriceMin && !isNaN(parseFloat(qPriceMin))) {
       priceMin.value = parseFloat(qPriceMin);
@@ -338,6 +340,20 @@
       filters.value.newArrivals = 'true';
     } else {
       filters.value.newArrivals = '';
+    }
+
+     // Aggiorna il filtro promoi in base ai parametri dell'URL
+     if (qpromo === 'true') {
+      filters.value.promo = 'true';
+    } else {
+      filters.value.promo = '';
+    }
+
+     // Aggiorna il filtro plus in base ai parametri dell'URL
+     if (qplus === 'true') {
+      filters.value.plus = 'true';  
+     }else {
+      filters.value.plus = '';
     }
 
     // Memorizza i parametri di filtro correnti per evitare chiamate API non necessarie
@@ -392,6 +408,12 @@
             : null,
           filters.value.newArrivals
             ? { key: 'newArrivals', label: 'Nuovi Arrivi' }
+            : null,
+          filters.value.promo
+           ? { key: 'promo', label: 'Promo' }
+            : null,
+          filters.value.plus
+           ? { key: 'plus', label: 'Spedizione Plus' }
             : null,
         ];
         return active.filter(filter => filter !== null);
@@ -640,7 +662,6 @@
       fetchProducts();
     });
 </script>
-
 <style scoped>
   /* Stili per il filtro prezzo */
   .slider {

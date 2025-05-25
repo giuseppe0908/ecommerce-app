@@ -1,7 +1,7 @@
 <template>
-    <div class="jumbo relative bg-no-repeat w-full h-[320px] md:h-[700px]">
+    <div class="jumbo relative bg-no-repeat w-full h-[320px] md:h-[676px]">
         <div class="image-container w-full h-full">
-            <img class="w-full h-full" src="../assets/img/jumbo.png" alt="jumbo">
+            <img class="w-full h-full" src="../assets/img/jumbo-nonradius.png" alt="jumbo">
         </div>
         <div class="centrato absolute ">    
             <div class="">
@@ -14,9 +14,17 @@
                 <Button name="BAMBINO" :bgColor="colorPrimary" textColor="white"  to="product?gender=bambini" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight" marginLeft="25px"/>
             </div>
         </div>
-        <div class="centrato absolute left-48 title text-[20px] md:w-[50%]" >
+        <!-- <div class="centrato absolute left-48 title text-[20px] md:w-[50%]" >
             <h1>Tutto in un unico posto per uno shopping 
                 <span class="text-black font-bold">facile e veloce!</span>
+            </h1>
+        </div> -->
+        <div class="centrato absolute left-48 title text-[20px] md:w-[50%]">
+            <h1 class="font-bold text-4xl leading-normal title-stroke" :style="{ color: colorPrimary }">
+                TUTTO IN UN<br />
+            <span class="text-7xl"> UNICO POSTO<br /></span>
+                PER UNO SHOPPING<br />
+            <span class="text-black font-bold">FACILE E VELOCE!</span>                
             </h1>
         </div>
     </div>
@@ -52,6 +60,7 @@ import Button from './Button.vue'
     /* height: 39vh; */
     /* width: 100%; */
     overflow: hidden; /* Assicura che l'immagine non fuoriesca dal contenitore */
+    border-bottom-right-radius: 18% 36%; 
 }
 
  .image-container {
@@ -72,19 +81,6 @@ import Button from './Button.vue'
   z-index: -1;
 }
 
-/* Media query per dispositivi più piccoli */
-@media (max-width: 768px) {
-    .image-container {
-        border-bottom-right-radius: 50px; /* Stondatura più piccola per dispositivi mobili */
-    }
-}
-
-/* Media query per dispositivi ancora più piccoli */
-@media (max-width: 480px) {
-    .image-container {
-        border-bottom-right-radius: 30px; /* Stondatura ancora più piccola */
-    }
-}
 
 .centrato{
     top: 50%;
@@ -107,6 +103,7 @@ img{
     /* border-bottom-right-radius: 110px; */
     /* border-bottom-right-radius: 50% 20%; */
     object-fit: cover;
+    background-position: center;
 }
 
 /* .title{
@@ -115,4 +112,10 @@ img{
     letter-spacing: 13px;
     text-transform: uppercase;
 } */
+.title-stroke {
+    -webkit-text-stroke: 2px ; /* Per browser WebKit (Chrome, Safari) */
+    text-stroke: 2px ; /* Standard */
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
 </style>

@@ -46,7 +46,7 @@
 import { ref } from 'vue';
 import { useFetch } from 'nuxt/app';
 import Card from '../components/Card.vue';
-import SingleProduct from '../components/SingleProduct.vue';
+import SingleProduct from '../components/Product/SingleProduct.vue';
 import { useAuthStore } from '~/stores/authStore'
 
 definePageMeta({

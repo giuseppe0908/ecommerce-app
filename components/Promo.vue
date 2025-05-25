@@ -7,7 +7,7 @@ const props = defineProps(['colorPrimary']);
 
 <template>
     <section class="Promo h-[50vh] md:h-[100vh] bg-white relative overflow-hidden">
-        <div class="imgPromo h-[70%] w-[85%] md:w-[70%] centrato absolute transition-all duration-300 hover:shadow-lg">
+        <div class="imgPromo h-[70%] w-[85%] md:w-[70%] centrato absolute transition-all duration-300 hover:shadow-lg rounded-tr-full rounded-br-full">
             <div class="centrato absolute"
                 :class="{
                     'md:right-[-148px] md:translate-x-1/2 md:w-[227px]': screenWidth >= 768,
@@ -18,7 +18,7 @@ const props = defineProps(['colorPrimary']);
                     name="PROMO" 
                     :bgColor="colorPrimary" 
                     textColor="white"  
-                    to="/Promo" 
+                    to="product?promo=true" 
                     :applyNegativeMargin="true" 
                     :width="buttonWidth" 
                     :height="buttonHeight" 
@@ -33,13 +33,9 @@ const props = defineProps(['colorPrimary']);
 <style scoped>
 .imgPromo{
     background-image: url("../assets/img/promo.png");
-    background-size: cover; /* Adatta l'immagine all'elemento */
-    background-position: center; /* Centra l'immagine */
+    background-size: cover; 
+    background-position: center; 
     transition: transform 0.3s ease;
-}
-
-.imgPromo:hover {
-    transform: translateY(-50%) scale(1.02);
 }
 
 .centrato{
@@ -48,16 +44,14 @@ const props = defineProps(['colorPrimary']);
 }
 
 @media (max-width: 769px) {
-    .imgPromo {
+    /* .imgPromo {
         border-top-right-radius: 120px;
         border-bottom-right-radius: 120px;
-    }
+    } */
 }
 
 @media (min-width: 770px) {
     .imgPromo {
-        border-top-right-radius: 200px;
-        border-bottom-right-radius: 200px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     }
 }

@@ -102,7 +102,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import Button from '../components/Button.vue';
+import Button from '../Button.vue';
 
 const emit = defineEmits(['close']); // Definiamo l'emit
 const route = useRoute();
