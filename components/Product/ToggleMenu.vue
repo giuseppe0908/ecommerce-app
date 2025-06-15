@@ -47,7 +47,7 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import Button from './Button.vue'
+import Button from '../Button.vue'
 import { useDebounced } from '@/composables/useDebounced'
 
 const props = defineProps({
