@@ -69,15 +69,15 @@ import logoConverse from '../assets/img/logo/logoConverse.png';
 </script>
 <template>
     <section class="Brand w-full" >
-        <div class="img-container h-[40vh] w-full relative  md:h-[55vh]">
+        <div class="img-container h-[40vh] w-full relative  md:h-[51vh]">
             <img class="w-full h-full " :src="brand" alt="">
             <div class="absolute top-8 md:top-12">
                 <Button name="BRAND" textColor="white" :bgColor="colorPrimary"  to="/Uomo" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight"/>
             </div>
         </div>
-        <div class="loghi h-[40vh] md:h-[55vh]">
+        <div class="loghi h-[40vh] md:h-[51vh]">
             <div class="carousel flex items-center h-full w-[95%] mx-auto justify-between overflow-x-scroll md:overflow-x-hidden">
-                <!-- <div class="left text-9xl"> < </div> -->
+                <div class="arrow left text-6xl pt-[30px]"> < </div>
                 <div class="logo mx-3" v-for="(logo,index) in brandLogos" :key="index">
                     <NuxtLink :to="logo.url" class="no-underline w-full">
                         <div class="flex flex-col">
@@ -85,8 +85,8 @@ import logoConverse from '../assets/img/logo/logoConverse.png';
                             <div class="text-center uppercase text-white bold">{{logo.name}}</div>
                         </div>
                     </NuxtLink>  
-
                 </div>
+                <div class="arrow right text-6xl pt-[30px]"> > </div>
             </div>
         </div>
     </section>

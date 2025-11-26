@@ -1,739 +1,1481 @@
 <template>
-    <div class="w-[95%]">
-      <!-- TOGGLE MENU -->
-      <div v-if="open" class="menu bg-[#5D758B] min-h-screen min-w-[95vw] text-white">
-        <div class="flex justify-between items-center mb-6">
-          <div class="flex gap-6 text-black">
-            <p class="font-semibold text-black border-b-2 border-white">DONNA</p>
-            <p class="font-semibold text-gray-400 hover:text-black">UOMO</p>
-            <p class="font-semibold text-gray-400 hover:text-black">BAMBINI</p>
-          </div>
-          <p @click="toggleMenu" class="text-gray-400 text-xl font-bold hover:text-white cursor-pointer">X</p>
+  <div class="product-catalog-container">
+    <!-- ============================================
+         MOBILE NAVIGATION MENU
+         Full-screen overlay menu for mobile devices
+         ============================================ -->
+    <transition name="fade">
+      <div
+        v-if="isMenuOpen"
+        class="mobile-menu"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mobile-menu-title"
+      >
+        <!-- Menu Header with Gender Tabs -->
+        <div class="mobile-menu__header">
+          <nav class="mobile-menu__tabs" role="tablist" aria-label="Categorie per genere">
+            <button
+              v-for="tab in GENDER_TABS"
+              :key="tab.id"
+              :class="[
+                'mobile-menu__tab',
+                { 'mobile-menu__tab--active': activeGenderTab === tab.id }
+              ]"
+              :aria-selected="activeGenderTab === tab.id"
+              role="tab"
+              @click="setActiveGenderTab(tab.id)"
+            >
+              {{ tab.label }}
+            </button>
+          </nav>
+
+          <!-- Close Button -->
+          <button
+            class="mobile-menu__close"
+            aria-label="Chiudi menu"
+            @click="toggleMobileMenu"
+          >
+            <span aria-hidden="true">×</span>
+          </button>
         </div>
-  
-        <div class="input mb-6 w-full">
+
+        <!-- Search Input -->
+        <div class="mobile-menu__search">
           <input
-            type="text"
-            placeholder="RICERCA"
-            class="search-input"
             v-model="searchQuery"
-            @input="debouncedFetchProducts"
+            type="search"
+            :placeholder="SEARCH_PLACEHOLDER"
+            class="search-input"
+            aria-label="Cerca prodotti"
+            @input="handleSearchInput"
           />
         </div>
-  
-        <div class="grid grid-cols-2 pt-5 gap-8 w-[95%] containerGrid">
-          <div
-            v-for="(category, index) in categories"
-            :key="index"
-            class="category-card"
-          >
-            <div class="square h-[140px] w-[135px] relative">
-              <img 
-                class="w-full h-full rounded-xl lazyload" 
-                :data-src="category.image" 
-                :alt="category.name"
-              >
-              <div class="absolute bottom-[-20px] left-0 w-full">
-                <Button 
-                  :name="category.name" 
-                  bgColor="white" 
-                  :textColor="colorPrimary" 
-                  :to="`/product?category=${category.name.toLowerCase()}`"
-                  width="100%" 
-                  :height="buttonHeight" 
-                /> 
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-  
-      <div v-if="!open" class="menu-toggle w-[95%] mx-auto my-0  flex gap-6 text-black items-center">
-        <div
-          @click="toggleMenu"
-          class="md:hidden inline-flex items-center justify-center pr-2 rounded-md text-gray-800 hover:text-gray-900 cursor-pointer"
-        >
-          <svg
-            class="h-6 w-6"
-            :style="{ color: colorPrimary }"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </div>
-        <div class="buttons flex gap-4">
-          <Button name="DONNA" :bgColor="colorPrimary" textColor="white" :to="getGenderQuery('donna')" width="83px" height="30px" fontSize="12px"/>
-          <Button name="UOMO" bgColor="white" :textColor="colorPrimary" :to="getGenderQuery('uomo')" width="83px" height="30px" fontSize="12px"/>
-          <Button name="BAMBINO" :bgColor="colorPrimary" textColor="white" :to="getGenderQuery('bambini')" width="83px" height="30px" fontSize="12px" />
-          <Button 
-            name="NUOVI ARRIVI" 
-            :bgColor="route.query.newArrivals === 'true' ? colorPrimary : 'white'" 
-            :textColor="route.query.newArrivals === 'true' ? 'white' : colorPrimary" 
-            @click="toggleNewArrivals" 
-            width="110px" 
-            height="30px" 
-            fontSize="12px" 
-          />
-        </div>
-      </div>
-  
-      <div class="navBar hidden sm:flex w-[95%] mx-auto my-0">
-        <div class="flex gap-4 hover:gap-6">
-          <p
+
+        <!-- Category Grid -->
+        <div class="mobile-menu__categories" role="list">
+          <article
             v-for="category in categories"
             :key="category.id"
-            @click="setCategory(category)"
-            class="category-link hover:scale-125 cursor-pointer"
-            :style="{color: colorPrimary}" 
+            class="category-card"
+            role="listitem"
+          >
+            <div class="category-card__image-wrapper">
+              <img
+                :data-src="category.image"
+                :alt="`Categoria ${category.name}`"
+                class="category-card__image lazyload"
+                loading="lazy"
+              />
+              <div class="category-card__button-wrapper">
+                <Button
+                  :name="category.name"
+                  bg-color="white"
+                  :text-color="colorPrimary"
+                  :to="buildCategoryUrl(category.name)"
+                  width="100%"
+                  :height="buttonHeight"
+                  :aria-label="`Vai alla categoria ${category.name}`"
+                />
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </transition>
+
+    <!-- ============================================
+         DESKTOP HEADER NAVIGATION
+         Horizontal navigation bar for larger screens
+         ============================================ -->
+    <nav
+      v-if="!isMenuOpen"
+      class="desktop-header"
+      aria-label="Navigazione principale"
+    >
+      <!-- Mobile Menu Toggle Button -->
+      <button
+        class="desktop-header__hamburger"
+        aria-label="Apri menu"
+        aria-expanded="false"
+        @click="toggleMobileMenu"
+      >
+        <svg
+          class="hamburger-icon"
+          :style="{ color: colorPrimary }"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 6h16M4 12h16M4 18h16"
+          />
+        </svg>
+      </button>
+
+      <!-- Quick Action Buttons -->
+      <div class="desktop-header__actions" role="group" aria-label="Filtri rapidi">
+        <Button
+          v-for="action in quickActions"
+          :key="action.id"
+          :name="action.label"
+          :bg-color="action.isActive ? colorPrimary : 'white'"
+          :text-color="action.isActive ? 'white' : colorPrimary"
+          :to="action.to"
+          :width="action.width"
+          height="30px"
+          font-size="12px"
+          @click="action.onClick"
+        />
+      </div>
+    </nav>
+
+    <!-- ============================================
+         DESKTOP CATEGORY NAVIGATION
+         Visible only on larger screens (≥640px)
+         ============================================ -->
+    <nav
+      class="category-navigation"
+      aria-label="Categorie prodotto"
+    >
+      <ul class="category-navigation__list">
+        <li
+          v-for="category in categories"
+          :key="category.id"
+          class="category-navigation__item"
+        >
+          <button
+            class="category-navigation__link"
+            :style="{ color: colorPrimary }"
+            :aria-label="`Filtra per categoria ${category.name}`"
+            @click="applyFilter('category', category)"
           >
             {{ category.name }}
-          </p>
-        </div>
-      </div>
-  
-      <div v-if="activeFilters.length" class="active-filters flex items-center gap-4 w-[95%] mx-auto my-0">
-        <div class="flex flex-wrap gap-2">
-          <p
-            v-for="(filter, index) in activeFilters"
-            :key="index"
+          </button>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- ============================================
+         ACTIVE FILTERS BREADCRUMB
+         Shows currently applied filters
+         ============================================ -->
+    <div
+      v-if="activeFilters.length > 0"
+      class="active-filters"
+      role="navigation"
+      aria-label="Filtri attivi"
+    >
+      <ul class="active-filters__list">
+        <li
+          v-for="filter in activeFilters"
+          :key="filter.key"
+          class="active-filters__item"
+        >
+          <button
+            class="active-filters__remove"
+            :aria-label="`Rimuovi filtro ${filter.label}`"
             @click="removeFilter(filter.key)"
-            class="filter-item cursor-pointer"
           >
-            {{ filter.label }} >
-          </p>
+            {{ filter.label }}
+            <span aria-hidden="true"> ›</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <!-- ============================================
+         MAIN CONTENT AREA
+         Filters sidebar + Product grid
+         ============================================ -->
+    <div v-if="!isMenuOpen" class="main-content">
+      <!-- ============================================
+           LEFT SIDEBAR - FILTERS (Desktop only)
+           ============================================ -->
+      <aside class="filters-sidebar" aria-label="Filtri prodotti">
+        <div class="filters-sidebar__section">
+          <button
+            class="filter-toggle-button"
+            :style="getFilterButtonStyles(isFilterPanelOpen)"
+            :aria-expanded="isFilterPanelOpen"
+            aria-controls="filter-panel"
+            @click="toggleFilterPanel"
+          >
+            {{ FILTER_LABEL }}
+          </button>
+
+          <!-- Filter Options List -->
+          <transition name="slide-down">
+            <ul
+              v-if="isFilterPanelOpen"
+              id="filter-panel"
+              class="filter-options-list"
+              role="list"
+            >
+              <li
+                v-for="option in FILTER_OPTIONS"
+                :key="option"
+                class="filter-options-list__item"
+              >
+                {{ option }}
+              </li>
+            </ul>
+          </transition>
         </div>
-      </div>
-  
-      <div v-if="!open" class="w-[95%] mx-auto my-0  gap-10 pl-2 md:flex">
-        <div class="left">
-          <div class="filtri sottocategory">
-            <div 
-              class="button items-center w-[74px] h-[31px] rounded-3xl flex justify-center cursor-pointer hover:scale-125"
-              @click="filterAdd = !filterAdd"
-              :style="{ 
-                backgroundColor: openfilters ? 'white' : colorPrimary, 
-                color: openfilters ? colorPrimary : 'white', 
-                border: openfilters ? `1px solid ${colorPrimary}` : 'none'
-              }"
-            > 
-              <p>FILTRI</p>
-            </div>
-            <ul v-if="filterAdd" class="list-none pl-0">
-              <li>pippo</li>
-              <li>pluto</li>
-              <li>tipo</li>
-              <li>olindo</li>
-              <li>nettuno</li>
-              <li>ulisse</li>
-              <li>nessuno</li>
-            </ul>  
-          </div>  
-        </div>
-  
-        <div class="right">
-          <div class="flex relative">
-            <div 
-              class="button items-center w-[74px] h-[31px] rounded-3xl flex justify-center cursor-pointer hover:scale-125"
-               @click="openfilters = !openfilters"
-              :style="{ 
-                backgroundColor: openfilters ? 'white' : colorPrimary, 
-                color: openfilters ? colorPrimary : 'white', 
-                border: openfilters ? `1px solid ${colorPrimary}` : 'none'
-              }"
-            > 
-              <p>FILTRI</p>
-            </div>
-  
+      </aside>
+
+      <!-- ============================================
+           RIGHT CONTENT AREA - Advanced Filters + Products
+           ============================================ -->
+      <main class="content-area">
+        <!-- Advanced Filters Section -->
+        <section class="advanced-filters" aria-label="Filtri avanzati">
+          <div class="advanced-filters__wrapper">
+            <button
+              class="filter-toggle-button"
+              :style="getFilterButtonStyles(isAdvancedFiltersOpen)"
+              :aria-expanded="isAdvancedFiltersOpen"
+              aria-controls="advanced-filters-panel"
+              @click="toggleAdvancedFilters"
+            >
+              {{ FILTER_LABEL }}
+            </button>
+
+            <!-- Advanced Filter Panel with Slide Animation -->
             <transition name="slide-in-right">
-              <div v-if="openfilters" class="filter-container">
-                <div class="flex gap-2">
-                  <div 
-                    v-for="(filter, index) in filtri"
-                    :key="index"
-                    class="button items-center w-[74px] h-[31px] rounded-3xl flex justify-center cursor-pointer hover:scale-125"
-                    :style="{ 
-                      backgroundColor: filter.selected ? colorPrimary : 'white', 
-                      color: filter.selected ? 'white' : colorPrimary, 
-                      border: !filter.selected ? `1px solid ${colorPrimary}` : 'none'
-                    }"
-                    @click="selectFilter(filter)"
-                  > 
-                    <p>{{filter.name}}</p>
-                  </div>
+              <div
+                v-if="isAdvancedFiltersOpen"
+                id="advanced-filters-panel"
+                class="filter-panel"
+              >
+                <!-- Filter Type Buttons -->
+                <div class="filter-panel__types" role="group" aria-label="Tipi di filtro">
+                  <button
+                    v-for="filterType in availableFilterTypes"
+                    :key="filterType.id"
+                    class="filter-type-button"
+                    :style="getFilterButtonStyles(filterType.selected)"
+                    :aria-pressed="filterType.selected"
+                    @click="selectFilterType(filterType)"
+                  >
+                    {{ filterType.name }}
+                  </button>
                 </div>
-                
-                <!-- Filtro per prezzo migliorato -->
-                <div v-if="isPriceFilterSelected" class="price-filter-container mt-4 bg-white p-4 rounded-xl shadow-lg">
-                  <h3 class="font-semibold mb-2" :style="{ color: colorPrimary }">Prezzo</h3>
-                  
-                  <!-- Range display -->
-                  <div class="flex justify-between mb-2">
-                    <span>€{{ priceRange.min }}</span>
-                    <span>€{{ priceRange.max }}</span>
-                  </div>
-                  
-                  <!-- Double slider -->
-                  <div class="relative mb-6 pt-5">
-                    <div class="slider-track h-1 absolute w-full bg-gray-300 rounded"></div>
-                    <div 
-                      class="slider-range h-1 absolute bg-blue-500 rounded" 
-                      :style="{ 
-                        left: `${((priceRange.min - minPrice) / (maxPrice - minPrice)) * 100}%`, 
-                        width: `${((priceRange.max - priceRange.min) / (maxPrice - minPrice)) * 100}%`,
-                        backgroundColor: colorPrimary
-                      }"
-                    ></div>
-                    
-                    <input 
-                      type="range" 
-                      class="slider absolute w-full" 
-                      :min="minPrice" 
-                      :max="maxPrice" 
-                      v-model.number="priceRange.min" 
-                      @input="updatePriceFilter"
-                    />
-                    
-                    <input 
-                      type="range" 
-                      class="slider absolute w-full" 
-                      :min="minPrice" 
-                      :max="maxPrice" 
-                      v-model.number="priceRange.max" 
-                      @input="updatePriceFilter"
-                    />
-                  </div>
-                  
-                  <!-- Input fields -->
-                  <div class="flex items-center space-x-2">
-                    <input 
-                      type="number" 
-                      v-model.number="priceRange.min" 
-                      @change="updatePriceFilter"
-                      class="w-1/2 p-2 border rounded text-center"
-                      :min="minPrice"
-                      :max="priceRange.max - 1"
-                    />
-                    <span>-</span>
-                    <input 
-                      type="number" 
-                      v-model.number="priceRange.max" 
-                      @change="updatePriceFilter"
-                      class="w-1/2 p-2 border rounded text-center"
-                      :min="priceRange.min + 1"
-                      :max="maxPrice"
-                    />
-                  </div>
-                  
-                  <!-- Pulsanti di azione -->
-                  <div class="flex justify-between mt-4">
-                    <button 
-                      @click="resetPriceFilter" 
-                      class="px-3 py-1 border rounded hover:bg-gray-100"
-                    >
-                      Reset
-                    </button>
-                    <button 
-                      @click="applyPriceFilter" 
-                      class="px-3 py-1 rounded text-white"
-                      :style="{ backgroundColor: colorPrimary }"
-                    >
-                      Applica
-                    </button>
-                  </div>
-                </div>
+
+                <!-- Price Range Filter Component -->
+                <PriceRangeFilter
+                  v-if="isPriceFilterActive"
+                  :min-price="priceConstraints.min"
+                  :max-price="priceConstraints.max"
+                  :current-range="priceRange"
+                  :color-primary="colorPrimary"
+                  @update:range="updatePriceRange"
+                  @apply="applyPriceFilter"
+                  @reset="resetPriceFilter"
+                />
               </div>
             </transition>
           </div>
-  
-          <div class="productGrid grid grid-cols-2 pt-2 gap-8 w-[95%] containerGrid md:grid-cols-6">
-            <Card 
-              v-for="product in products" 
+        </section>
+
+        <!-- ============================================
+             PRODUCT GRID
+             Responsive grid with product cards
+             ============================================ -->
+        <section
+          class="product-grid"
+          aria-label="Catalogo prodotti"
+          :aria-busy="isLoading"
+        >
+          <!-- Loading State -->
+          <div v-if="isLoading" class="loading-state" aria-live="polite">
+            <div class="spinner" role="status">
+              <span class="sr-only">Caricamento prodotti...</span>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else-if="products.length === 0" class="empty-state">
+            <p class="empty-state__message">
+              {{ EMPTY_STATE_MESSAGE }}
+            </p>
+          </div>
+
+          <!-- Product Cards Grid -->
+          <div v-else class="product-grid__container">
+            <Card
+              v-for="product in products"
               :key="product.id"
               :id="product.id"
               :name="product.name"
               :img="product.photo"
-              :codeItem="product.codeItem"
+              :code-item="product.codeItem"
               :promo="product.promo"
               :plus="product.plus"
               :price="product.price"
               :category="product.category"
               :brand="product.brand"
-              :colorPrimary="colorPrimary"
-              colorSecondary="#00192F"
-            /> 
+              :color-primary="colorPrimary"
+              color-secondary="#00192F"
+            />
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
+  </div>
 </template>
-  
+
 <script setup>
-  import { useRoute, useRouter } from 'vue-router';
-  import { ref, computed, onMounted, watch } from 'vue';
-  
-  // Route & Router
-  const route = useRoute();
-  const router = useRouter();
-  
-  // Composables
-  const { screenWidth, buttonHeight, colorPrimary } = useResponsiveButton();
-  
-  const { data: categories } = await useFetch('/api/categories');
-  const { data: genders } = await useFetch('/api/genders');
-  const { data: brands } = await useFetch('/api/brands');
-  // Stato prodotti e ricerca
-  const products = ref([]);
-  const prezzo = ref(false);
-  const searchQuery = ref('');
-  const priceMin = ref(null);
-  const priceMax = ref(null);
-  const filters = ref({
-    category: '',
-    brand: '',
-    gender: '',
-    priceMin: '',
-    priceMax: '',
-    promo: '',
-    plus: '',
-    newArrivals: '',
-  });
-  const lastQueryString = ref('');
+import { useRoute, useRouter } from 'vue-router';
+import { ref, computed, onMounted, watch } from 'vue';
 
-  
-  // Fetch prodotti
-  const fetchProducts = async () => {
-    // Aggiorna i filtri in base ai parametri dell'URL
-    setFilter(categories, 'category');
-    setFilter(brands, 'brand');
-    setFilter(genders, 'gender');
-    
-    // Aggiorna i valori di prezzo in base ai parametri dell'URL
-    const qPriceMin = route.query.priceMin;
-    const qPriceMax = route.query.priceMax;
-    const qNewArrivals = route.query.newArrivals;
-    const qpromo = route.query.promo;
-    const qplus = route.query.plus;
-    
-    if (qPriceMin && !isNaN(parseFloat(qPriceMin))) {
-      priceMin.value = parseFloat(qPriceMin);
-      filters.value.priceMin = qPriceMin;
-    } else if (qPriceMin === undefined) {
-      // Reset quando il parametro viene rimosso
-      priceMin.value = null;
-      filters.value.priceMin = '';
-    }
-    
-    if (qPriceMax && !isNaN(parseFloat(qPriceMax))) {
-      priceMax.value = parseFloat(qPriceMax);
-      filters.value.priceMax = qPriceMax;
-    } else if (qPriceMax === undefined) {
-      // Reset quando il parametro viene rimosso
-      priceMax.value = null;
-      filters.value.priceMax = '';
-    }
-    
-    // Aggiorna il filtro nuovi arrivi in base ai parametri dell'URL
-    if (qNewArrivals === 'true') {
-      filters.value.newArrivals = 'true';
-    } else {
-      filters.value.newArrivals = '';
-    }
+/**
+ * ============================================
+ * CONSTANTS & CONFIGURATION
+ * ============================================
+ */
+const GENDER_TABS = [
+  { id: 'donna', label: 'DONNA' },
+  { id: 'uomo', label: 'UOMO' },
+  { id: 'bambini', label: 'BAMBINI' }
+];
 
-     // Aggiorna il filtro promoi in base ai parametri dell'URL
-     if (qpromo === 'true') {
-      filters.value.promo = 'true';
-    } else {
-      filters.value.promo = '';
-    }
+const FILTER_OPTIONS = ['pippo', 'pluto', 'tipo', 'olindo', 'nettuno', 'ulisse', 'nessuno'];
 
-     // Aggiorna il filtro plus in base ai parametri dell'URL
-     if (qplus === 'true') {
-      filters.value.plus = 'true';  
-     }else {
-      filters.value.plus = '';
-    }
+const FILTER_LABEL = 'FILTRI';
+const SEARCH_PLACEHOLDER = 'RICERCA';
+const EMPTY_STATE_MESSAGE = 'Nessun prodotto trovato. Prova a modificare i filtri.';
 
-    // Memorizza i parametri di filtro correnti per evitare chiamate API non necessarie
-    const queryString = new URLSearchParams(filters.value).toString();
+const DEBOUNCE_DELAY_MS = 500;
+const PRICE_STEP = 1;
+
+/**
+ * ============================================
+ * COMPOSABLES & EXTERNAL DEPENDENCIES
+ * ============================================
+ */
+const route = useRoute();
+const router = useRouter();
+
+// Custom composable for responsive UI values
+const { screenWidth, buttonHeight, colorPrimary } = useResponsiveButton();
+
+// API data fetching using Nuxt's useFetch
+const { data: categories } = await useFetch('/api/categories');
+const { data: genders } = await useFetch('/api/genders');
+const { data: brands } = await useFetch('/api/brands');
+
+/**
+ * ============================================
+ * REACTIVE STATE MANAGEMENT
+ * ============================================
+ */
+
+// UI State
+const isMenuOpen = ref(false);
+const isFilterPanelOpen = ref(false);
+const isAdvancedFiltersOpen = ref(false);
+const isLoading = ref(false);
+const activeGenderTab = ref('donna');
+
+// Product Data
+const products = ref([]);
+const searchQuery = ref('');
+
+// Filter State
+const filters = ref({
+  category: '',
+  brand: '',
+  gender: '',
+  priceMin: '',
+  priceMax: '',
+  promo: '',
+  plus: '',
+  newArrivals: ''
+});
+
+// Price Filter State
+const priceConstraints = ref({
+  min: 0,
+  max: 1000
+});
+
+const priceRange = ref({
+  min: priceConstraints.value.min,
+  max: priceConstraints.value.max
+});
+
+// Available filter types with selection state
+const availableFilterTypes = ref([
+  { id: 'color', name: 'Colore', value: '', selected: false },
+  { id: 'size', name: 'Taglia', value: '', selected: false },
+  { id: 'price', name: 'Prezzo', value: '', selected: false }
+]);
+
+// Request deduplication
+const lastQueryString = ref('');
+
+/**
+ * ============================================
+ * COMPUTED PROPERTIES
+ * ============================================
+ */
+
+/**
+ * Determines if price filter is currently active
+ * @returns {boolean} True if price filter type is selected
+ */
+const isPriceFilterActive = computed(() => {
+  return availableFilterTypes.value.find(f => f.id === 'price')?.selected || false;
+});
+
+/**
+ * Generates array of active filters with labels for UI display
+ * @returns {Array<{key: string, label: string}>} Array of active filter objects
+ */
+const activeFilters = computed(() => {
+  const filterMap = [
+    {
+      condition: filters.value.gender,
+      key: 'gender',
+      getLabel: () => genders.value.find(g => g.id === parseInt(filters.value.gender, 10))?.name || ''
+    },
+    {
+      condition: filters.value.category,
+      key: 'category',
+      getLabel: () => categories.value.find(c => c.id === parseInt(filters.value.category, 10))?.name || ''
+    },
+    {
+      condition: filters.value.brand,
+      key: 'brand',
+      getLabel: () => brands.value.find(b => b.id === parseInt(filters.value.brand, 10))?.name || ''
+    },
+    {
+      condition: filters.value.priceMin,
+      key: 'priceMin',
+      getLabel: () => `Prezzo Min: €${filters.value.priceMin}`
+    },
+    {
+      condition: filters.value.priceMax,
+      key: 'priceMax',
+      getLabel: () => `Prezzo Max: €${filters.value.priceMax}`
+    },
+    {
+      condition: filters.value.newArrivals,
+      key: 'newArrivals',
+      getLabel: () => 'Nuovi Arrivi'
+    },
+    {
+      condition: filters.value.promo,
+      key: 'promo',
+      getLabel: () => 'Promo'
+    },
+    {
+      condition: filters.value.plus,
+      key: 'plus',
+      getLabel: () => 'Spedizione Plus'
+    }
+  ];
+
+  return filterMap
+    .filter(filter => filter.condition)
+    .map(filter => ({ key: filter.key, label: filter.getLabel() }));
+});
+
+/**
+ * Generates quick action buttons configuration for desktop header
+ * @returns {Array<Object>} Array of button configuration objects
+ */
+const quickActions = computed(() => {
+  return [
+    {
+      id: 'donna',
+      label: 'DONNA',
+      isActive: route.query.gender === 'donna',
+      to: buildGenderUrl('donna'),
+      width: '83px'
+    },
+    {
+      id: 'uomo',
+      label: 'UOMO',
+      isActive: route.query.gender === 'uomo',
+      to: buildGenderUrl('uomo'),
+      width: '83px'
+    },
+    {
+      id: 'bambini',
+      label: 'BAMBINO',
+      isActive: route.query.gender === 'bambini',
+      to: buildGenderUrl('bambini'),
+      width: '83px'
+    },
+    {
+      id: 'newArrivals',
+      label: 'NUOVI ARRIVI',
+      isActive: route.query.newArrivals === 'true',
+      onClick: toggleNewArrivals,
+      width: '110px'
+    }
+  ];
+});
+
+/**
+ * ============================================
+ * API & DATA FETCHING
+ * ============================================
+ */
+
+/**
+ * Fetches products from API based on current filters
+ * Implements request deduplication to avoid unnecessary API calls
+ * @async
+ * @returns {Promise<void>}
+ */
+const fetchProducts = async () => {
+  try {
+    // Sync filters with URL query parameters
+    syncFiltersFromQuery();
+
+    // Build query string for API request
+    const queryString = new URLSearchParams(
+      Object.entries(filters.value).filter(([_, value]) => value !== '')
+    ).toString();
+
+    // Prevent duplicate requests
     if (queryString === lastQueryString.value) return;
     lastQueryString.value = queryString;
 
-    // Solo se ci sono parametri validi, fai la chiamata API
-    try {
-        const res = await fetch(`/api/products?${queryString}`);
-        if (!res.ok) {
-            console.error('Errore HTTP:', res.status, res.statusText);
-            throw new Error('Errore nella risposta del server');
-        }
-        const data = await res.json();
-        products.value = data || [];
-    } catch (err) {
-        console.error('Fetch fallito:', err.message);
-        products.value = [];
+    // Set loading state
+    isLoading.value = true;
+
+    // Fetch products from API
+    const response = await fetch(`/api/products?${queryString}`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    products.value = Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('[fetchProducts] Error:', error.message);
+    products.value = [];
+
+    // TODO: Implement user-facing error notification
+    // showErrorNotification('Errore nel caricamento dei prodotti');
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+/**
+ * Synchronizes local filter state with URL query parameters
+ * Updates filters for category, brand, gender, price, and feature flags
+ * @returns {void}
+ */
+const syncFiltersFromQuery = () => {
+  // Sync entity-based filters (category, brand, gender)
+  syncEntityFilter(categories, 'category');
+  syncEntityFilter(brands, 'brand');
+  syncEntityFilter(genders, 'gender');
+
+  // Sync price filters
+  syncPriceFilter('priceMin', priceConstraints.value.min);
+  syncPriceFilter('priceMax', priceConstraints.value.max);
+
+  // Sync boolean filters
+  syncBooleanFilter('newArrivals');
+  syncBooleanFilter('promo');
+  syncBooleanFilter('plus');
+};
+
+/**
+ * Syncs a single entity-based filter from query params
+ * @param {Ref<Array>} entityArray - Ref to array of entities (categories, brands, etc.)
+ * @param {string} paramName - Query parameter name
+ */
+const syncEntityFilter = (entityArray, paramName) => {
+  const queryValue = route.query[paramName];
+
+  if (queryValue && entityArray.value) {
+    const entity = entityArray.value.find(
+      item => item.name.toLowerCase() === queryValue.toLowerCase()
+    );
+    filters.value[paramName] = entity ? entity.id.toString() : '';
+  } else {
+    filters.value[paramName] = '';
+  }
+};
+
+/**
+ * Syncs a price filter from query params with validation
+ * @param {string} paramName - Query parameter name ('priceMin' or 'priceMax')
+ * @param {number} defaultValue - Default value if param is invalid
+ */
+const syncPriceFilter = (paramName, defaultValue) => {
+  const queryValue = route.query[paramName];
+
+  if (queryValue && !isNaN(parseFloat(queryValue))) {
+    const numValue = parseFloat(queryValue);
+    filters.value[paramName] = queryValue;
+    priceRange.value[paramName === 'priceMin' ? 'min' : 'max'] = numValue;
+  } else if (queryValue === undefined) {
+    filters.value[paramName] = '';
+    priceRange.value[paramName === 'priceMin' ? 'min' : 'max'] = defaultValue;
+  }
+};
+
+/**
+ * Syncs a boolean filter from query params
+ * @param {string} paramName - Query parameter name
+ */
+const syncBooleanFilter = (paramName) => {
+  filters.value[paramName] = route.query[paramName] === 'true' ? 'true' : '';
+};
+
+/**
+ * ============================================
+ * FILTER MANAGEMENT
+ * ============================================
+ */
+
+/**
+ * Applies a filter and updates the URL
+ * @param {string} filterType - Type of filter to apply (e.g., 'category', 'brand')
+ * @param {Object} value - Value object containing filter data
+ */
+const applyFilter = (filterType, value) => {
+  const newQuery = { ...route.query };
+
+  if (value && value.name) {
+    newQuery[filterType] = value.name.toLowerCase();
+  } else {
+    delete newQuery[filterType];
+  }
+
+  router.replace({ query: newQuery });
+};
+
+/**
+ * Removes a specific filter from the active filters
+ * @param {string} filterKey - Key of the filter to remove
+ */
+const removeFilter = (filterKey) => {
+  const newQuery = { ...route.query };
+  delete newQuery[filterKey];
+
+  // Reset local state for price filters
+  if (filterKey === 'priceMin') {
+    priceRange.value.min = priceConstraints.value.min;
+    filters.value.priceMin = '';
+  }
+
+  if (filterKey === 'priceMax') {
+    priceRange.value.max = priceConstraints.value.max;
+    filters.value.priceMax = '';
+  }
+
+  if (filterKey === 'newArrivals') {
+    filters.value.newArrivals = '';
+  }
+
+  router.replace({ query: newQuery });
+};
+
+/**
+ * Toggles the "New Arrivals" filter
+ */
+const toggleNewArrivals = () => {
+  const newQuery = { ...route.query };
+
+  if (newQuery.newArrivals === 'true') {
+    delete newQuery.newArrivals;
+    filters.value.newArrivals = '';
+  } else {
+    newQuery.newArrivals = 'true';
+    filters.value.newArrivals = 'true';
+  }
+
+  router.replace({ query: newQuery });
+};
+
+/**
+ * Selects a filter type (color, size, price) in advanced filters
+ * @param {Object} filterType - Filter type object to select
+ */
+const selectFilterType = (filterType) => {
+  // Deselect all filter types
+  availableFilterTypes.value.forEach(f => (f.selected = false));
+
+  // Select the clicked filter type
+  filterType.selected = true;
+};
+
+/**
+ * ============================================
+ * PRICE FILTER MANAGEMENT
+ * ============================================
+ */
+
+/**
+ * Updates price range constraints based on available products
+ * Calculates min/max prices from product data
+ */
+const updatePriceConstraints = () => {
+  if (!products.value || products.value.length === 0) return;
+
+  const prices = products.value.map(p => p.price).filter(price => !isNaN(price));
+
+  if (prices.length === 0) return;
+
+  const minProductPrice = Math.floor(Math.min(...prices));
+  const maxProductPrice = Math.ceil(Math.max(...prices));
+
+  priceConstraints.value.min = minProductPrice;
+  priceConstraints.value.max = maxProductPrice;
+
+  // Initialize range if not set
+  if (!priceRange.value.min || priceRange.value.min < minProductPrice) {
+    priceRange.value.min = minProductPrice;
+  }
+  if (!priceRange.value.max || priceRange.value.max > maxProductPrice) {
+    priceRange.value.max = maxProductPrice;
+  }
+};
+
+/**
+ * Updates the price range reactively during slider interaction
+ * @param {Object} newRange - New price range {min, max}
+ */
+const updatePriceRange = (newRange) => {
+  priceRange.value = { ...newRange };
+};
+
+/**
+ * Applies the current price range filter to the URL
+ * Triggers product refetch with new price constraints
+ */
+const applyPriceFilter = () => {
+  const newQuery = { ...route.query };
+
+  // Update local filters
+  filters.value.priceMin = priceRange.value.min.toString();
+  filters.value.priceMax = priceRange.value.max.toString();
+
+  // Add to URL only if different from default
+  if (priceRange.value.min !== priceConstraints.value.min) {
+    newQuery.priceMin = priceRange.value.min.toString();
+  } else {
+    delete newQuery.priceMin;
+    filters.value.priceMin = '';
+  }
+
+  if (priceRange.value.max !== priceConstraints.value.max) {
+    newQuery.priceMax = priceRange.value.max.toString();
+  } else {
+    delete newQuery.priceMax;
+    filters.value.priceMax = '';
+  }
+
+  router.replace({ query: newQuery });
+  isAdvancedFiltersOpen.value = false;
+};
+
+/**
+ * Resets price filter to default constraints
+ * Removes price parameters from URL
+ */
+const resetPriceFilter = () => {
+  priceRange.value.min = priceConstraints.value.min;
+  priceRange.value.max = priceConstraints.value.max;
+
+  const newQuery = { ...route.query };
+  delete newQuery.priceMin;
+  delete newQuery.priceMax;
+
+  filters.value.priceMin = '';
+  filters.value.priceMax = '';
+
+  router.replace({ query: newQuery });
+};
+
+/**
+ * ============================================
+ * UI INTERACTION HANDLERS
+ * ============================================
+ */
+
+/**
+ * Toggles mobile menu visibility
+ */
+const toggleMobileMenu = () => {
+  isMenuOpen.value = !isMenuOpen.value;
+
+  // Prevent body scroll when menu is open
+  if (isMenuOpen.value) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
+};
+
+/**
+ * Toggles filter panel in sidebar
+ */
+const toggleFilterPanel = () => {
+  isFilterPanelOpen.value = !isFilterPanelOpen.value;
+};
+
+/**
+ * Toggles advanced filters panel
+ */
+const toggleAdvancedFilters = () => {
+  isAdvancedFiltersOpen.value = !isAdvancedFiltersOpen.value;
+};
+
+/**
+ * Sets the active gender tab in mobile menu
+ * @param {string} tabId - ID of the tab to activate
+ */
+const setActiveGenderTab = (tabId) => {
+  activeGenderTab.value = tabId;
+};
+
+/**
+ * Handles search input with debouncing
+ * Prevents excessive API calls during typing
+ */
+const handleSearchInput = debounce(() => {
+  fetchProducts();
+}, DEBOUNCE_DELAY_MS);
+
+/**
+ * ============================================
+ * URL BUILDERS
+ * ============================================
+ */
+
+/**
+ * Builds URL for category filtering
+ * @param {string} categoryName - Name of the category
+ * @returns {string} Complete URL with query parameters
+ */
+const buildCategoryUrl = (categoryName) => {
+  const params = new URLSearchParams(route.query);
+  params.set('category', categoryName.toLowerCase());
+  return `/product?${params.toString()}`;
+};
+
+/**
+ * Builds URL for gender filtering while preserving other filters
+ * @param {string} gender - Gender value (donna, uomo, bambini)
+ * @returns {string} Complete URL with query parameters
+ */
+const buildGenderUrl = (gender) => {
+  const params = new URLSearchParams();
+
+  params.append('gender', gender.toLowerCase());
+
+  // Preserve existing query parameters except gender
+  for (const [key, value] of Object.entries(route.query)) {
+    if (key !== 'gender') {
+      params.append(key, value);
     }
   }
-    // Debounce per la ricerca
-    const debounce = (func, delay) => {
-        let timeout;
-        return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), delay);
-        };
-    };
-    
-    const debouncedFetchProducts = debounce(() => {
-        fetchProducts();
-    }, 500); // Aumentato da 300ms a 500ms
-    
-    // Filtri attivi
-    const activeFilters = computed(() => {
-        const active = [
-          filters.value.gender
-            ? { key: 'gender', label: ` ${genders.value.find(g => g.id === parseInt(filters.value.gender, 10))?.name || ''}` }
-            : null,
-          filters.value.category
-            ? { key: 'category', label: ` ${categories.value.find(cat => cat.id === parseInt(filters.value.category, 10))?.name || ''}` }
-            : null,
-          filters.value.brand
-            ? { key: 'brand', label: `${brands.value.find(b => b.id === parseInt(filters.value.brand, 10))?.name || ''}` }
-            : null,
-          filters.value.priceMin
-            ? { key: 'priceMin', label: `Prezzo Min: €${filters.value.priceMin}` }
-            : null,
-          filters.value.priceMax
-            ? { key: 'priceMax', label: `Prezzo Max: €${filters.value.priceMax}` }
-            : null,
-          filters.value.newArrivals
-            ? { key: 'newArrivals', label: 'Nuovi Arrivi' }
-            : null,
-          filters.value.promo
-           ? { key: 'promo', label: 'Promo' }
-            : null,
-          filters.value.plus
-           ? { key: 'plus', label: 'Spedizione Plus' }
-            : null,
-        ];
-        return active.filter(filter => filter !== null);
-    });
 
-    const setFilter = ((array, param) => {
-        const queryValue = route.query[param]; // Ottieni il valore dal query param
-        if (queryValue) {
-            const item = array.value.find(
-                item => item.name.toLowerCase() === queryValue.toLowerCase()
-            );
-            filters.value[param] = item ? item.id : ''; // Assegna dinamicamente al filtro
-        } else {
-            filters.value[param] = '';
-        }
-    });
-  
-    // Rimuovi filtro
-    function removeFilter(key) {
-        const newQuery = { ...route.query };
-        delete newQuery[key];
-        
-        // Aggiorna anche i valori locali quando rimuovi i filtri di prezzo
-        if (key === 'priceMin') {
-          priceMin.value = null;
-          filters.value.priceMin = '';
-        }
-        
-        if (key === 'priceMax') {
-          priceMax.value = null;
-          filters.value.priceMax = '';
-        }
-        
-        // Gestione del filtro prezzo personalizzato
-        if (key === 'price') {
-          resetPriceFilter();
-        }
-        
-        // Gestione del filtro nuovi arrivi
-        if (key === 'newArrivals') {
-          filters.value.newArrivals = '';
-        }
-        
-        router.replace({ query: newQuery });
-    }
-    
-    // Toggle nuovi arrivi
-    function toggleNewArrivals() {
-        const newQuery = { ...route.query };
-        
-        if (newQuery.newArrivals === 'true') {
-          delete newQuery.newArrivals;
-          filters.value.newArrivals = '';
-        } else {
-          newQuery.newArrivals = 'true';
-          filters.value.newArrivals = 'true';
-        }
-        
-        router.replace({ query: newQuery });
-    }
+  return `/product?${params.toString()}`;
+};
 
-    const openModalFilter = (name) => {
-        if(name.toLowerCase() === "prezzo"){ 
-          prezzo.value = !prezzo.value;
-        }
-    }
-  
-    // Cambia categoria
-    function setCategory(category) {
-        router.push({
-        path: '/product',
-        query: {
-          ...route.query, // Mantiene tutti i query params esistenti
-          category: category?.name?.toLowerCase() || undefined // Resetta il parametro se category è null/undefined    }
-        }
-        });
-    }
+/**
+ * ============================================
+ * UTILITY FUNCTIONS
+ * ============================================
+ */
 
-    // Update the getGenderQuery function to return a string URL
-    const getGenderQuery = (gender) => {
-        const queryParams = new URLSearchParams();
-        
-        // Add gender parameter
-        queryParams.append('gender', gender.toLowerCase());
-        
-        // Preserve other query parameters
-        for (const [key, value] of Object.entries(route.query)) {
-          if (key !== 'gender') {
-            queryParams.append(key, value);
-          }
-        }
-        
-        return `/product?${queryParams.toString()}`;
-    }
-  
-    // Toggle menu
-    const open = ref(false);
-    function toggleMenu() {
-        open.value = !open.value;
-    }
-  
-    // Modal
-    const openfilters = ref(false);
-    const filterAdd = ref(false);
-    const selected = ref(false);
-    const filtri = ref([
-        { name: "Colore", value: "", selected: false },
-        { name: "Taglia", value: "", selected: false },
-        { name: "Prezzo", value: "", selected: false }
-    ]);
-  
-    function openModal() {
-        openfilters.value = !openfilters.value;
-        selected.value = openfilters.value;
-    }
+/**
+ * Creates a debounced function that delays execution
+ * @param {Function} func - Function to debounce
+ * @param {number} delay - Delay in milliseconds
+ * @returns {Function} Debounced function
+ */
+function debounce(func, delay) {
+  let timeoutId;
+  return function (...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(this, args), delay);
+  };
+}
 
-    // Calcolo prezzo minimo e massimo con memorizzazione
-    const minPrice = ref(0);
-    const maxPrice = ref(1000);
-    
-    // Aggiorna i valori min e max in base ai prodotti disponibili
-    const updatePriceRange = () => {
-      if (!products.value || products.value.length === 0) return;
-      
-      const min = Math.floor(products.value.reduce((min, product) => 
-        product.price < min ? product.price : min, Infinity));
-      
-      const max = Math.ceil(products.value.reduce((max, product) => 
-        product.price > max ? product.price : max, -Infinity));
-      
-      if (min !== Infinity) minPrice.value = min;
-      if (max !== -Infinity) maxPrice.value = max;
-      
-      // Inizializza il range se non è già stato impostato
-      if (!priceRange.value.min) priceRange.value.min = minPrice.value;
-      if (!priceRange.value.max) priceRange.value.max = maxPrice.value;
-    };
+/**
+ * Generates dynamic styles for filter buttons based on state
+ * @param {boolean} isActive - Whether the button is active
+ * @returns {Object} Style object for button
+ */
+const getFilterButtonStyles = (isActive) => {
+  return {
+    backgroundColor: isActive ? colorPrimary : 'white',
+    color: isActive ? 'white' : colorPrimary,
+    border: isActive ? 'none' : `1px solid ${colorPrimary}`
+  };
+};
 
-    // Validazione range prezzi
-    const validatePriceRange = () => {
-        // Assicurati che priceMin non sia maggiore di priceMax
-        if (priceMin.value > priceMax.value) {
-          priceMin.value = priceMax.value;
-        }
-        
-        // Assicurati che priceMax non sia minore di priceMin
-        if (priceMax.value < priceMin.value) {
-          priceMax.value = priceMin.value;
-        }
-    };
-  
-    // Applica filtro prezzo all'URL
-    const applyPriceFilter = () => {
-      const newQuery = { ...route.query };
-      
-      // Aggiorna i filtri locali prima di aggiornare l'URL
-      filters.value.priceMin = priceRange.value.min.toString();
-      filters.value.priceMax = priceRange.value.max.toString();
-      
-      // Aggiungi i parametri di prezzo solo se sono stati impostati
-      if (priceRange.value.min !== minPrice.value) {
-        newQuery.priceMin = priceRange.value.min.toString();
-      } else {
-        delete newQuery.priceMin;
-        filters.value.priceMin = '';
-      }
-      
-      if (priceRange.value.max !== maxPrice.value) {
-        newQuery.priceMax = priceRange.value.max.toString();
-      } else {
-        delete newQuery.priceMax;
-        filters.value.priceMax = '';
-      }
-      
-      // Aggiorna l'URL con i nuovi parametri
-      router.replace({ query: newQuery });
-      
-      // Chiudi il filtro prezzo
-      openfilters.value = false;
-      
-      // Forza il recupero dei prodotti con i nuovi filtri
-      fetchProducts();
-    };
+/**
+ * ============================================
+ * LIFECYCLE HOOKS & WATCHERS
+ * ============================================
+ */
 
-    // Reset filtro prezzo
-    const resetPriceFilter = () => {
-      priceRange.value.min = minPrice.value;
-      priceRange.value.max = maxPrice.value;
-      
-      // Rimuovi i parametri dall'URL
-      const newQuery = { ...route.query };
-      delete newQuery.priceMin;
-      delete newQuery.priceMax;
-      router.replace({ query: newQuery });
-      
-      // Aggiorna i filtri locali
-      filters.value.priceMin = '';
-      filters.value.priceMax = '';
-    };
+/**
+ * Watch route query changes and refetch products
+ * Deep watch ensures nested property changes are detected
+ */
+watch(
+  () => route.query,
+  () => {
+    fetchProducts();
+  },
+  { deep: true }
+);
 
-    // Watch per triggerare fetch al cambio di query
-    watch(() => route.query, () => {
-      fetchProducts();
-    }, { deep: true });
+/**
+ * Watch products array and update price constraints
+ * Runs immediately on mount to set initial constraints
+ */
+watch(
+  products,
+  () => {
+    updatePriceConstraints();
+  },
+  { immediate: true }
+);
 
-    // Watch per aggiornare il range di prezzi quando arrivano i prodotti
-    watch(products, () => {
-      updatePriceRange();
-    }, { immediate: true });
-
-    // Inizializza il range di prezzi
-    const priceRange = ref({
-      min: minPrice.value,
-      max: maxPrice.value
-    });
-    
-    const isPriceFilterSelected = ref(false);
-
-    // Funzione per selezionare un filtro
-    const selectFilter = (filter) => {
-      // Resetta tutti i filtri
-      filtri.value.forEach(f => f.selected = false);
-      
-      // Seleziona il filtro corrente
-      filter.selected = true;
-      
-      // Imposta il flag per il filtro prezzo
-      isPriceFilterSelected.value = filter.name === 'Prezzo';
-    };
-
-    // Funzione per aggiornare il filtro prezzo durante l'interazione con gli slider
-    const updatePriceFilter = () => {
-      // Assicurati che min non superi max - 1
-      if (priceRange.value.min >= priceRange.value.max) {
-        priceRange.value.min = priceRange.value.max - 1;
-      }
-      
-      // Assicurati che max non sia inferiore a min + 1
-      if (priceRange.value.max <= priceRange.value.min) {
-        priceRange.value.max = priceRange.value.min + 1;
-      }
-    };
-
-    // Inizializza i prodotti al caricamento della pagina
-    onMounted(() => {
-      fetchProducts();
-    });
+/**
+ * Component mounted hook
+ * Initializes product data on first render
+ */
+onMounted(() => {
+  fetchProducts();
+});
 </script>
+
 <style scoped>
-  /* Stili per il filtro prezzo */
-  .slider {
-    -webkit-appearance: none;
-    height: 1px;
-    background: transparent;
-    outline: none;
-    margin: 0;
-    padding: 0;
-    z-index: 2;
+/**
+ * ============================================
+ * GLOBAL CONTAINER
+ * ============================================
+ */
+.product-catalog-container {
+  width: 95%;
+  margin: 0 auto;
+}
+
+/**
+ * ============================================
+ * MOBILE MENU STYLES
+ * ============================================
+ */
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  min-height: 100vh;
+  background-color: #5d758b;
+  color: white;
+  padding: 1.5rem;
+  z-index: 9999;
+  overflow-y: auto;
+}
+
+.mobile-menu__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.mobile-menu__tabs {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.mobile-menu__tab {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #9ca3af;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding-bottom: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mobile-menu__tab--active {
+  color: #000;
+  border-bottom-color: white;
+}
+
+.mobile-menu__tab:hover {
+  color: #000;
+}
+
+.mobile-menu__close {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #9ca3af;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.mobile-menu__close:hover {
+  color: white;
+}
+
+.mobile-menu__search {
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.mobile-menu__categories {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  padding-top: 1.25rem;
+}
+
+/**
+ * Category Cards
+ */
+.category-card {
+  position: relative;
+}
+
+.category-card__image-wrapper {
+  position: relative;
+  height: 140px;
+  width: 135px;
+}
+
+.category-card__image {
+  width: 100%;
+  height: 100%;
+  border-radius: 0.75rem;
+  object-fit: cover;
+}
+
+.category-card__button-wrapper {
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+  width: 100%;
+}
+
+/**
+ * ============================================
+ * DESKTOP HEADER NAVIGATION
+ * ============================================
+ */
+.desktop-header {
+  width: 95%;
+  margin: 0 auto;
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1rem 0;
+}
+
+.desktop-header__hamburger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-right: 0.5rem;
+  border-radius: 0.375rem;
+  color: #1f2937;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.desktop-header__hamburger:hover {
+  color: #111827;
+}
+
+.hamburger-icon {
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.desktop-header__actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Hide hamburger on desktop */
+@media (min-width: 768px) {
+  .desktop-header__hamburger {
+    display: none;
   }
-  
-  .slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: v-bind(colorPrimary);
-    cursor: pointer;
-    z-index: 3;
+}
+
+/**
+ * ============================================
+ * CATEGORY NAVIGATION (Desktop)
+ * ============================================
+ */
+.category-navigation {
+  display: none;
+  width: 95%;
+  margin: 0 auto;
+  padding: 1rem 0;
+}
+
+@media (min-width: 640px) {
+  .category-navigation {
+    display: block;
   }
-  
-  .slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: v-bind(colorPrimary);
-    cursor: pointer;
-    z-index: 3;
-  }
-  
-  /* Animazione per il filtro */
-  .slide-in-right-enter-active {
-    transition: all 0.3s ease-out;
-  }
-  
-  .slide-in-right-leave-active {
-    transition: all 0.3s ease-in;
-  }
-  
-  .slide-in-right-enter-from,
-  .slide-in-right-leave-to {
-    transform: translateX(20px);
-    opacity: 0;
-  }
-  
-  /* Stili per i filtri attivi */
-  .filter-item {
-    background-color: #f0f0f0;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.9rem;
+}
+
+.category-navigation__list {
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  transition: gap 0.2s ease;
+}
+
+.category-navigation__list:hover {
+  gap: 1.5rem;
+}
+
+.category-navigation__item {
+  list-style: none;
+}
+
+.category-navigation__link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem;
+  transition: transform 0.2s ease;
+}
+
+.category-navigation__link:hover {
+  transform: scale(1.25);
+}
+
+/**
+ * ============================================
+ * ACTIVE FILTERS BREADCRUMB
+ * ============================================
+ */
+.active-filters {
+  width: 95%;
+  margin: 0 auto;
+  padding: 0.5rem 0;
+}
+
+.active-filters__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.active-filters__item {
+  list-style: none;
+}
+
+.active-filters__remove {
+  background-color: #f0f0f0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.active-filters__remove:hover {
+  background-color: #e0e0e0;
+}
+
+/**
+ * ============================================
+ * MAIN CONTENT LAYOUT
+ * ============================================
+ */
+.main-content {
+  width: 95%;
+  margin: 0 auto;
+  display: flex;
+  gap: 2.5rem;
+  padding-left: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .main-content {
     display: flex;
-    align-items: center;
-    transition: all 0.2s;
   }
-  
-  .filter-item:hover {
-    background-color: #e0e0e0;
+}
+
+/**
+ * ============================================
+ * FILTERS SIDEBAR (Desktop only)
+ * ============================================
+ */
+.filters-sidebar {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .filters-sidebar {
+    display: block;
+    min-width: 200px;
   }
-  
-  /* Stili per il contenitore dei filtri */
-  .filter-container {
-    position: absolute;
-    top: 40px;
-    left: 0;
-    background-color: white;
-    padding: 16px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 10;
-    min-width: 250px;
+}
+
+.filters-sidebar__section {
+  margin-bottom: 1.5rem;
+}
+
+.filter-toggle-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 74px;
+  height: 31px;
+  border-radius: 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid;
+}
+
+.filter-toggle-button:hover {
+  transform: scale(1.25);
+}
+
+.filter-options-list {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 1rem;
+}
+
+.filter-options-list__item {
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+  color: #4b5563;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.filter-options-list__item:hover {
+  color: #1f2937;
+}
+
+/**
+ * ============================================
+ * CONTENT AREA (Filters + Products)
+ * ============================================
+ */
+.content-area {
+  flex: 1;
+}
+
+/**
+ * ============================================
+ * ADVANCED FILTERS SECTION
+ * ============================================
+ */
+.advanced-filters {
+  margin-bottom: 2rem;
+}
+
+.advanced-filters__wrapper {
+  position: relative;
+  display: flex;
+}
+
+.filter-panel {
+  position: absolute;
+  top: 40px;
+  left: 0;
+  background-color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  min-width: 250px;
+}
+
+.filter-panel__types {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.filter-type-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 74px;
+  height: 31px;
+  border-radius: 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid;
+}
+
+.filter-type-button:hover {
+  transform: scale(1.25);
+}
+
+/**
+ * ============================================
+ * PRODUCT GRID
+ * ============================================
+ */
+.product-grid {
+  width: 100%;
+}
+
+.product-grid__container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  padding-top: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .product-grid__container {
+    grid-template-columns: repeat(6, 1fr);
   }
+}
+
+/**
+ * ============================================
+ * LOADING & EMPTY STATES
+ * ============================================
+ */
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 0;
+}
+
+.spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 4px solid #f3f4f6;
+  border-top-color: v-bind(colorPrimary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 2rem;
+}
+
+.empty-state__message {
+  font-size: 1.125rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+/**
+ * ============================================
+ * TRANSITIONS & ANIMATIONS
+ * ============================================
+ */
+
+/* Fade transition for mobile menu */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Slide down transition for filter options */
+.slide-down-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-down-leave-active {
+  transition: all 0.2s ease-in;
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
+/* Slide in right transition for filter panel */
+.slide-in-right-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-in-right-leave-active {
+  transition: all 0.3s ease-in;
+}
+
+.slide-in-right-enter-from,
+.slide-in-right-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
 </style>

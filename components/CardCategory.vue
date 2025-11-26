@@ -62,7 +62,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="categories min-w-[134px] md:max-w-[300px]">
+  <div class="categories min-w-[134px] md:max-w-[300px] ">
     <div class="w-full relative">
       <div class="img h-[193px] md:h-[321px]">
         <img 

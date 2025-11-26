@@ -1,6 +1,6 @@
 <template>
-    <div class="w-[95%] mx-auto my-0">    
-      <div class="buttons flex gap-4 text-xs">
+    <div class="w-[95%] mx-auto md:my-0 ">    
+      <div class="buttons flex justify-center md:justify-start gap-4 text-xs">
         <Button name="DONNA" :bgColor="colorPrimary" textColor="white" to="/product?gender=donna"  width="100px" height="30px" fontSize="15px"/>
         <Button name="UOMO" bgColor="white" :textColor="colorPrimary" to="/product?gender=uomo" width="100px" height="30px" fontSize="15px"/>
         <Button name="BAMBINO" :bgColor="colorPrimary" textColor="white" to="/product?gender=bambini"  width="100px" height="30px" fontSize="15px"/>
@@ -9,118 +9,159 @@
 
       </div>
       <div class="cronologia"></div>
-      <div class="container flex gap-12 mt-8">
-        <div class="left flex gap-2">
-            <!-- Colonna delle immagini -->
-          <div class="imgVertical flex flex-col gap-4">
-            <img
-              v-for="(image, index) in currentOtherImages"
-              :key="index"
-              class="img square h-[138px] w-[136px] rounded-xl cursor-pointer"
-              :src="image"
-              :alt="'Immagine correlata ' + index"
-              @click="changeMainImage(image)"
-            />
-          </div>
-      
-          <!-- Immagine principale -->
-          <div class=" w-[412px] h-[605px]">
-            <img
-              class="w-full h-full rounded-xl"
-              :src="currentMainImage"
-              alt="Immagine principale"
-            />
-          </div>
-        </div>
-        <div class="right">
-          <div class="descriptions">
-            <div class="brand font-bold text-black text-3xl">
-              <p>{{ product.brand.name }}</p>
-            </div>
-            <div class="name text-[#5D758B] text-2xl">
-              <p>{{ product.name }}</p>
-            </div>
-            <div class="price text-2xl">
-              <span class="flex items-center">
-                {{ product.price }} <p class="text-[#5D758B]">€ IVA inclusa</p>
-              </span>
-             
-            </div>
-            <div class="color">
-              colore: {{ img[currentColorIndex].color }}
-            </div>
-          </div>
-          <!-- Miniature delle colorazioni -->
-          <div class="color-thumbnails flex gap-2 items-center mt-4">
-            <img
-              v-for="(item, id) in img"
-              :key="item.id"
-              :src="item.images.main"
-              :alt="'Colorazione ' + item.color"
-              class="thumbnail cursor-pointer square h-[138px] w-[136px] rounded-xl cursor-pointer border"
-              :class="{ active: id === currentColorIndex }"
-              @click="changeColor(id)"
-            />
-          </div>
-          <div class="disponibility mt-4 p-3 bg-gray-100 rounded-lg">
-            <p v-if="stockQuantity > 5" class="text-green-600">Disponibile - Spedizione in 24/48h</p>
-            <p v-else-if="stockQuantity > 0" class="text-orange-500">Solo {{ stockQuantity }} disponibili!</p>
-            <p v-else class="text-red-500">Prodotto esaurito</p>
-          </div>
-          <div class="buttons flex gap-4 mt-4">
-            <Button name="Acquista" bgColor="white" colorText="#5D758B" width="200px" height="50px" @click="addCart" to="/checkout"/>
-            <Button name="Aggiungi al carrello" :bgColor="colorPrimary" textColor="white" width="200px" height="50px" @click="addCart"/>
-            <button 
-              @click="toggleWishlist"
-              class="wishlist-button flex items-center justify-center w-12 h-12 rounded-full border border-gray-300 hover:border-red-500 transition-colors"
-              :class="{ 'bg-red-50': isInWishlist }"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 wishlist-heart-icon" :fill="isInWishlist ? colorPrimary : 'none'" viewBox="0 0 24 24" :stroke="colorPrimary">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            </button>
-          </div>
-          
-          <!-- Specifiche tecniche -->
-          <div class="technical-specs mt-8 border-t pt-4">
-            <h3 class="text-xl font-semibold mb-3">Specifiche tecniche</h3>
-            <div class="specs-grid grid grid-cols-2 gap-3">
-              <div v-for="(spec, index) in productSpecs" :key="index" class="spec-item">
-                <span class="font-medium">{{ spec.name }}:</span> {{ spec.value }}
-              </div>
-            </div>
-          </div>
-        </div>
+     <div class="container flex flex-col md:flex-row gap-12 mt-8">
+    <!-- Sezione sinistra: immagini (responsive) -->
+    <div class="left flex flex-1 md:max-w-[500px] flex-col md:flex-row md:gap-2">
+      <!-- Colonna verticale delle miniature (solo desktop) -->
+      <div class="imgVertical hidden md:flex flex-col gap-4">
+        <img
+          v-for="(image, index) in currentOtherImages"
+          :key="index"
+          class="img square h-[138px] w-[136px] rounded-xl cursor-pointer"
+          :src="image"
+          :alt="'Immagine correlata ' + index"
+          @click="changeMainImage(image)"
+        />
       </div>
-      
-      <!-- Recensioni -->
-      <div class="reviews-section mt-12 border-t pt-6">
-        <ReviewComponent :productId="productId" :reviews="productReviews" :averageRating="averageRating" />
-      </div>
-      
-      <!-- Prodotti correlati -->
-      <div class="related-products mt-12 border-t pt-6" v-if="relatedProducts && relatedProducts.length > 0">
-        <div class="products-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
-          <Card 
-            v-for="(product, index) in relatedProducts.slice(0, 4)"
-            :key="index"
-            :id="product.id" 
-            :category="product.category" 
-            :brand="product.brand"
-            :name="product.name"
-            :photo="product.photo"
-            :description="product.description"
-            :price="product.price"
-            :plus="product.plus"
-            :promo="product.promo"
-            :codeItem="product.codeItem"
-            :colorPrimary="colorPrimary"
-            :colorSecondary="colorSecondary"
-          />
-        </div>
+
+      <!-- Immagine principale (con carousel su mobile) -->
+      <div class="image-container relative w-full md:w-[412px] md:h-[605px] max-w-[500px] mx-auto">
+        <img
+          ref="mainImageRef"
+          class="w-full h-auto md:h-full aspect-square md:aspect-auto rounded-xl select-none object-cover"
+          :src="currentMainImage"
+          alt="Immagine principale"
+          @touchstart="handleTouchStart"
+          @touchmove="handleTouchMove"
+          @touchend="handleTouchEnd"
+          @dragstart.prevent
+        />
         
+        <!-- Frecce di navigazione (solo mobile) -->
+        <button
+          v-if="currentImageIndex > 0"
+          @click="previousImage"
+          class="nav-arrow nav-arrow-left flex absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all duration-200 md:hidden"
+        >
+          <svg class="w-6 h-6 text-[#5D758B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+        
+        <button
+          v-if="currentImageIndex < allImages.length - 1"
+          @click="nextImage"
+          class="nav-arrow nav-arrow-right flex absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all duration-200 md:hidden"
+        >
+          <svg class="w-6 h-6 text-[#5D758B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Indicatori (solo mobile) -->
+      <div class="image-indicators flex justify-center mt-4 gap-2 md:hidden">
+        <button
+          v-for="(image, index) in allImages"
+          :key="index"
+          class="indicator-dot w-3 h-3 rounded-full transition-all duration-200"
+          :class="currentImageIndex === index ? 'bg-[#5D758B]' : 'bg-gray-300'"
+          @click="goToImage(index)"
+        ></button>
       </div>
     </div>
+
+    <!-- Sezione destra: descrizioni, colori, disponibilità, bottoni -->
+    <div class="right flex-1">
+      <div class="descriptions">
+        <div class="brand font-bold text-black text-3xl">
+          <p>{{ product.brand.name }}</p>
+        </div>
+        <div class="name text-[#5D758B] text-2xl">
+          <p>{{ product.name }}</p>
+        </div>
+        <div class="price text-2xl">
+          <span class="flex items-center">
+            {{ product.price }} <p class="text-[#5D758B]">€ IVA inclusa</p>
+          </span>
+        </div>
+        <div class="color">
+          colore: {{ img[currentColorIndex].color }}
+        </div>
+      </div>
+      
+      <!-- Miniature delle colorazioni -->
+      <div class="color-thumbnails flex gap-2 items-center mt-4 overflow-x-auto">
+        <img
+          v-for="(item, id) in img"
+          :key="item.id"
+          :src="item.images.main"
+          :alt="'Colorazione ' + item.color"
+          class="thumbnail cursor-pointer square h-[138px] w-[103px] md:w-[136px] rounded-xl cursor-pointer border"
+          :class="{ active: id === currentColorIndex }"
+          @click="changeColor(id)"
+        />
+      </div>
+      
+      <div class="disponibility mt-4 p-3 bg-gray-100 rounded-lg">
+        <p v-if="stockQuantity > 5" class="text-green-600">Disponibile - Spedizione in 24/48h</p>
+        <p v-else-if="stockQuantity > 0" class="text-orange-500">Solo {{ stockQuantity }} disponibili!</p>
+        <p v-else class="text-red-500">Prodotto esaurito</p>
+      </div>
+      
+      <div class="buttons flex gap-4 mt-4">
+        <Button name="Acquista" bgColor="white" textColor="#5D758B" width="200px" height="50px" @click="addCart" to="/checkout"/>
+        <Button name="Aggiungi al carrello" :bgColor="colorPrimary" textColor="white" width="200px" height="50px" @click="addCart"/>
+        <button 
+          @click="toggleWishlist"
+          class="wishlist-button flex items-center justify-center w-12 h-12 rounded-full border border-gray-300 hover:border-red-500 transition-colors"
+          :class="{ 'bg-red-50': isInWishlist }"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 wishlist-heart-icon" :fill="isInWishlist ? colorPrimary : 'none'" viewBox="0 0 24 24" :stroke="colorPrimary">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Specifiche tecniche -->
+      <div class="technical-specs mt-8 border-t pt-4">
+        <h3 class="text-xl font-semibold mb-3">Specifiche tecniche</h3>
+        <div class="specs-grid grid grid-cols-2 gap-3">
+          <div v-for="(spec, index) in productSpecs" :key="index" class="spec-item">
+            <span class="font-medium">{{ spec.name }}:</span> {{ spec.value }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+      
+  <!-- Recensioni -->
+  <div class="reviews-section mt-12 border-t pt-6">
+    <ReviewComponent :productId="productId" :reviews="productReviews" :averageRating="averageRating" />
+  </div>
+  
+  <!-- Prodotti correlati -->
+  <div class="related-products mt-12 border-t pt-6" v-if="relatedProducts && relatedProducts.length > 0">
+    <div class="products-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 md:grid-cols-4 gap-10">
+      <Card 
+        v-for="(product, index) in relatedProducts.slice(0, 4)"
+        :key="index"
+        :id="product.id" 
+        :category="product.category" 
+        :brand="product.brand"
+        :name="product.name"
+        :photo="product.photo"
+        :description="product.description"
+        :price="product.price"
+        :plus="product.plus"
+        :promo="product.promo"
+        :codeItem="product.codeItem"
+        :colorPrimary="colorPrimary"
+        :colorSecondary="colorSecondary"
+      />
+    </div>
+  </div>
+</div>
 </template>
   
   
@@ -209,12 +250,19 @@
   // Funzioni per la gestione delle immagini e colori
   function changeMainImage(image) {
     currentMainImage.value = image;
+    // Sincronizza l'indice con il carousel
+    const imageIndex = allImages.value.findIndex(img => img === image);
+    if (imageIndex !== -1) {
+      currentImageIndex.value = imageIndex;
+    }
   }
 
   function changeColor(index) {
     currentColorIndex.value = index;
     currentMainImage.value = img.value[index].images.main;
     currentOtherImages.value = img.value[index].images.others;
+    // Reset dell'indice dell'immagine quando si cambia colore
+    currentImageIndex.value = 0;
   }
 
   // Funzione per aggiungere al carrello
@@ -279,6 +327,77 @@
         duration: 2000
       });
     }
+  }
+
+  // Touch/Swipe handling per tutti i dispositivi
+  const touchStartX = ref(0);
+  const touchEndX = ref(0);
+  const minSwipeDistance = 50;
+  const isTouchDevice = ref(false);
+
+  function handleTouchStart(e) {
+    // Attiva su tutti i dispositivi
+    touchStartX.value = e.touches[0].clientX;
+    isTouchDevice.value = true;
+  }
+
+  function handleTouchMove(e) {
+    // Previene lo scroll durante il swipe su tutti i dispositivi
+    if (isTouchDevice.value) {
+      e.preventDefault();
+    }
+  }
+
+  function handleTouchEnd(e) {
+    // Gestisce il swipe su tutti i dispositivi
+    if (isTouchDevice.value) {
+      touchEndX.value = e.changedTouches[0].clientX;
+      handleSwipe();
+    }
+    isTouchDevice.value = false;
+  }
+
+  function handleSwipe() {
+    const swipeDistance = touchStartX.value - touchEndX.value;
+    
+    if (Math.abs(swipeDistance) > minSwipeDistance) {
+      if (swipeDistance > 0) {
+        // Swipe left - next image
+        nextImage();
+      } else {
+        // Swipe right - previous image
+        previousImage();
+      }
+    }
+  }
+
+  // Computed per tutte le immagini (principale + altre)
+  const allImages = computed(() => {
+    const current = img.value[currentColorIndex.value];
+    return [current.images.main, ...current.images.others];
+  });
+
+  // Indice dell'immagine corrente
+  const currentImageIndex = ref(0);
+
+  // Funzioni di navigazione per tablet/mobile
+  function nextImage() {
+    if (currentImageIndex.value < allImages.value.length - 1) {
+      currentImageIndex.value++;
+      currentMainImage.value = allImages.value[currentImageIndex.value];
+    }
+  }
+
+  function previousImage() {
+    if (currentImageIndex.value > 0) {
+      currentImageIndex.value--;
+      currentMainImage.value = allImages.value[currentImageIndex.value];
+    }
+  }
+
+  function goToImage(index) {
+    currentImageIndex.value = index;
+    currentMainImage.value = allImages.value[index];
   }
 
   // Caricamento delle recensioni
