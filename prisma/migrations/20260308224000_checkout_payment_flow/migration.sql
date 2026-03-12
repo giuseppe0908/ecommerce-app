@@ -1,0 +1,2 @@
+-- Historical migration kept as a no-op.
+-- The full schema is now bootstrapped by 20250101000000_init_schema.
