@@ -1,45 +1,51 @@
-import { PrismaClient } from '@prisma/client';
 import { H3Event, createError } from 'h3';
+import { z } from 'zod';
+import { createLogger } from '../utils/observability';
+import prisma from '../utils/prisma';
+import { getTokenLookupCandidates } from '../utils/token-security';
 
-const prisma = new PrismaClient();
+const verifyResetTokenSchema = z.object({
+  token: z.string().trim().min(1),
+});
+const logger = createLogger('auth-verify-reset-token');
 
 export default defineEventHandler(async (event: H3Event) => {
+  if (event.node.req.method !== 'POST') {
+    throw createError({ statusCode: 405, message: 'Metodo non supportato' });
+  }
+
   try {
     const body = await readBody(event);
-    const { token } = body;
-    
-    // Validate token parameter
-    if (!token || typeof token !== 'string') {
+    const parsedBody = verifyResetTokenSchema.safeParse(body);
+    if (!parsedBody.success) {
       throw createError({
         statusCode: 400,
-        message: 'Token non fornito o non valido'
+        message: 'Payload token non valido',
+        data: parsedBody.error.format(),
       });
     }
+    const { token } = parsedBody.data;
 
-    // Find token in database
-    const resetToken = await prisma.resetToken.findUnique({
-      where: { token },
-      include: { user: true }
+    const tokenCandidates = getTokenLookupCandidates(token);
+    const resetToken = await prisma.resetToken.findFirst({
+      where: { token: { in: tokenCandidates } },
     });
 
-    // Check if token exists
     if (!resetToken) {
       throw createError({
-        statusCode: 404,
-        message: 'Token non trovato'
+        statusCode: 400,
+        message: 'Token non valido o scaduto',
       });
     }
 
-    // Check if token is expired
     if (resetToken.expiresAt < new Date()) {
-      // Delete expired token
       await prisma.resetToken.delete({
-        where: { id: resetToken.id }
+        where: { id: resetToken.id },
       });
-      
+
       throw createError({
         statusCode: 400,
-        message: 'Token scaduto'
+        message: 'Token non valido o scaduto',
       });
     }
 
@@ -47,18 +53,17 @@ export default defineEventHandler(async (event: H3Event) => {
       success: true,
       data: {
         valid: true,
-        userId: resetToken.userId,
-        email: resetToken.user.email
-      }
+      },
     };
-
   } catch (error) {
-    console.error('Error verifying reset token:', error);
-    
-    if (error.statusCode) {
+    if ((error as { statusCode?: number })?.statusCode) {
       throw error;
     }
 
+    logger.error('Errore verifica reset token', {
+      requestId: event.context.requestId,
+      error,
+    });
     throw createError({
       statusCode: 500,
       message: 'Errore interno del server'

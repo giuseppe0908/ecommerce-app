@@ -1,130 +1,188 @@
-import { defineEventHandler, getQuery, createError, sendRedirect } from 'h3'
-import { ofetch } from 'ofetch'
-import { PrismaClient } from '@prisma/client';
-import { verifyStateParam } from '~/server/utils/state'
-import jwt from 'jsonwebtoken';
+import { defineEventHandler, getQuery, sendRedirect } from 'h3';
+import { ofetch } from 'ofetch';
+import { verifyStateParam } from '../../../utils/state';
+import { createLogger } from '../../../utils/observability';
+import prisma from '../../../utils/prisma';
+import { issueUserSession } from '../../../utils/session';
 
+const logger = createLogger('auth-github-callback');
 
-export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
-  const { code, state } = getQuery(event)
-  if (!code) {
-    await sendRedirect(event, '/login?error=missing_code', 302)
-    return
-  }
-  // Verifica lo state (anti-CSRF)
-  if (!state || !verifyStateParam(state.toString())) {
-    throw createError({ statusCode: 401, message: 'Invalid state parameter' })
-  }
-  const prisma = new PrismaClient();
-  const JWT_SECRET = config.jwtSecret;
-  if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET non configurato');
-  }
-  // 1. Scambio code con access token
-  const tokenResponse = await ofetch('https://github.com/login/oauth/access_token', {
-    method: 'POST',
-    body: {
-      client_id: config.githubClientId,
-      client_secret: config.githubClientSecret,
-      code,
-    },
-    headers: {
-      Accept: 'application/json',
-    },
-  })
+type GitHubUserResponse = {
+  id: number | string;
+  login?: string | null;
+  name?: string | null;
+};
 
-  // 2. Ottieni i dati dell'utente
-  const userResponse = await ofetch('https://api.github.com/user', {
-    headers: {
-      Authorization: `Bearer ${tokenResponse.access_token}`,
-      'User-Agent': 'ecommerce'
-    },
-  })
+type GitHubEmailResponse = {
+  email?: string | null;
+  primary?: boolean;
+  verified?: boolean;
+};
 
-  if (!userResponse.id) {
-    throw new Error('Dati utente non ricevuti da GitHub')
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+function getGitHubDisplayName(user: GitHubUserResponse) {
+  return String(user.name || user.login || 'Utente GitHub').trim();
+}
+
+function getPrimaryVerifiedEmail(emailResponse: GitHubEmailResponse[]) {
+  const primaryVerifiedEmail = emailResponse.find((email) => email.primary && email.verified)?.email;
+  if (!primaryVerifiedEmail) {
+    return null;
   }
 
-  const emailResponse = await ofetch('https://api.github.com/user/emails', {
-    headers: {
-      Authorization: `Bearer ${tokenResponse.access_token}`,
-      'User-Agent': 'ecommerce'
-    },
-  })
+  return normalizeEmail(primaryVerifiedEmail);
+}
 
+async function findOrCreateGitHubUser(params: {
+  githubId: string;
+  email: string;
+  displayName: string;
+}) {
+  const existingGitHubUser = await prisma.user.findUnique({
+    where: { githubId: params.githubId },
+  });
 
-  if (!emailResponse || !Array.isArray(emailResponse)) {
-    throw new Error('Dati email non ricevuti da GitHub')
-  }
+  if (existingGitHubUser) {
+    const conflictingEmailUser =
+      existingGitHubUser.email === params.email
+        ? null
+        : await prisma.user.findUnique({
+            where: { email: params.email },
+          });
 
+    if (conflictingEmailUser && conflictingEmailUser.id !== existingGitHubUser.id) {
+      return { user: null, error: 'github_email_conflict' as const };
+    }
 
-  const primaryEmail = emailResponse.find((email: any) => email.primary && email.verified)?.email
-
-  if (!primaryEmail) {
-    throw new Error('Nessuna email principale verificata trovata')
-  }
-
-  // 3. Crea o aggiorna l'utente nel database
-  
-  let user = await prisma.user.findUnique({
-    where: { githubId: userResponse.id.toString() },
-  })
-
-  if (!user) {
-    user = await prisma.user.create({
+    const updatedUser = await prisma.user.update({
+      where: { id: existingGitHubUser.id },
       data: {
-        githubId: userResponse.id.toString(),
-        email: primaryEmail|| `${userResponse.id}@github.local`, // Email fittizia
-        name: userResponse.login || 'Utente GitHub',
-      }
-    })
-  }
-
-  // 4. Crea JWT
-  const ONE_DAY = 24 * 60 * 60 * 1000; // 24 ore in millisecondi
-  // Genera il token JWT con payload minimale per ridurre la dimensione
-  const token = jwt.sign(
-    { 
-      sub: user.id.toString(),
-      email: user.email,
-      role: user.role || 'USER',
-      exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour expiration
-    },
-    JWT_SECRET
-  );  
-
-  try {
-    // Trova se esiste già un token per questo utente
-    const existingToken = await prisma.token.findFirst({
-      where: { userId: user.id },
+        email: params.email,
+        name: existingGitHubUser.name || params.displayName,
+      },
     });
 
-    if (existingToken) {
-      // Se esiste, aggiorna il record del token
-      await prisma.token.update({
-        where: { id: existingToken.id },
-        data: {
-          token,
-          expiresAt: new Date(Date.now() + ONE_DAY),
-        },
-      });
-    } else {
-      // Se non esiste, crea un nuovo record per il token
-      await prisma.token.create({
-        data: {
-          userId: user.id,
-          token,
-          expiresAt: new Date(Date.now() + ONE_DAY),
-        },
-      });
-    }
-  } catch (error) {
-    //console.error('Errore nel salvataggio del token:', error);
-    console.error('GitHub Auth Error:', error)
-    await sendRedirect(event, '/login?error=github_auth_failed', 302)
+    return { user: updatedUser, error: null };
   }
-  // 5. Reindirizza alla pagina frontend con il token
-  //await sendRedirect(event, `/auth-callback?token=${token}`, 302)
-  return sendRedirect(event, `/authcallback?token=${token}`, 302)
-})
+
+  const linkedUser = await prisma.$transaction(async (tx) => {
+    const existingEmailUser = await tx.user.findUnique({
+      where: { email: params.email },
+    });
+
+    if (existingEmailUser) {
+      if (existingEmailUser.githubId && existingEmailUser.githubId !== params.githubId) {
+        return { user: null, error: 'github_email_conflict' as const };
+      }
+
+      const updatedUser = await tx.user.update({
+        where: { id: existingEmailUser.id },
+        data: {
+          githubId: params.githubId,
+          name: existingEmailUser.name || params.displayName,
+        },
+      });
+
+      return { user: updatedUser, error: null };
+    }
+
+    const createdUser = await tx.user.create({
+      data: {
+        githubId: params.githubId,
+        email: params.email,
+        name: params.displayName,
+      },
+    });
+
+    return { user: createdUser, error: null };
+  });
+
+  return linkedUser;
+}
+
+export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig();
+  const { code, state } = getQuery(event);
+
+  if (!code) {
+    return sendRedirect(event, '/login?error=missing_code', 302);
+  }
+
+  if (!state || !verifyStateParam(String(state), event)) {
+    return sendRedirect(event, '/login?error=invalid_state', 302);
+  }
+
+  try {
+    const tokenResponse = await ofetch<{ access_token?: string }>(
+      'https://github.com/login/oauth/access_token',
+      {
+        method: 'POST',
+        body: {
+          client_id: config.githubClientId,
+          client_secret: config.githubClientSecret,
+          code,
+        },
+        headers: {
+          Accept: 'application/json',
+        },
+      }
+    );
+
+    if (!tokenResponse?.access_token) {
+      throw new Error('Access token GitHub non ricevuto');
+    }
+
+    const authHeaders = {
+      Authorization: `Bearer ${tokenResponse.access_token}`,
+      'User-Agent': 'ecommerce',
+    };
+
+    const userResponse = await ofetch<GitHubUserResponse>('https://api.github.com/user', {
+      headers: authHeaders,
+    });
+    const emailResponse = await ofetch<GitHubEmailResponse[]>('https://api.github.com/user/emails', {
+      headers: authHeaders,
+    });
+
+    const githubId = String(userResponse?.id || '').trim();
+    const primaryEmail = Array.isArray(emailResponse)
+      ? getPrimaryVerifiedEmail(emailResponse)
+      : null;
+
+    if (!githubId || !primaryEmail) {
+      return sendRedirect(event, '/login?error=github_email_required', 302);
+    }
+
+    const lookupResult = await findOrCreateGitHubUser({
+      githubId,
+      email: primaryEmail,
+      displayName: getGitHubDisplayName(userResponse),
+    });
+
+    if (!lookupResult.user) {
+      logger.warn('Collisione GitHub su email esistente', {
+        requestId: event.context.requestId,
+        githubId,
+        email: primaryEmail,
+      });
+      return sendRedirect(event, '/login?error=github_email_conflict', 302);
+    }
+
+    await issueUserSession(event, {
+      id: lookupResult.user.id,
+      email: lookupResult.user.email,
+      role: lookupResult.user.role || 'USER',
+    });
+
+    return sendRedirect(event, '/authcallback', 302);
+  } catch (error) {
+    logger.error('GitHub auth error', {
+      requestId: event.context.requestId,
+      error,
+    });
+    return sendRedirect(event, '/login?error=github_auth_failed', 302);
+  }
+});
