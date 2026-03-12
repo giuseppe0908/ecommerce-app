@@ -1,6 +1,21 @@
-import { PrismaClient } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
+import { createLogger } from '../../utils/observability'
+import prisma from '../../utils/prisma'
 
-const prisma = new PrismaClient()
+const logger = createLogger('chat-ecommerce-data')
+type ProductWithCategoryBrandGender = Prisma.ProductGetPayload<{
+  include: { category: true; brand: true; gender: true }
+}>
+type ProductWithCategoryBrand = Prisma.ProductGetPayload<{
+  include: { category: true; brand: true }
+}>
+type CategoryWithProducts = Prisma.CategoryGetPayload<{
+  include: { products: true }
+}>
+
+function hasStatusCode(error: unknown): error is { statusCode: number } {
+  return typeof error === 'object' && error !== null && 'statusCode' in error
+}
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -14,10 +29,11 @@ export default defineEventHandler(async (event) => {
       case 'new-arrivals':
         return await getNewArrivals()
       
-      case 'recommendations':
+      case 'recommendations': {
         const categoryId = query.categoryId ? parseInt(query.categoryId as string) : undefined
         const priceRange = query.priceRange as string
         return await getRecommendations(categoryId, priceRange)
+      }
       
       case 'low-stock':
         return await getLowStockProducts()
@@ -38,7 +54,15 @@ export default defineEventHandler(async (event) => {
         })
     }
   } catch (error) {
-    console.error('Errore nel recupero dati e-commerce:', error)
+    if (hasStatusCode(error)) {
+      throw error
+    }
+
+    logger.error('Errore nel recupero dati e-commerce', {
+      requestId: event.context.requestId,
+      error,
+      action,
+    })
     throw createError({
       statusCode: 500,
       message: 'Errore nel recupero dei dati'
@@ -66,7 +90,7 @@ async function getSalesProducts() {
 
   return {
     count: salesProducts.length,
-    products: salesProducts.map(product => ({
+    products: salesProducts.map((product: ProductWithCategoryBrandGender) => ({
       id: product.id,
       name: product.name,
       originalPrice: product.price,
@@ -101,7 +125,7 @@ async function getNewArrivals() {
 
   return {
     count: newProducts.length,
-    products: newProducts.map(product => ({
+    products: newProducts.map((product: ProductWithCategoryBrandGender) => ({
       id: product.id,
       name: product.name,
       price: product.price,
@@ -153,7 +177,7 @@ async function getRecommendations(categoryId?: number, priceRange?: string) {
 
   return {
     count: recommendations.length,
-    products: recommendations.map(product => ({
+    products: recommendations.map((product: ProductWithCategoryBrandGender) => ({
       id: product.id,
       name: product.name,
       price: product.price,
@@ -186,7 +210,7 @@ async function getLowStockProducts() {
 
   return {
     count: lowStockProducts.length,
-    products: lowStockProducts.map(product => ({
+    products: lowStockProducts.map((product: ProductWithCategoryBrand) => ({
       id: product.id,
       name: product.name,
       price: product.price,
@@ -217,7 +241,7 @@ async function getTopRatedProducts() {
 
   return {
     count: topRated.length,
-    products: topRated.map(product => ({
+    products: topRated.map((product: ProductWithCategoryBrandGender) => ({
       id: product.id,
       name: product.name,
       price: product.price,
@@ -241,13 +265,14 @@ async function getCategoriesStats() {
     }
   })
 
-  return categories.map(category => ({
+  return categories.map((category: CategoryWithProducts) => ({
     id: category.id,
     name: category.name,
     totalProducts: category.products.length,
-    onSaleProducts: category.products.filter(p => p.promo).length,
-    newArrivals: category.products.filter(p => p.newArrival).length,
-    averagePrice: category.products.reduce((sum, p) => sum + p.price, 0) / category.products.length || 0
+    onSaleProducts: category.products.filter((product) => product.promo).length,
+    newArrivals: category.products.filter((product) => product.newArrival).length,
+    averagePrice:
+      category.products.reduce((sum, product) => sum + product.price, 0) / category.products.length || 0
   }))
 }
 

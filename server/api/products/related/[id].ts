@@ -1,97 +1,137 @@
-import { PrismaClient } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
+import { z } from 'zod';
+import { createLogger } from '../../../utils/observability';
+import { buildCacheKey, rememberCache } from '../../../utils/cache';
+import prisma from '../../../utils/prisma';
+const logger = createLogger('products-related');
+const MAX_CANDIDATES = 24;
+const MAX_RESULTS = 8;
 
-const prisma = new PrismaClient();
+const productIdSchema = z.coerce.number().int().positive();
+
+const relatedProductSelect = {
+  id: true,
+  name: true,
+  photo: true,
+  codeItem: true,
+  promo: true,
+  plus: true,
+  price: true,
+  rating: true,
+  description: true,
+  categoryId: true,
+  brandId: true,
+  genderId: true,
+  category: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  brand: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  gender: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+} satisfies Prisma.ProductSelect;
+
+type RelatedProduct = Prisma.ProductGetPayload<{ select: typeof relatedProductSelect }>;
+type ScoredRelatedProduct = RelatedProduct & { relevanceScore: number };
+
+function scoreRelatedProduct(product: RelatedProduct, currentProduct: { categoryId: number; brandId: number; genderId: number }) {
+  let relevanceScore = 0;
+
+  if (product.categoryId === currentProduct.categoryId) relevanceScore += 3;
+  if (product.brandId === currentProduct.brandId) relevanceScore += 2;
+  if (product.genderId === currentProduct.genderId) relevanceScore += 1;
+  if (product.promo) relevanceScore += 0.5;
+  if (product.rating) relevanceScore += Math.min(product.rating, 5) / 10;
+
+  return relevanceScore;
+}
 
 export default defineEventHandler(async (event) => {
+  const parsedProductId = productIdSchema.safeParse(event.context.params?.id);
+  if (!parsedProductId.success) {
+    throw createError({
+      statusCode: 400,
+      message: 'ID prodotto non valido',
+    });
+  }
+
+  const productId = parsedProductId.data;
+  const cacheKey = buildCacheKey('products:related', { productId });
+
   try {
-    const id = event.context.params?.id;    
-    if (!id) {
-      throw createError({
-        statusCode: 400,
-        message: 'ID prodotto mancante'
+    const { value: relatedProducts } = await rememberCache(cacheKey, 180, async () => {
+      const currentProduct = await prisma.product.findUnique({
+        where: { id: productId },
+        select: {
+          id: true,
+          categoryId: true,
+          brandId: true,
+          genderId: true,
+        },
       });
-    }
-    
-    // Ottieni il prodotto corrente per trovare la categoria e il brand
-    const currentProduct = await prisma.product.findUnique({
-      where: { id: parseInt(id) },
-      include: {
-        category: true,
-        brand: true,
-        gender: true
+
+      if (!currentProduct) {
+        throw createError({
+          statusCode: 404,
+          message: 'Prodotto non trovato',
+        });
       }
-    });
-    
-    if (!currentProduct) {
-      throw createError({
-        statusCode: 404,
-        message: 'Prodotto non trovato'
-      });
-    }    
-    
-    // Trova prodotti correlati basati su categoria, brand o genere
-    // Esclude il prodotto corrente e limita a 8 risultati
-    const relatedProducts = await prisma.product.findMany({
-      where: {
-        OR: [
-          // Stessa categoria
-          { categoryId: currentProduct.categoryId },
-          // Stesso brand
-          { brandId: currentProduct.brandId },
-          // Stesso genere
-          { genderId: currentProduct.genderId }
+
+      const relatedCandidates = await prisma.product.findMany({
+        where: {
+          id: { not: currentProduct.id },
+          available_quantity: { gt: 0 },
+          OR: [
+            { categoryId: currentProduct.categoryId },
+            { brandId: currentProduct.brandId },
+            { genderId: currentProduct.genderId },
+          ],
+        },
+        select: relatedProductSelect,
+        orderBy: [
+          { promo: 'desc' },
+          { newArrival: 'desc' },
+          { rating: 'desc' },
+          { id: 'desc' },
         ],
-        // Escludi il prodotto corrente
-        NOT: { id: currentProduct.id }
-      },
-      include: {
-        category: true,
-        brand: true,
-        gender: true
-      },
-      // Ordina per rilevanza: prima stessa categoria e brand, poi solo stessa categoria
-      orderBy: [
-        { categoryId: 'asc' },
-        { brandId: 'asc' }
-      ],
-      // Limita a 8 prodotti correlati
-      take: 8
-    });
-    
-    console.log(relatedProducts);
+        take: MAX_CANDIDATES,
+      });
 
-
-    // Calcola un punteggio di rilevanza per ogni prodotto correlato
-    const scoredProducts = relatedProducts.map(product => {
-      let relevanceScore = 0;
-      
-      // Assegna punteggi in base alla corrispondenza
-      if (product.categoryId === currentProduct.categoryId) relevanceScore += 3;
-      if (product.brandId === currentProduct.brandId) relevanceScore += 2;
-      if (product.genderId === currentProduct.genderId) relevanceScore += 1;
-      
-      // Aggiungi un piccolo bonus per prodotti in promozione
-      if (product.promo) relevanceScore += 0.5;
-      
-      return {
-        ...product,
-        relevanceScore
-      };
+      return relatedCandidates
+        .map((product: RelatedProduct) => ({
+          ...product,
+          relevanceScore: scoreRelatedProduct(product, currentProduct),
+        }) as ScoredRelatedProduct)
+        .sort((a: ScoredRelatedProduct, b: ScoredRelatedProduct) => b.relevanceScore - a.relevanceScore)
+        .slice(0, MAX_RESULTS)
+        .map(({ relevanceScore, ...product }: ScoredRelatedProduct) => product);
     });
-    
-    // Ordina per punteggio di rilevanza (dal più alto al più basso)
-    scoredProducts.sort((a, b) => b.relevanceScore - a.relevanceScore);
-    
-    // Rimuovi il campo relevanceScore prima di inviare la risposta
-    const result = scoredProducts.map(({ relevanceScore, ...product }) => product);
-    
-    return result;
-    
-  } catch (error) {
-    console.error('Errore nel recupero dei prodotti correlati:', error);
+
+    return relatedProducts;
+  } catch (error: any) {
+    if (error?.statusCode) {
+      throw error;
+    }
+
+    logger.error('Errore recupero prodotti correlati', {
+      requestId: event.context.requestId,
+      error,
+      productId,
+    });
     throw createError({
       statusCode: 500,
-      message: 'Errore nel recupero dei prodotti correlati'
+      message: 'Errore nel recupero dei prodotti correlati',
     });
   }
 });

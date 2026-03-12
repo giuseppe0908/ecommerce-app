@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { defineEventHandler, getQuery, sendRedirect } from 'h3';
 import { ofetch } from 'ofetch';
 import { verifyStateParam } from '../../../utils/state';
@@ -68,7 +69,7 @@ async function findOrCreateGitHubUser(params: {
     return { user: updatedUser, error: null };
   }
 
-  const linkedUser = await prisma.$transaction(async (tx) => {
+  const linkedUser = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const existingEmailUser = await tx.user.findUnique({
       where: { email: params.email },
     });

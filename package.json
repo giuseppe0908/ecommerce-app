@@ -8,10 +8,13 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
+    "lint": "eslint \"nuxt.config.ts\" \"server/**/*.{js,ts}\" \"middleware/**/*.ts\" \"prisma/**/*.ts\" \"tests/**/*.ts\" --max-warnings=0",
     "preview": "nuxt preview",
     "test": "npm run test:api",
     "test:api": "tsx --test tests/api/**/*.test.ts",
     "test:e2e:smoke": "npm run build && tsx --test tests/smoke.e2e.test.ts",
+    "typecheck": "nuxi prepare && vue-tsc --noEmit -p tsconfig.typecheck.json",
+    "quality": "npm run lint && npm run typecheck && npm test && npm run build",
     "postinstall": "prisma generate && nuxt prepare"
   },
   "dependencies": {
@@ -50,13 +53,21 @@
     "seed": "tsx prisma/seeder.ts"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@nuxt/types": "^2.18.1",
     "@nuxt/typescript-build": "^3.0.2",
+    "@types/bcrypt": "^6.0.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/nodemailer": "^7.0.11",
     "caniuse-lite": "^1.0.30001714",
+    "eslint": "^9.39.4",
+    "globals": "^16.5.0",
     "prisma": "^5.22.0",
     "stripe": "^17.6.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.57.0",
+    "vue-tsc": "^2.1.10"
   },
   "overrides": {
     "vue": "3.5.12"

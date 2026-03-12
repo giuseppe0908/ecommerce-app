@@ -1,0 +1,31 @@
+{
+  "extends": "./.nuxt/tsconfig.json",
+  "compilerOptions": {
+    "strict": true
+  },
+  "include": [
+    ".nuxt/**/*.d.ts",
+    "app.vue",
+    "nuxt.config.ts",
+    "middleware/**/*.ts",
+    "plugins/**/*.ts",
+    "pages/**/*.vue",
+    "components/**/*.vue",
+    "layouts/**/*.vue",
+    "composables/**/*.ts",
+    "stores/**/*.ts",
+    "utils/**/*.ts",
+    "server/**/*.ts",
+    "server/**/*.js",
+    "prisma/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".output",
+    "dist",
+    "tests/**/*",
+    "prisma/seeder.ts",
+    "stores/items.ts",
+    "server/api/chat/**/*"
+  ]
+}

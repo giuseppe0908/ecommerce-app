@@ -19,7 +19,7 @@ async function main() {
   const scarpe = await prisma.category.create({ data: { name: 'Scarpe' } });
   const borse = await prisma.category.create({ data: { name: 'Borse' } });
   const accessori = await prisma.category.create({ data: { name: 'Accessori' } });
-  const promo = await prisma.category.create({ data: { name: 'Promo' } });
+  const _promo = await prisma.category.create({ data: { name: 'Promo' } });
   const abbigliamento = await prisma.category.create({ data: { name: 'Abbigliamento' } });
 
   const camicia = await prisma.subCategory.create({
@@ -34,7 +34,7 @@ async function main() {
     data: { name: 'Orologi', categoryId: accessori.id },
   });
 
-  const gioielli = await prisma.subCategory.create({
+  const _gioielli = await prisma.subCategory.create({
     data: { name: 'Gioielli', categoryId: accessori.id },
   });
 

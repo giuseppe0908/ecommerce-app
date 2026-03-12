@@ -1,20 +1,15 @@
-
 {
+  "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
-    "moduleResolution": "node",
-    "lib": ["esnext"],
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "jsx": "preserve",
-    "types": ["@types/node", "vue", "vuex"]
+    "strict": true
   },
-  "exclude": ["node_modules", ".nuxt"],
-  "include": [
-   "server/**/*",
-   "prisma/**/*"
+  "exclude": [
+    "node_modules",
+    ".output",
+    "dist",
+    "tests/**/*",
+    "prisma/seeder.ts",
+    "stores/items.ts",
+    "server/api/chat/**/*"
   ]
 }

@@ -69,6 +69,13 @@ type NormalizedCheckoutItem = {
   productId: number;
   quantity: number;
 };
+type CheckoutProductRecord = {
+  id: number;
+  name: string;
+  photo: string | null;
+  price: number;
+  available_quantity: number;
+};
 
 type ParsedCheckoutPayload = {
   name: string;
@@ -94,8 +101,8 @@ function formatCurrency(value: number) {
   return roundCurrency(value).toFixed(2);
 }
 
-function buildProductMap<T extends { id: number }>(products: T[]) {
-  const map = new Map<number, T>();
+function buildProductMap(products: CheckoutProductRecord[]) {
+  const map = new Map<number, CheckoutProductRecord>();
   for (const product of products) {
     map.set(product.id, product);
   }
@@ -292,7 +299,7 @@ async function loadProductsForCheckout(
 
 function computeSubtotal(
   items: NormalizedCheckoutItem[],
-  productMap: Map<number, { price: number }>
+  productMap: Map<number, CheckoutProductRecord>
 ) {
   return roundCurrency(
     items.reduce((total, item) => {
@@ -310,8 +317,8 @@ function createCheckoutExpirationDate() {
 }
 
 export async function createCheckoutDraft(payload: ParsedCheckoutPayload & { userId?: number | null }) {
-  return prisma.$transaction(async (tx) => {
-    const { products, productMap } = await loadProductsForCheckout(tx, payload.products);
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const { productMap } = await loadProductsForCheckout(tx, payload.products);
     const subtotal = computeSubtotal(payload.products, productMap);
     const totalAmount = roundCurrency(subtotal + DEFAULT_SHIPPING_AMOUNT);
 
@@ -388,7 +395,7 @@ export function serializeCheckoutSession(
       shipping: checkoutSession.shippingAmount,
       total: checkoutSession.totalAmount,
     },
-    items: checkoutSession.items.map((item) => ({
+    items: checkoutSession.items.map((item: CheckoutSessionRecord['items'][number]) => ({
       id: item.id,
       productId: item.productId,
       quantity: item.quantity,
@@ -406,7 +413,7 @@ export async function syncCheckoutPaymentState(
   paymentIntentId: string | null,
   paymentStatus: PaymentStatus
 ) {
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const checkoutSession = await tx.checkoutSession.findUnique({
       where: { id: checkoutSessionId },
       include: checkoutSessionInclude,
@@ -646,7 +653,7 @@ async function loadExistingFinalizedCheckout(
 
 export async function finalizeCheckoutSession(checkoutSessionId: string, paymentIntentId: string) {
   try {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const checkoutSession = await tx.checkoutSession.findUnique({
         where: { id: checkoutSessionId },
         include: checkoutSessionInclude,
@@ -689,7 +696,7 @@ export async function finalizeCheckoutSession(checkoutSessionId: string, payment
         };
       }
 
-      const items = checkoutSession.items.map((item) => ({
+      const items = checkoutSession.items.map((item: CheckoutSessionRecord['items'][number]) => ({
         productId: item.productId,
         quantity: item.quantity,
       }));
@@ -717,7 +724,7 @@ export async function finalizeCheckoutSession(checkoutSessionId: string, payment
           customerPhone: checkoutSession.customerPhone,
           paidAt: new Date(),
           products: {
-            create: checkoutSession.items.map((item) => ({
+            create: checkoutSession.items.map((item: CheckoutSessionRecord['items'][number]) => ({
               product: { connect: { id: item.productId } },
               quantity: item.quantity,
             })),
@@ -789,7 +796,7 @@ export async function sendOrderConfirmationEmail({
   const styleImg = 'width: 72px; height: 72px; border-radius: 8px; object-fit: cover;';
 
   const productDetails = checkoutSession.items
-    .map((item) => {
+    .map((item: CheckoutSessionRecord['items'][number]) => {
       const lineTotal = item.unitPrice * item.quantity;
       return `
         <li style="display:flex;align-items:center;gap:12px;margin:8px 0;">

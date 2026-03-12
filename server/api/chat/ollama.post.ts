@@ -1,14 +1,24 @@
 import { EcommerceRecommendationEngine, type UserProfile, type RecommendationContext } from './business-logic'
+import { z } from 'zod'
+import { createLogger } from '../../utils/observability'
+
+const chatRequestSchema = z.object({
+  message: z.string().trim().min(1).max(2000),
+  context: z.unknown().optional()
+})
+const logger = createLogger('chat-ollama')
 
 export default defineEventHandler(async (event) => {
-  const { message, context } = await readBody(event)
-
-  if (!message) {
+  const body = await readBody(event)
+  const parsedBody = chatRequestSchema.safeParse(body)
+  if (!parsedBody.success) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Message is required'
+      statusMessage: 'Payload chat non valido',
+      data: parsedBody.error.format()
     })
   }
+  const { message } = parsedBody.data
 
   try {
     // Build system prompt with context
@@ -49,8 +59,12 @@ export default defineEventHandler(async (event) => {
     }
 
   } catch (error: any) {
-    console.error('Errore nella chiamata a Ollama:', error)
-    
+    logger.error('Errore nella chiamata a Ollama', {
+      requestId: event.context.requestId,
+      error,
+      message,
+    })
+
     return {
       success: false,
       error: 'Mi dispiace, al momento non riesco a rispondere. Riprova tra poco.',
@@ -122,7 +136,7 @@ IMPORTANTE: Rispondi sempre in italiano e mantieni un tono professionale ma amic
       // Aggiungi alternative se disponibili
       if (recommendations.alternatives && recommendations.alternatives.length > 0) {
         systemPrompt += `\nALTERNATIVE CONSIGLIATE:\n`
-        recommendations.alternatives.slice(0, 3).forEach((product, index) => {
+        recommendations.alternatives.slice(0, 3).forEach((product) => {
           systemPrompt += `• ${product.name} - €${product.price} (${product.brand?.name})\n`
         })
       }
@@ -131,7 +145,10 @@ IMPORTANTE: Rispondi sempre in italiano e mantieni un tono professionale ma amic
     systemPrompt += `\n\nUSA QUESTI DATI per fornire consigli personalizzati e accurati. Menziona sempre i prezzi, eventuali sconti, e spiega perché stai consigliando determinati prodotti.`
     
   } catch (error) {
-    console.error('Errore nel sistema di raccomandazioni:', error)
+    logger.error('Errore nel sistema di raccomandazioni chat', {
+      error,
+      userMessage,
+    })
     systemPrompt += `\n\nNota: Sistema di raccomandazioni temporaneamente non disponibile. Fornisci comunque il miglior supporto possibile.`
   }
   
@@ -161,7 +178,7 @@ function determineUserIntent(message: string): string {
 }
 
 // Funzioni di formattazione dati (mantenute per compatibilità)
-function formatSalesData(data: any): string {
+function _formatSalesData(data: any): string {
   if (!data?.products?.length) return 'Nessun prodotto in saldo al momento.'
   
   return data.products.slice(0, 5).map((product: any) => 
@@ -169,7 +186,7 @@ function formatSalesData(data: any): string {
   ).join('\n')
 }
 
-function formatNewArrivalsData(data: any): string {
+function _formatNewArrivalsData(data: any): string {
   if (!data?.products?.length) return 'Nessun nuovo arrivo al momento.'
   
   return data.products.slice(0, 5).map((product: any) => 
@@ -177,7 +194,7 @@ function formatNewArrivalsData(data: any): string {
   ).join('\n')
 }
 
-function formatRecommendationsData(data: any): string {
+function _formatRecommendationsData(data: any): string {
   if (!data?.products?.length) return 'Nessuna raccomandazione disponibile.'
   
   return data.products.slice(0, 5).map((product: any) => 
@@ -185,7 +202,7 @@ function formatRecommendationsData(data: any): string {
   ).join('\n')
 }
 
-function formatCategoriesData(data: any): string {
+function _formatCategoriesData(data: any): string {
   if (!data?.length) return 'Nessuna categoria disponibile.'
   
   return data.slice(0, 5).map((category: any) => 
@@ -195,7 +212,7 @@ function formatCategoriesData(data: any): string {
 
 function cleanResponse(response: string): string {
   // Remove common AI response artifacts
-  let cleaned = response
+  const cleaned = response
     .replace(/^(Assistant:|AI:|Bot:)/i, '')
     .replace(/\n\n+/g, '\n\n')
     // Remove <think> tags and their content

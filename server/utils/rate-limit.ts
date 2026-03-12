@@ -66,7 +66,7 @@ export async function enforceRateLimit(event: H3Event, options: RateLimitOptions
     return;
   }
 
-  setHeader(event, 'retry-after', String(retryAfterSeconds));
+  setHeader(event, 'retry-after', retryAfterSeconds);
   logger.warn('Rate limit superato', {
     requestId: event.context.requestId,
     namespace: options.namespace,

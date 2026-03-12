@@ -1,3 +1,4 @@
+import type Stripe from 'stripe';
 import { getRequestHeader, readRawBody } from 'h3';
 import {
   handleCompletedCheckout,
@@ -22,7 +23,7 @@ export default defineEventHandler(async (event) => {
   const stripe = getStripeClient();
   const webhookSecret = getStripeWebhookSecret();
 
-  let stripeEvent;
+  let stripeEvent: Stripe.Event;
   try {
     stripeEvent = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch (error) {
@@ -37,7 +38,11 @@ export default defineEventHandler(async (event) => {
     return { received: true };
   }
 
-  const paymentIntent = stripeEvent.data.object;
+  if (stripeEvent.data.object.object !== 'payment_intent') {
+    return { received: true };
+  }
+
+  const paymentIntent: Stripe.PaymentIntent = stripeEvent.data.object;
   const checkoutSessionId =
     typeof paymentIntent.metadata?.checkoutSessionId === 'string'
       ? paymentIntent.metadata.checkoutSessionId

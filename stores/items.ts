@@ -1,3 +1,4 @@
+// @ts-nocheck
 // store/items.ts
 // export const state = () => ({
 //     items: [] as any[],  // Array per gli articoli

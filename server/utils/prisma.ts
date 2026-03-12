@@ -1,7 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type Prisma } from '@prisma/client';
 import { withAccelerate } from '@prisma/extension-accelerate';
 
-const prismaLogs = process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'];
+const prismaLogs: Prisma.LogLevel[] =
+  process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'];
 const databaseUrl = (process.env.DATABASE_URL || '').trim();
 const isAccelerateUrl = databaseUrl.startsWith('prisma://');
 

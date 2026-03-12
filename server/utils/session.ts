@@ -11,11 +11,15 @@ export const TOKEN_EXPIRY_MS = TOKEN_EXPIRY_SECONDS * 1000;
 const SESSION_AUDIENCE = 'ecommerce-app-session';
 const SESSION_ISSUER = 'ecommerce-app';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET non configurato');
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET?.trim();
+  if (!secret) {
+    throw new Error('JWT_SECRET non configurato');
+  }
+  return secret;
 }
+
+const JWT_SECRET = getJwtSecret();
 
 export type SessionUserPayload = {
   id: number;

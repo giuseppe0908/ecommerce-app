@@ -28,7 +28,7 @@ type AuthOptions = {
   requiredRole?: Role;
 };
 
-function rejectUnauthorized(event: H3Event, message: string) {
+function rejectUnauthorized(event: H3Event, message: string): never {
   clearSessionCookie(event);
   throw createError({ statusCode: 401, message });
 }

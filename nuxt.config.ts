@@ -5,6 +5,9 @@ const appBaseUrl = process.env.APP_BASE_URL || process.env.BASE_URL || 'http://l
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   devtools: { enabled: process.env.NODE_ENV !== 'production' },
+  typescript: {
+    strict: true,
+  },
   app: {
     head: {
       htmlAttrs: {
@@ -16,7 +19,8 @@ export default defineNuxtConfig({
         { name: 'format-detection', content: 'telephone=no' },
         { name: 'theme-color', content: '#0F1D2C' },
       ],
-      titleTemplate: (titleChunk) => (titleChunk ? `${titleChunk} | ${siteName}` : siteName),
+      title: siteName,
+      titleTemplate: `%s | ${siteName}`,
     },
   },
   css: ['@/assets/css/main.css', 'vue-toastification/dist/index.css'],
@@ -27,8 +31,8 @@ export default defineNuxtConfig({
     },
   },
   routeRules: {
-    '/admin/**': { middleware: 'auth' },
-    '/dashboard': { middleware: 'auth' }
+    '/admin/**': { appMiddleware: ['auth'] },
+    '/dashboard': { appMiddleware: ['auth'] }
   },
   // store: true,
   modules: [

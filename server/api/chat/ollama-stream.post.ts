@@ -1,12 +1,23 @@
-export default defineEventHandler(async (event) => {
-  const { message, context } = await readBody(event)
+import { z } from 'zod'
+import { createLogger } from '../../utils/observability'
 
-  if (!message) {
+const chatStreamRequestSchema = z.object({
+  message: z.string().trim().min(1).max(2000),
+  context: z.unknown().optional()
+})
+const logger = createLogger('chat-ollama-stream')
+
+export default defineEventHandler(async (event) => {
+  const body = await readBody(event)
+  const parsedBody = chatStreamRequestSchema.safeParse(body)
+  if (!parsedBody.success) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Message is required'
+      statusMessage: 'Payload chat stream non valido',
+      data: parsedBody.error.format()
     })
   }
+  const { message } = parsedBody.data
 
   // Set headers for Server-Sent Events
   setHeader(event, 'Content-Type', 'text/plain; charset=utf-8')
@@ -83,7 +94,7 @@ export default defineEventHandler(async (event) => {
                   controller.close()
                   break
                 }
-              } catch (parseError) {
+              } catch {
                 // Skip invalid JSON lines
                 continue
               }
@@ -96,7 +107,11 @@ export default defineEventHandler(async (event) => {
     })
 
   } catch (error: any) {
-    console.error('Errore nello streaming Ollama:', error)
+    logger.error('Errore nello streaming Ollama', {
+      requestId: event.context.requestId,
+      error,
+      message,
+    })
     throw createError({
       statusCode: 500,
       statusMessage: 'Errore interno del server'

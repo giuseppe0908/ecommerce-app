@@ -1,12 +1,11 @@
 // server/api/ip.ts
 import { defineEventHandler, getRequestHeader } from 'h3'
+import { createLogger } from '../../utils/observability'
+
+const logger = createLogger('request-ip')
 
 export default defineEventHandler((event) => {
   try {
-    // Debug headers
-    const headers = event.node.req.headers
-    console.log('[Debug] Request headers:', headers)
-
     // Raccolta di tutti i possibili header/IP sources
     const ipSources = {
       cloudflare: getRequestHeader(event, 'cf-connecting-ip'),
@@ -17,8 +16,6 @@ export default defineEventHandler((event) => {
       socket: event.node.req.socket?.remoteAddress,
       connection: event.node.req.connection?.remoteAddress
     }
-
-    console.log('[Debug] IP Sources:', ipSources)
 
     // Priorità: Cloudflare → Vercel → X-Forwarded-For → X-Real-IP → Socket
     const clientIP = ipSources.cloudflare ||
@@ -40,7 +37,11 @@ export default defineEventHandler((event) => {
                   ipSources.connection ? 'connection' :
                   'fallback'
 
-    console.log('[Debug] Final IP:', { ip: clientIP, source })
+    logger.debug('IP rilevato', {
+      requestId: event.context.requestId,
+      source,
+      clientIP,
+    })
 
     return {
       data: {
@@ -51,13 +52,19 @@ export default defineEventHandler((event) => {
       }
     }
   } catch (error) {
-    console.error('[Error] IP Detection:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto'
+    const errorStack = error instanceof Error ? error.stack : undefined
+
+    logger.error('Errore rilevamento IP', {
+      requestId: event.context.requestId,
+      error,
+    })
     return {
       data: {
         ip: 'unknown',
-        error: error.message,
+        error: errorMessage,
         timestamp: new Date().toISOString(),
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
       }
     }
   }
