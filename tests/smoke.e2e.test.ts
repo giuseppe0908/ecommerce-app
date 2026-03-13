@@ -73,6 +73,8 @@ test(
         GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET || 'smoke-github-secret',
         GITHUB_CALLBACK_URL:
           process.env.GITHUB_CALLBACK_URL || `${baseUrl}/api/auth/github/callback`,
+        AI_CHAT_ENABLED: process.env.AI_CHAT_ENABLED || 'false',
+        AI_CHAT_PROVIDER: process.env.AI_CHAT_PROVIDER || 'ollama',
         DATABASE_URL:
           process.env.DATABASE_URL || 'mysql://root:@127.0.0.1:3306/smoke_ecommerce',
         DIRECT_DATABASE_URL:
@@ -134,6 +136,37 @@ test(
       adminStatistics.status,
       401,
       `GET /api/admin/statistics status is ${adminStatistics.status}. Logs: ${serverLogs.join('')}`
+    );
+
+    const chatStatus = await fetch(`${baseUrl}/api/chat/status`);
+    assert.equal(
+      chatStatus.status,
+      200,
+      `GET /api/chat/status status is ${chatStatus.status}. Logs: ${serverLogs.join('')}`
+    );
+    const chatStatusPayload = await chatStatus.json();
+    assert.equal(
+      chatStatusPayload.enabled,
+      false,
+      `GET /api/chat/status enabled is ${String(chatStatusPayload.enabled)}. Logs: ${serverLogs.join('')}`
+    );
+    assert.equal(
+      chatStatusPayload.available,
+      false,
+      `GET /api/chat/status available is ${String(chatStatusPayload.available)}. Logs: ${serverLogs.join('')}`
+    );
+
+    const chatMessage = await fetch(`${baseUrl}/api/chat/ollama`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        message: 'Ciao',
+      }),
+    });
+    assert.equal(
+      chatMessage.status,
+      503,
+      `POST /api/chat/ollama status is ${chatMessage.status}. Logs: ${serverLogs.join('')}`
     );
 
     const draftCheckout = await fetch(`${baseUrl}/api/order/order`, {

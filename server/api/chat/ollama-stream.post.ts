@@ -1,11 +1,16 @@
 import { z } from 'zod'
 import { createLogger } from '../../utils/observability'
+import { createAiChatUnavailableError, getAiChatGenerateUrl, getAiChatRuntimeConfig } from '../../utils/ai-chat'
 
 const chatStreamRequestSchema = z.object({
   message: z.string().trim().min(1).max(2000),
   context: z.unknown().optional()
 })
 const logger = createLogger('chat-ollama-stream')
+
+function hasStatusCode(error: unknown): error is { statusCode: number } {
+  return typeof error === 'object' && error !== null && 'statusCode' in error
+}
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -26,17 +31,22 @@ export default defineEventHandler(async (event) => {
   setHeader(event, 'Access-Control-Allow-Origin', '*')
 
   try {
+    const aiChatConfig = getAiChatRuntimeConfig(event)
+    if (!aiChatConfig.enabled || !aiChatConfig.configured) {
+      throw createAiChatUnavailableError()
+    }
+
     // Build system prompt
     const systemPrompt = `Sei un assistente AI per un e-commerce. Rispondi in modo conciso e utile in italiano.`
 
-    // Call Ollama API with streaming
-    const response = await fetch('http://localhost:11434/api/generate', {
+    const response = await fetch(getAiChatGenerateUrl(event), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(aiChatConfig.timeoutMs),
       body: JSON.stringify({
-        model: 'llama3.2:1b',
+        model: aiChatConfig.model,
         prompt: `${systemPrompt}\n\nUtente: ${message}\nAssistente:`,
         stream: true,
         options: {
@@ -51,7 +61,7 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!response.ok) {
-      throw new Error(`Ollama API error: ${response.status}`)
+      throw createAiChatUnavailableError()
     }
 
     // Create readable stream
@@ -106,15 +116,16 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (hasStatusCode(error)) {
+      throw error
+    }
+
     logger.error('Errore nello streaming Ollama', {
       requestId: event.context.requestId,
       error,
       message,
     })
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Errore interno del server'
-    })
+    throw createAiChatUnavailableError()
   }
 })

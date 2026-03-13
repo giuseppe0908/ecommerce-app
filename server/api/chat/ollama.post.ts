@@ -1,12 +1,17 @@
 import { EcommerceRecommendationEngine, type UserProfile, type RecommendationContext } from './business-logic'
 import { z } from 'zod'
 import { createLogger } from '../../utils/observability'
+import { createAiChatUnavailableError, getAiChatGenerateUrl, getAiChatRuntimeConfig } from '../../utils/ai-chat'
 
 const chatRequestSchema = z.object({
   message: z.string().trim().min(1).max(2000),
   context: z.unknown().optional()
 })
 const logger = createLogger('chat-ollama')
+
+function hasStatusCode(error: unknown): error is { statusCode: number } {
+  return typeof error === 'object' && error !== null && 'statusCode' in error
+}
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -21,17 +26,22 @@ export default defineEventHandler(async (event) => {
   const { message } = parsedBody.data
 
   try {
+    const aiChatConfig = getAiChatRuntimeConfig(event)
+    if (!aiChatConfig.enabled || !aiChatConfig.configured) {
+      throw createAiChatUnavailableError()
+    }
+
     // Build system prompt with context
     const systemPrompt = await buildSystemPrompt(message)
 
-    // Call Ollama API
-    const response = await fetch('http://localhost:11434/api/generate', {
+    const response = await fetch(getAiChatGenerateUrl(event), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(aiChatConfig.timeoutMs),
       body: JSON.stringify({
-        model: 'llama3.2:1b',
+        model: aiChatConfig.model,
         prompt: `${systemPrompt}\n\nUtente: ${message}\nAssistente:`,
         stream: false,
         options: {
@@ -46,7 +56,7 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!response.ok) {
-      throw new Error(`Ollama API error: ${response.status}`)
+      throw createAiChatUnavailableError()
     }
 
     const ollamaResponse = await response.json() as { response: string }
@@ -55,21 +65,21 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       response: cleanedResponse,
-      model: 'llama3.2:1b'
+      model: aiChatConfig.model
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (hasStatusCode(error)) {
+      throw error
+    }
+
     logger.error('Errore nella chiamata a Ollama', {
       requestId: event.context.requestId,
       error,
       message,
     })
 
-    return {
-      success: false,
-      error: 'Mi dispiace, al momento non riesco a rispondere. Riprova tra poco.',
-      details: error.message
-    }
+    throw createAiChatUnavailableError()
   }
 })
 

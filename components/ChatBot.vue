@@ -171,46 +171,18 @@ const handleSendMessage = async () => {
 const sendMessage = async (text) => {
   if (!text.trim()) return
 
-  // Add user message
-  chatStore.addMessage({
-    text: text.trim(),
-    isUser: true,
-    timestamp: new Date()
-  })
-
   scrollToBottom()
   isLoading.value = true
   isTyping.value = true
 
   try {
-    // Call Nuxt API endpoint for Ollama
-    const response = await $fetch('/api/chat/ollama', {
-      method: 'POST',
-      body: {
-        message: text.trim(),
-        context: getContextualInfo()
-      }
-    })
+    chatStore.setPageContext(getContextualInfo().currentPage, getContextualInfo())
+    const response = await chatStore.sendMessage(text.trim())
 
-    // Add bot response
-    chatStore.addMessage({
-      text: response.response,
-      isUser: false,
-      timestamp: new Date()
-    })
-
-    if (!isOpen.value) {
+    if (response && !isOpen.value) {
       hasNewMessage.value = true
       unreadCount.value++
     }
-
-  } catch (error) {
-    console.error('Errore nella comunicazione con Ollama:', error)
-    chatStore.addMessage({
-      text: 'Mi dispiace, si è verificato un errore. Riprova più tardi.',
-      isUser: false,
-      timestamp: new Date()
-    })
   } finally {
     isLoading.value = false
     isTyping.value = false
@@ -219,7 +191,6 @@ const sendMessage = async (text) => {
 }
 
 const getContextualInfo = () => {
-  // Get current page context for better responses
   const route = useRoute()
   return {
     currentPage: route.name,

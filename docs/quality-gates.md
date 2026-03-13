@@ -23,7 +23,8 @@
   - `tests/**/*` because runtime behavior is already validated by `npm test`
   - `prisma/seeder.ts` because it is a local data bootstrap script, not preview runtime code
   - `stores/items.ts` because it is a legacy Vuex store no longer used by the active app
-  - `server/api/chat/**/*` because the local Ollama chatbot is isolated for Task 7
+  - `server/api/chat/**/*` because the optional AI chat runtime is smoke-validated separately and
+    must not become a hard dependency of preview deploys
 - CI uses placeholder environment variables so the gates do not depend on live Stripe, GitHub,
   email or a remote database provider.
 

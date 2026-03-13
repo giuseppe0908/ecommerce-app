@@ -1,47 +1,70 @@
 import { ref, onMounted, readonly } from 'vue'
 
 export const useOllamaStatus = () => {
-  const isOllamaAvailable = ref(false)
-  const isChecking = ref(true)
+  const runtimeConfig = useRuntimeConfig()
+  const featureEnabled = Boolean(runtimeConfig.public?.aiChatEnabled)
+  const isChatAvailable = ref(false)
+  const isChecking = ref(featureEnabled)
+  const status = ref({
+    enabled: featureEnabled,
+    available: false,
+    provider: runtimeConfig.public?.aiChatProvider || 'ollama',
+    reason: featureEnabled ? 'checking' : 'disabled',
+  })
 
   const checkOllamaStatus = async () => {
+    if (!featureEnabled) {
+      status.value = {
+        enabled: false,
+        available: false,
+        provider: runtimeConfig.public?.aiChatProvider || 'ollama',
+        reason: 'disabled',
+      }
+      isChatAvailable.value = false
+      isChecking.value = false
+      return status.value
+    }
+
     try {
       isChecking.value = true
-      
-      // Verifica se Ollama è disponibile facendo una richiesta ai modelli
-      const response = await fetch('http://localhost:11434/api/tags', {
+
+      const response = await $fetch('/api/chat/status', {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        // Timeout di 3 secondi per evitare attese lunghe
-        signal: AbortSignal.timeout(3000)
+        retry: 0,
       })
-      
-      if (response.ok) {
-        const data = await response.json()
-        // Verifica che ci siano modelli disponibili
-        isOllamaAvailable.value = data.models && data.models.length > 0
-      } else {
-        isOllamaAvailable.value = false
+
+      status.value = {
+        enabled: Boolean(response?.enabled),
+        available: Boolean(response?.available),
+        provider: response?.provider || runtimeConfig.public?.aiChatProvider || 'ollama',
+        reason: response?.reason || 'unavailable',
       }
+      isChatAvailable.value = status.value.enabled && status.value.available
     } catch (error) {
-      // Se c'è un errore (connessione rifiutata, timeout, ecc.), Ollama non è disponibile
-      console.warn('Ollama non disponibile:', error.message)
-      isOllamaAvailable.value = false
+      console.warn('Assistente AI non disponibile:', error?.message || error)
+      status.value = {
+        enabled: featureEnabled,
+        available: false,
+        provider: runtimeConfig.public?.aiChatProvider || 'ollama',
+        reason: 'unreachable',
+      }
+      isChatAvailable.value = false
     } finally {
       isChecking.value = false
     }
+
+    return status.value
   }
 
-  // Controlla lo stato all'avvio
   onMounted(() => {
-    checkOllamaStatus()
+    void checkOllamaStatus()
   })
 
   return {
-    isOllamaAvailable: readonly(isOllamaAvailable),
+    isChatAvailable: readonly(isChatAvailable),
+    isOllamaAvailable: readonly(isChatAvailable),
     isChecking: readonly(isChecking),
+    status: readonly(status),
     checkOllamaStatus
   }
 }
