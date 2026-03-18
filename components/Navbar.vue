@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useProductStore } from '@/stores/productStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useWishlistStore } from '@/stores/wishlistStore'
@@ -16,8 +16,8 @@ const wishlistStore = useWishlistStore()
 const isOpen = ref(false)
 const searchBar = ref(false)
 const showAuthMenu = ref(false)
-const hasToken = ref(false)
 let leaveTimeout = null  // Timeout per ritardare la chiusura del menu
+const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 // Link di navigazione
 const links = [
@@ -27,13 +27,6 @@ const links = [
 ]
 
 // Funzioni
-const checkToken = () => {
-  if (process.client) {
-    const token = localStorage.getItem('authToken')
-    hasToken.value = !!token
-  }
-}
-
 const clearLeaveTimeout = () => {
   if (leaveTimeout) {
     clearTimeout(leaveTimeout)
@@ -41,9 +34,11 @@ const clearLeaveTimeout = () => {
   }
 }
 
-const handleMouseEnter = () => {
+const handleMouseEnter = async () => {
   clearLeaveTimeout()
-  checkToken()
+  if (!authStore.isInitialized) {
+    await authStore.initialize()
+  }
   showAuthMenu.value = true
 }
 
@@ -58,20 +53,22 @@ const openSearch = () => {
   searchBar.value = !searchBar.value
 }
 
-const checkAuth = () => {
-  if (process.client) {
-    const token = localStorage.getItem('authToken')
-    if (!token) {
-      navigateTo('/login')
-    } else {
-      navigateTo('/dashboard')
-    }
+const checkAuth = async () => {
+  if (!authStore.isInitialized) {
+    await authStore.initialize()
   }
+
+  navigateTo(authStore.isAuthenticated ? '/dashboard' : '/login')
+}
+
+const handleLogout = async () => {
+  await authStore.logout()
+  navigateTo('/login')
 }
 
 // Inizializzazione
 onMounted(() => {
-  checkToken()
+  authStore.initialize()
 })
 </script>
 
@@ -154,7 +151,7 @@ onMounted(() => {
               @mouseleave="handleMouseLeave"
             >
               <!-- Menu per utenti non autenticati -->
-              <template v-if="!hasToken">
+              <template v-if="!isAuthenticated">
                 <NuxtLink 
                   to="/login"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -177,14 +174,8 @@ onMounted(() => {
                 >
                   Dashboard
                 </NuxtLink>
-                <NuxtLink 
-                  to="/profile"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  Profilo
-                </NuxtLink>
                 <button 
-                  @click="authStore.logout(); navigateTo('/login') "
+                  @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                 >
                   Logout

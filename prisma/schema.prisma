@@ -1,45 +1,58 @@
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_DATABASE_URL")
 }
+
 generator client {
   provider = "prisma-client-js"
 }
 
 model Product {
-  id               Int       @id @default(autoincrement())
-  name             String
-  categoryId       Int
-  brandId          Int
-  genderId         Int
-  favorite         Boolean?
-  promo            Boolean
-  plus             Boolean  
-  newArrival       Boolean   
-  price            Float
-  photo            String
-  codeItem         String
-  percentualPromo  Float
-  rating           Float?  
-  description      String  
-  available_quantity Int 
-  subCategoryId Int?
-  features         ProductFeature[] 
-  subCategory      SubCategory? @relation(fields: [subCategoryId], references: [id])
-  category         Category       @relation(fields: [categoryId], references: [id])
-  productColors    ProductColor[] // Relazione esplicita con la tabella di join  category         Category  @relation(fields: [categoryId], references: [id])
-  brand            Brand     @relation(fields: [brandId], references: [id])
-  gender           Gender   @relation(fields: [genderId], references: [id]) // Relazione con Gender
-  reviews          Review[]  // Relazione per le recensioni degli utenti
-  orders           OrderProduct[] // Relazione Many-to-Many tramite tabella intermedia
-  favoritedBy      Favorite[] // Relazione con gli utenti che hanno messo il prodotto nei preferiti
+  id                 Int                   @id @default(autoincrement())
+  name               String
+  categoryId         Int
+  brandId            Int
+  genderId           Int
+  favorite           Boolean?
+  promo              Boolean
+  plus               Boolean
+  newArrival         Boolean
+  price              Float
+  photo              String
+  codeItem           String                @unique
+  percentualPromo    Float
+  rating             Float?
+  description        String
+  available_quantity Int
+  subCategoryId      Int?
+  features           ProductFeature[]
+  subCategory        SubCategory?          @relation(fields: [subCategoryId], references: [id])
+  category           Category              @relation(fields: [categoryId], references: [id])
+  productColors      ProductColor[] // Relazione esplicita con la tabella di join  category         Category  @relation(fields: [categoryId], references: [id])
+  brand              Brand                 @relation(fields: [brandId], references: [id])
+  gender             Gender                @relation(fields: [genderId], references: [id]) // Relazione con Gender
+  reviews            Review[] // Relazione per le recensioni degli utenti
+  orders             OrderProduct[] // Relazione Many-to-Many tramite tabella intermedia
+  favoritedBy        Favorite[] // Relazione con gli utenti che hanno messo il prodotto nei preferiti
+  images             ProductImage[] // Relazione con le immagini del prodotto
+  checkoutSessions   CheckoutSessionItem[]
+
+  // Indici per query ad alto traffico (search/related/recommendations)
+  @@index([promo, percentualPromo, rating, id], map: "idx_product_sale_rank")
+  @@index([newArrival, rating, id], map: "idx_product_new_arrival_rank")
+  @@index([available_quantity, price, rating, id], map: "idx_product_stock_price_rank")
+  @@index([categoryId, promo, rating, id], map: "idx_product_rel_cat_rank")
+  @@index([brandId, promo, rating, id], map: "idx_product_rel_brand_rank")
+  @@index([genderId, promo, rating, id], map: "idx_product_rel_gender_rank")
 }
+
 model Color {
-  id              Int            @id @default(autoincrement())
-  name            String
-  hex             String?
-  productColors   ProductColor[]  // Relazione opposta
+  id            Int            @id @default(autoincrement())
+  name          String
+  hex           String?
+  productColors ProductColor[] // Relazione opposta
+  productImages ProductImage[] // Immagini associate a questo colore
 }
 
 model ProductColor {
@@ -51,86 +64,114 @@ model ProductColor {
   @@id([productId, colorId]) // Chiave primaria composta se è una tabella di join
 }
 
+// Enum per il tipo di immagine
+enum ImageType {
+  MAIN // Immagine principale per colore
+  SECONDARY // Immagini secondarie per colore
+  GENERAL // Immagini generiche del prodotto (taglie, dettagli, etc.)
+}
+
+// Modello per le immagini dei prodotti
+model ProductImage {
+  id        Int       @id @default(autoincrement())
+  productId Int
+  colorId   Int? // NULL per immagini GENERAL
+  imageUrl  String
+  imageType ImageType
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color   Color?  @relation(fields: [colorId], references: [id])
+
+  @@index([productId, colorId])
+  @@index([productId, imageType])
+}
+
 model Brand {
   id       Int       @id @default(autoincrement())
-  name     String
+  name     String    @unique
   products Product[]
 }
 
 model SubCategory {
-  id          Int      @id @default(autoincrement())
-  name        String
-  categoryId  Int
-  category    Category @relation(fields: [categoryId], references: [id])
-  products    Product[] // Se i prodotti appartengono direttamente a una sottocategoria
+  id         Int       @id @default(autoincrement())
+  name       String
+  categoryId Int
+  category   Category  @relation(fields: [categoryId], references: [id])
+  products   Product[] // Se i prodotti appartengono direttamente a una sottocategoria
 }
 
 model Category {
   id            Int             @id @default(autoincrement())
-  name          String
-  images        CategoryImage[]  // Relazione con le immagini per genere
-  products      Product[]        // Relazione con i prodotti appartenenti alla categoria
-  subCategories SubCategory[]   // Nuova relazione verso le sottocategorie
+  name          String          @unique
+  images        CategoryImage[] // Relazione con le immagini per genere
+  products      Product[] // Relazione con i prodotti appartenenti alla categoria
+  subCategories SubCategory[] // Nuova relazione verso le sottocategorie
   features      Feature[]
 }
 
 model CategoryImage {
-  id           Int        @id @default(autoincrement())
-  imageUrl     String     // URL dell'immagine
-  genderId     Int      
-  categoryId   Int
-  category     Category    @relation(fields: [categoryId], references: [id])
-  gender       Gender      @relation(fields: [genderId], references: [id])
+  id         Int      @id @default(autoincrement())
+  imageUrl   String // URL dell'immagine
+  genderId   Int
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+  gender     Gender   @relation(fields: [genderId], references: [id])
 }
 
 model Feature {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  type        String    // 'text', 'select', 'range' (per UI)
-  category    Category? @relation(fields: [categoryId], references: [id])
-  categoryId  Int?
-  products    ProductFeature[]
-  options     String?  // Per type 'select' es: ["S", "M", "L"]
+  id         Int              @id @default(autoincrement())
+  name       String           @unique
+  type       String // 'text', 'select', 'range' (per UI)
+  category   Category?        @relation(fields: [categoryId], references: [id])
+  categoryId Int?
+  products   ProductFeature[]
+  options    String? // Per type 'select' es: ["S", "M", "L"]
 }
 
 model ProductFeature {
-  productId  Int
-  featureId  Int
-  value      String
-  product    Product @relation(fields: [productId], references: [id])
-  feature    Feature @relation(fields: [featureId], references: [id])
+  productId Int
+  featureId Int
+  value     String
+  product   Product @relation(fields: [productId], references: [id])
+  feature   Feature @relation(fields: [featureId], references: [id])
+
   @@id([productId, featureId])
 }
 
 model User {
-  id       Int       @id @default(autoincrement())
-  name     String?
-  surname  String?
-  email    String    @unique
-  password String?
-  address  String?
-  number   String?
-  newsletter Boolean ?
-  githubId     String?   @unique
-  orders   Order[]
-  reviews  Review[] 
-  favorites Favorite[] // Relazione con i preferiti
-  role     Role      @default(USER)
-  createdAt DateTime @default(now())
-  tokens    Token[]   // Relazione con i token
-  resetTokens     ResetToken[] 
-
+  id               Int               @id @default(autoincrement())
+  name             String?
+  surname          String?
+  email            String            @unique
+  password         String?
+  address          String?
+  number           String?
+  newsletter       Boolean?
+  githubId         String?           @unique
+  orders           Order[]
+  reviews          Review[]
+  favorites        Favorite[] // Relazione con i preferiti
+  role             Role              @default(USER)
+  createdAt        DateTime          @default(now())
+  tokens           Token[] // Relazione con i token
+  resetTokens      ResetToken[]
+  checkoutSessions CheckoutSession[]
 }
 
 model Token {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   userId    Int
-  user      User      @relation(fields: [userId], references: [id])
-  token     String     @db.Text // Utilizzo del tipo Text per lunghezza illimitatas
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @db.Text // Utilizzo del tipo Text per lunghezza illimitatas
   expiresAt DateTime
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
+
   @@index([userId])
-  @@index([token(length: 255)]) // Creiamo un indice sulla prima parte del token
+  @@index([expiresAt])
+  @@index([userId, expiresAt])
+  @@index([token]) // PostgreSQL supporta l'indice diretto sul campo text
 }
 
 model ResetToken {
@@ -140,6 +181,9 @@ model ResetToken {
   token     String   @unique
   expiresAt DateTime // Scadenza del token
   createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+  @@index([userId, expiresAt])
 }
 
 enum Role {
@@ -147,27 +191,120 @@ enum Role {
   ADMIN
 }
 
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  REQUIRES_ACTION
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum CheckoutStatus {
+  OPEN
+  PAYMENT_PENDING
+  COMPLETED
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
 model Order {
-  id        Int            @id @default(autoincrement())
-  idUtente  Int
-  price     Float
-  user      User           @relation(fields: [idUtente], references: [id])
-  products  OrderProduct[] // Relazione Many-to-Many tramite tabella intermedia
+  id              Int              @id @default(autoincrement())
+  idUtente        Int
+  price           Float
+  subtotal        Float            @default(0)
+  shippingAmount  Float            @default(0)
+  currency        String           @default("eur")
+  status          OrderStatus      @default(PENDING)
+  paymentStatus   PaymentStatus    @default(PENDING)
+  paymentIntentId String?          @unique
+  customerName    String?
+  customerSurname String?
+  customerEmail   String?
+  shippingAddress String?
+  customerPhone   String?
+  paidAt          DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  user            User             @relation(fields: [idUtente], references: [id])
+  products        OrderProduct[] // Relazione Many-to-Many tramite tabella intermedia
+  checkoutSession CheckoutSession?
+
+  @@index([createdAt])
+  @@index([idUtente, createdAt])
+  @@index([status, createdAt])
+  @@index([paymentStatus, createdAt])
 }
 
 model OrderProduct {
-  id        Int       @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   orderId   Int
   productId Int
-  quantity  Int       @default(1) // Quantità del prodotto nell'ordine
-  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int     @default(1) // Quantità del prodotto nell'ordine
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
   @@unique([orderId, productId]) // Evita duplicati dello stesso prodotto nello stesso ordine
 }
+
+model CheckoutSession {
+  id              String                @id @default(cuid())
+  userId          Int?
+  orderId         Int?                  @unique
+  customerName    String
+  customerSurname String
+  customerEmail   String
+  shippingAddress String
+  customerPhone   String
+  currency        String                @default("eur")
+  subtotal        Float
+  shippingAmount  Float                 @default(0)
+  totalAmount     Float
+  status          CheckoutStatus        @default(OPEN)
+  paymentStatus   PaymentStatus         @default(PENDING)
+  paymentIntentId String?               @unique
+  expiresAt       DateTime
+  completedAt     DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  user            User?                 @relation(fields: [userId], references: [id])
+  order           Order?                @relation(fields: [orderId], references: [id])
+  items           CheckoutSessionItem[]
+
+  @@index([userId, createdAt])
+  @@index([status, expiresAt])
+  @@index([paymentStatus, createdAt])
+  @@index([customerEmail, createdAt])
+}
+
+model CheckoutSessionItem {
+  id                Int             @id @default(autoincrement())
+  checkoutSessionId String
+  productId         Int
+  quantity          Int             @default(1)
+  unitPrice         Float
+  productName       String
+  productPhoto      String?
+  checkoutSession   CheckoutSession @relation(fields: [checkoutSessionId], references: [id], onDelete: Cascade)
+  product           Product         @relation(fields: [productId], references: [id])
+
+  @@unique([checkoutSessionId, productId])
+  @@index([productId])
+}
+
 model Gender {
-  id        Int       @id @default(autoincrement())
-  name      String
-  products  Product[] // Relazione con i prodotti
+  id             Int             @id @default(autoincrement())
+  name           String          @unique
+  products       Product[] // Relazione con i prodotti
   categoryImages CategoryImage[]
 }
 
@@ -179,8 +316,12 @@ model Review {
   comment   String
   // Add this field
   createdAt DateTime @default(now())
-  product   Product   @relation(fields: [productId], references: [id])
-  user      User      @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([userId])
 }
 
 model Favorite {
@@ -190,7 +331,7 @@ model Favorite {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
+
   @@unique([userId, productId]) // Evita duplicati dello stesso prodotto per lo stesso utente
   @@index([userId])
   @@index([productId])

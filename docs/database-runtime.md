@@ -3,51 +3,50 @@
 ## Chosen strategy
 
 - ORM: Prisma
-- Primary database: MySQL
-- Preview/production pooling: Prisma Accelerate
-- Local development: direct MySQL connection
+- Primary database: PostgreSQL
+- Hosted database: Neon
+- Local development: direct PostgreSQL connection
 
 ## Why this strategy
 
-On Vercel, serverless concurrency can open too many direct MySQL connections even when the
-application uses a shared Prisma singleton per runtime instance. Prisma Accelerate adds a pooled
-`prisma://` endpoint that is designed for serverless fan-out while preserving the existing Prisma
-client and schema.
+On Vercel, the application can run directly against Neon over SSL using a standard
+`postgresql://` connection string. If the project later adopts Prisma Accelerate, the runtime
+already supports `prisma://` URLs as an optional pooled layer.
 
 This keeps the current architecture intact:
 
 - no ORM rewrite
 - no repository-layer rewrite
-- no provider switch required
+- provider aligned with Neon/Postgres
 
 ## Environment split
 
 ### Local
 
-- `DATABASE_URL=mysql://...`
-- `DIRECT_DATABASE_URL=mysql://...`
+- `DATABASE_URL=postgresql://...`
+- `DIRECT_DATABASE_URL=postgresql://...`
 
-Both variables point to the same local MySQL instance.
+Both variables point to the same local PostgreSQL instance.
 
 ### Vercel Preview
 
-- `DATABASE_URL=prisma://...`
-- `DIRECT_DATABASE_URL=mysql://...`
+- `DATABASE_URL=postgresql://...`
+- `DIRECT_DATABASE_URL=postgresql://...`
 
-Preview uses the pooled Accelerate URL at runtime and the direct MySQL URL for
+Preview uses the Neon URL with `sslmode=require` at runtime and for
 `prisma generate` / `prisma migrate deploy`.
 
 ### Vercel Production
 
-- `DATABASE_URL=prisma://...`
-- `DIRECT_DATABASE_URL=mysql://...`
+- `DATABASE_URL=postgresql://...`
+- `DIRECT_DATABASE_URL=postgresql://...`
 
 Same pattern as preview, with isolated production credentials.
 
 ## Connection management
 
 - `server/utils/prisma.ts` creates one Prisma client per runtime instance.
-- In local development the client uses direct MySQL access.
+- In local development the client uses direct PostgreSQL access.
 - When `DATABASE_URL` starts with `prisma://`, the client is extended with
   `@prisma/extension-accelerate`.
 - Prisma CLI and migrations use `DIRECT_DATABASE_URL` via `directUrl` in the Prisma datasource.
@@ -55,5 +54,5 @@ Same pattern as preview, with isolated production credentials.
 ## Operational notes
 
 - Run `npm run db:generate` after dependency or schema changes.
-- Run `npm run db:migrate:deploy` in preview/production environments against the direct database URL.
+- Run `npm run db:migrate:deploy` in preview/production environments against the direct Neon URL.
 - Keep preview and production databases separated.

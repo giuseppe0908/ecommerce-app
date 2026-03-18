@@ -1,35 +1,21 @@
-import { PrismaClient } from '@prisma/client';
-import jwt from 'jsonwebtoken';
-
-const prisma = new PrismaClient();
+import { requireAuthenticatedUser } from '../../utils/auth-session';
 
 export default defineEventHandler(async (event) => {
-  const token = event.req.headers['authorization']?.split(' ')[1];
-
-  if (!token) {
-    throw createError({ statusCode: 401, message: 'Token mancante' });
+  if (event.node.req.method !== 'GET') {
+    throw createError({ statusCode: 405, message: 'Metodo non supportato' });
   }
 
-  try {
-    // Decodifica il token JWT
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Verifica che l'utente esista nel database
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.sub }, // Changed from decoded.id to decoded.sub
-    });
-
-    if (!user) {
-      throw createError({ statusCode: 401, message: 'Utente non trovato' });
-    }
-
-    console.log('Utente autenticato:', user.role);
-    
-    // Restituisci i dati dell'utente
-    return { id: user.id, name: user.name, role: user.role };
-
-  } catch (error) {
-    // Gestione degli errori (token invalido o scaduto)
-    throw createError({ statusCode: 401, message: 'Token non valido o scaduto' });
-  }
+  const user = await requireAuthenticatedUser(event);
+  return {
+    authenticated: true,
+    user: {
+      id: user.id,
+      name: user.name,
+      surname: user.surname,
+      email: user.email,
+      role: user.role,
+      address: user.address,
+      number: user.number,
+    },
+  };
 });

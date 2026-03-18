@@ -6,6 +6,9 @@
       <slot />
     </main>
     <ClientOnly>
+      <Cart />
+    </ClientOnly>
+    <ClientOnly>
       <ChatBot v-if="isChatAvailable" />
     </ClientOnly>
   </div>
@@ -13,6 +16,7 @@
 
 <script setup>
 import Navbar from '~/components/Navbar.vue'
+import Cart from '~/components/Cart.vue'
 import ChatBot from '~/components/ChatBot.vue'
 import { useOllamaStatus } from '~/composables/useOllamaStatus.js'
 

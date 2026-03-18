@@ -1,35 +1,31 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
 import { useCartStore } from '@/stores/cartStore';
 import Button from './Button.vue';
 
 const cartStore = useCartStore();
-const props = defineProps(['colorPrimary']);
+const props = defineProps({
+  colorPrimary: {
+    type: String,
+    default: '#5D758B',
+  },
+});
 const info = "Se il tuo ordine raggiunge 28,90 €, la tua spedizione è gratuita. Per i membri Plus, è sempre offerta.";
 const price_shipping = 4.95;
 
 const addquantity = (item) => {
     cartStore.addtocart(item);
-    cartStore.total += item.price;
-    localStorage.prezzototal = JSON.stringify(cartStore.total);
 };
 
 const removeQuantity = (item) => {
     cartStore.removetocart(item.codeItem);
-    cartStore.total -= item.price;
 };
 
 const svuota = () => {
-    localStorage.removeItem('carrello');
-    localStorage.removeItem('prezzototal');
-    cartStore.cart.splice(0, cartStore.cart.length);
-    cartStore.total = 0;
+    cartStore.clearCart();
 };
 
 onMounted(() => {
-  if(localStorage.getItem('carrello')){
-    cartStore.total = JSON.parse(localStorage.getItem('prezzototal'));
-  }
+  cartStore.loadCartFromLocalStorage();
 });
 
 
@@ -98,7 +94,7 @@ onMounted(() => {
             <div class="button mt-4" v-if="cartStore.cart.length > 0">
                 <button class="bg-blue-500 text-white px-4 py-2 rounded mr-2 hover:bg-blue-600">
                     <!-- <RouterLink to="/order">Compra</RouterLink> -->
-                    <Button name="ACQUISTA ORA" bgColor="white" textColor="black" to="/order" applyNegativeMargin="false" width="150px" height="50px" fontSize="13px"/>
+                    <Button name="ACQUISTA ORA" bgColor="white" textColor="black" to="/order" :applyNegativeMargin="false" width="150px" height="50px" fontSize="13px"/>
                 </button>
                 <button @click="svuota" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Svuota</button>
             </div>

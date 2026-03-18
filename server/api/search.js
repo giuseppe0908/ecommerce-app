@@ -1,46 +1,56 @@
-import { PrismaClient } from '@prisma/client'
+import { buildCacheKey, rememberCache } from '../utils/cache'
+import { createLogger } from '../utils/observability'
+import prisma from '../utils/prisma'
 
-const prisma = new PrismaClient()
+const logger = createLogger('quick-search')
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
-  const searchTerm = query.q?.toLowerCase() // Convertiamo in minuscolo
+  const searchTerm = typeof query.q === 'string' ? query.q.trim() : ''
   
   if (!searchTerm || searchTerm.length < 2) {
-    return []
+    return { products: [], brands: [] }
   }
 
+  const cacheKey = buildCacheKey('products:quick-search', { searchTerm })
+
   try {
-    const results = await prisma.$transaction([
-      // Cerca nei prodotti
-      prisma.product.findMany({
-        where: {
-          OR: [
-            { name: { contains: searchTerm } },
-            { description: { contains: searchTerm } }
-          ]
-        },
-        include: {
-          brand: true,
-          category: true
-        },
-        take: 5
-      }),
-      // Cerca nei brand
-      prisma.brand.findMany({
-        where: {
-          name: { contains: searchTerm }
-        },
-        take: 3
-      })
-    ])
+    const { value: results } = await rememberCache(cacheKey, 30, () =>
+      prisma.$transaction([
+        // Cerca nei prodotti
+        prisma.product.findMany({
+          where: {
+            OR: [
+              { name: { contains: searchTerm, mode: 'insensitive' } },
+              { description: { contains: searchTerm, mode: 'insensitive' } }
+            ]
+          },
+          include: {
+            brand: true,
+            category: true
+          },
+          take: 5
+        }),
+        // Cerca nei brand
+        prisma.brand.findMany({
+          where: {
+            name: { contains: searchTerm, mode: 'insensitive' }
+          },
+          take: 3
+        })
+      ])
+    )
 
     return {
       products: results[0],
       brands: results[1]
     }
   } catch (error) {
-    console.error('Errore nella ricerca:', error)
-    return { error: 'Errore durante la ricerca' }
+    logger.error('Errore quick search', {
+      requestId: event.context.requestId,
+      error,
+      searchTerm,
+    })
+    return { products: [], brands: [], error: 'Errore durante la ricerca' }
   }
 })

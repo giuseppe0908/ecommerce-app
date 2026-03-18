@@ -1,60 +1,56 @@
 <template>
-  <div class="product-recommendations bg-white rounded-lg shadow-md p-6 mb-6">
-    <h3 class="text-xl font-bold mb-4">Consigliati per te</h3>
-    
+  <div class="product-recommendations rounded-lg bg-white p-6 shadow-md">
+    <h3 class="mb-4 text-xl font-bold">Consigliati per te</h3>
+
     <div v-if="isLoading" class="flex justify-center py-8">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div class="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-blue-500"></div>
     </div>
-    
-    <div v-else-if="recommendations.length === 0" class="text-center py-8">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+    <div v-else-if="errorMessage" class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+      {{ errorMessage }}
+    </div>
+
+    <div v-else-if="recommendations.length === 0" class="py-8 text-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto mb-4 h-16 w-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
-      <p class="text-gray-500 mb-2">Nessun prodotto consigliato al momento</p>
-      <NuxtLink to="/catalog" class="text-blue-600 hover:underline">Esplora il catalogo</NuxtLink>
+      <p class="mb-2 text-gray-500">Nessun prodotto consigliato al momento</p>
+      <NuxtLink to="/product" class="text-blue-600 hover:underline">Esplora il catalogo</NuxtLink>
     </div>
-    
-    <div v-else>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <!-- Product Cards -->
-        <div 
-          v-for="product in recommendations" 
-          :key="product.id"
-          class="product-card border rounded-lg overflow-hidden hover:shadow-md transition-all"
-        >
-          <div class="relative">
-            <!-- Product Image -->
-            <img 
-              :src="product.image" 
-              :alt="product.name" 
-              class="w-full h-48 object-cover"
-            >
-            
-            <!-- Wishlist Button -->
-            <button 
-              @click="toggleWishlist(product)" 
-              class="absolute top-2 right-2 bg-white rounded-full p-1.5 shadow-md hover:bg-red-50 transition-colors"
-              :title="isInWishlist(product.id) ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" :class="isInWishlist(product.id) ? 'text-red-500 fill-current' : 'text-gray-400'" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            </button>
-          </div>
-          
-          <!-- Product Info -->
-          <div class="p-4">
-            <p class="text-sm text-gray-500">{{ product.brand?.name || 'Brand' }}</p>
-            <h4 class="font-medium mb-2 truncate">{{ product.name }}</h4>
-            <div class="flex justify-between items-center">
-              <p class="font-bold">{{ product.price }} €</p>
-              <NuxtLink 
-                :to="`/product/${product.id}`" 
-                class="text-sm text-blue-600 hover:underline"
-              >
-                Visualizza
-              </NuxtLink>
-            </div>
+
+    <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div
+        v-for="product in recommendations"
+        :key="product.id"
+        class="product-card overflow-hidden rounded-lg border transition-all hover:shadow-md"
+      >
+        <div class="relative">
+          <img
+            :src="product.image || fallbackImage"
+            :alt="product.name"
+            class="h-48 w-full object-cover"
+          >
+
+          <button
+            type="button"
+            class="absolute top-2 right-2 rounded-full bg-white p-1.5 shadow-md transition-colors hover:bg-red-50"
+            :title="isInWishlist(product.id) ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'"
+            @click="toggleWishlist(product)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" :class="isInWishlist(product.id) ? 'fill-current text-red-500' : 'text-gray-400'" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-4">
+          <p class="text-sm text-gray-500">{{ product.brand?.name || 'Brand' }}</p>
+          <h4 class="mb-2 truncate font-medium">{{ product.name }}</h4>
+          <div class="flex items-center justify-between">
+            <p class="font-bold">{{ formatCurrency(product.price) }}</p>
+            <NuxtLink :to="`/product/${product.id}`" class="text-sm text-blue-600 hover:underline">
+              Visualizza
+            </NuxtLink>
           </div>
         </div>
       </div>
@@ -63,98 +59,106 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useWishlistStore } from '~/stores/wishlistStore';
-import { useToast } from 'vue-toastification';
+import { useAppToast } from '~/composables/useAppToast';
 
 const props = defineProps({
   userId: {
     type: Number,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const wishlistStore = useWishlistStore();
-const toast = useToast();
+const toast = useAppToast();
+const fallbackImage = 'https://via.placeholder.com/320x320?text=Prodotto';
 const recommendations = ref([]);
 const isLoading = ref(true);
+const errorMessage = ref('');
 
-// Initialize wishlist and fetch recommendations
-onMounted(() => {
-  wishlistStore.initWishlist();
-  fetchRecommendations();
-});
+function formatCurrency(value) {
+  const amount = Number(value) || 0;
 
-// Check if product is in wishlist
-const isInWishlist = (productId) => {
+  return new Intl.NumberFormat('it-IT', {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(amount);
+}
+
+function isInWishlist(productId) {
   return wishlistStore.isInWishlist(productId);
-};
+}
 
-// Toggle product in wishlist
-const toggleWishlist = (product) => {
-  const productToToggle = {
+async function toggleWishlist(product) {
+  const wasInWishlist = isInWishlist(product.id);
+
+  await wishlistStore.toggleWishlistItem({
     id: product.id,
     name: product.name,
     price: product.price,
     brand: product.brand,
-    img: product.image
-  };
-  
-  wishlistStore.toggleWishlistItem(productToToggle);
-  
-  // Show feedback to user
-  if (isInWishlist(product.id)) {
+    img: product.image,
+  });
+
+  if (wishlistStore.error) {
+    toast.error(wishlistStore.error, {
+      position: 'top-right',
+      timeout: 2000,
+    });
+    return;
+  }
+
+  if (wasInWishlist) {
     toast.info('Prodotto rimosso dai preferiti', {
       position: 'top-right',
-      duration: 2000
+      timeout: 2000,
     });
-  } else {
-    toast.success('Prodotto aggiunto ai preferiti', {
-      position: 'top-right',
-      duration: 2000
-    });
+    return;
   }
-};
 
-// Fetch product recommendations
-const fetchRecommendations = async () => {
+  toast.success('Prodotto aggiunto ai preferiti', {
+    position: 'top-right',
+    timeout: 2000,
+  });
+}
+
+async function fetchRecommendations() {
+  if (!props.userId) return;
+
+  isLoading.value = true;
+  errorMessage.value = '';
+
   try {
-    // In a real implementation, you would fetch recommendations from an API
-    // const { data } = await useFetch(`/api/recommendations/${props.userId}`);
-    // recommendations.value = data.value || [];
-    
-    // For now, we'll use mock data
-    setTimeout(() => {
-      recommendations.value = [
-        {
-          id: 101,
-          name: 'Sneakers Nike Air Max',
-          price: 129.99,
-          image: 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg',
-          brand: { name: 'Nike' }
-        },
-        {
-          id: 102,
-          name: 'T-Shirt Premium',
-          price: 39.95,
-          image: 'https://images.pexels.com/photos/1656684/pexels-photo-1656684.jpeg',
-          brand: { name: 'Adidas' }
-        },
-        {
-          id: 103,
-          name: 'Jeans Slim Fit',
-          price: 50.00,
-          image: 'https://images.pexels.com/photos/1082529/pexels-photo-1082529.jpeg',
-          brand: { name: 'Levi\'s' }
-        }
-      ];
-      isLoading.value = false;
-    }, 1000);
+    const payload = await $fetch('/api/recommendations/me');
+    recommendations.value = Array.isArray(payload?.recommendations)
+      ? payload.recommendations
+      : [];
   } catch (error) {
-    console.error('Error fetching recommendations:', error);
+    recommendations.value = [];
+    errorMessage.value =
+      error?.data?.message ||
+      error?.message ||
+      'Errore durante il recupero delle raccomandazioni.';
+  } finally {
     isLoading.value = false;
   }
-};
+}
+
+onMounted(async () => {
+  await wishlistStore.initWishlist();
+  await fetchRecommendations();
+});
+
+watch(
+  () => props.userId,
+  async (nextUserId, previousUserId) => {
+    if (nextUserId && nextUserId !== previousUserId) {
+      await wishlistStore.initWishlist();
+      await fetchRecommendations();
+    }
+  }
+);
 </script>
 
 <style scoped>

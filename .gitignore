@@ -28,3 +28,4 @@ logs
 prisma/migrations/migration_lock.toml
 # Se vuoi ignorare tutte le migrazioni, decommenta la riga seguente
 # prisma/migrations/
+.vercel

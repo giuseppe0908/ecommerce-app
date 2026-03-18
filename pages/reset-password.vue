@@ -93,6 +93,11 @@
   
   const route = useRoute();
   const router = useRouter();
+  useNoIndexPageSeo({
+    title: 'Reset password',
+    description: 'Imposta una nuova password in modo sicuro tramite token di verifica.',
+    path: '/reset-password',
+  })
   const token = route.query.token;
   const password = ref('');
   const confirmPassword = ref('');

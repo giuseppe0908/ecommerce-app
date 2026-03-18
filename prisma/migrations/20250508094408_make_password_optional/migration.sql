@@ -1,2 +1,3 @@
--- Historical migration kept as a no-op.
--- The full schema is now bootstrapped by 20250101000000_init_schema.
+-- No-op on PostgreSQL.
+-- This change is already included in the baseline migration at
+-- 20250101000000_init_schema for the Neon/Postgres setup.

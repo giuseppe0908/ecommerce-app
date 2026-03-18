@@ -1,93 +1,132 @@
-import { PrismaClient } from '@prisma/client';
-import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
+import { getRequestURL } from 'h3';
+import { z } from 'zod';
+import { createLogger } from '../../utils/observability';
+import prisma from '../../utils/prisma';
+import { createOpaqueToken } from '../../utils/token-security';
 
-const prisma = new PrismaClient();
+const RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000; // 1 ora
+const MIN_RESPONSE_MS = 500; // Mitiga differenze di timing tra email esistenti/non esistenti
+const GENERIC_RESET_MESSAGE = 'Se l\'email esiste, riceverai un link per reimpostare la password.';
+const logger = createLogger('auth-forgot-password');
+const forgotPasswordBodySchema = z.object({
+  email: z.string().trim().email().transform((value) => value.toLowerCase()),
+});
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function buildResetLink(event, token) {
+  const config = useRuntimeConfig(event);
+  const configuredBaseUrl = (config.public?.appBaseUrl || process.env.APP_BASE_URL || '').trim();
+  const origin = configuredBaseUrl || getRequestURL(event).origin;
+  const normalizedOrigin = origin.replace(/\/+$/, '');
+  return `${normalizedOrigin}/reset-password?token=${encodeURIComponent(token)}`;
+}
+
+async function sendResetEmail(toEmail, resetLink) {
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
+
+  if (!emailUser || !emailPass) {
+    throw new Error('EMAIL_USER o EMAIL_PASS non configurati');
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: emailUser,
+      pass: emailPass,
+    },
+  });
+
+  await transporter.sendMail({
+    from: emailUser,
+    to: toEmail,
+    subject: 'Reset Password',
+    html: `
+      <p>Clicca sul link seguente per reimpostare la tua password:</p>
+      <a href="${resetLink}">${resetLink}</a>
+      <p>Il link scadrà tra 1 ora.</p>
+    `,
+  });
+}
 
 export default defineEventHandler(async (event) => {
-    try{
-        const body = await readBody(event);
-        const email = body.email;
-        const user = await prisma.user.findUnique({
-            where: {email}
-        });
-        
-        if(!user){
-            return {
-                success: false,
-                error: 'Utente non trovato'
-            };
-        }
+  if (event.node.req.method !== 'POST') {
+    throw createError({ statusCode: 405, message: 'Metodo non supportato' });
+  }
 
-         // Genera il token JWT
-        const token = jwt.sign(
-            { id: user.id, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }  // Scadenza di 1 ora
-        );        
-    
-        // Trova se esiste già un token per questo utente
-        const existingToken = await prisma.resetToken.findFirst({
-            where: { userId: user.id },
-        });
-    
-        if (existingToken) {
-            // Se esiste, aggiorna il record del token
-            await prisma.resetToken.update({
-                where: { id: existingToken.id },  // Usa l'id del token esistente per l'aggiornamento
-                data: {
-                    token,  // Aggiorna il token
-                    expiresAt: new Date(Date.now() + 3600 * 1000),  // Scadenza tra 1 ora
-                },
-            });
-        } else {
-            // Se non esiste, crea un nuovo record per il token
-            await prisma.resetToken.create({
-                data: {
-                    userId: user.id,
-                    token,
-                    expiresAt: new Date(Date.now() + 3600 * 1000), // Scadenza tra 1 ora
-                },
-            });
-        }
+  const startedAt = Date.now();
+  const ensureMinResponseTime = async () => {
+    const elapsed = Date.now() - startedAt;
+    if (elapsed < MIN_RESPONSE_MS) {
+      await sleep(MIN_RESPONSE_MS - elapsed);
+    }
+  };
 
-        const resetLink = `localhost:3000/reset-password?token=${token}`;
+  try {
+    const body = await readBody(event);
+    const parsedBody = forgotPasswordBodySchema.safeParse(body);
+    if (!parsedBody.success) {
+      throw createError({
+        statusCode: 400,
+        message: 'Payload reset password non valido',
+        data: parsedBody.error.format(),
+      });
+    }
+    const email = parsedBody.data.email;
 
-        const transporter = nodemailer.createTransport({
-            service: 'gmail', // Puoi usare il servizio email che preferisci
-            auth: {
-              user: process.env.EMAIL_USER, // Usa la tua email dal file .env
-              pass: process.env.EMAIL_PASS, // Usa la tua password dal file .env
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (user) {
+      try {
+        const { token, tokenHash } = createOpaqueToken();
+        const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_MS);
+        const resetLink = buildResetLink(event, token);
+
+        await prisma.$transaction([
+          prisma.resetToken.deleteMany({ where: { userId: user.id } }),
+          prisma.resetToken.create({
+            data: {
+              userId: user.id,
+              token: tokenHash,
+              expiresAt,
             },
-          });
+          }),
+        ]);
 
-        // Invia l'email con il link di reset
-        const mailOptions = {
-            from: process.env.EMAIL_USER, // Usa la tua email dal file .env
-            to: email,
-            subject: 'Reset Password',
-            html: `
-            <p>Clicca sul link seguente per resettare la tua password:</p>
-            <a href="${resetLink}">${resetLink}</a>
-            <p>Il link scadrà tra 1 ora.</p>`,  
-        };
-        
-          // Invia l'email
-          transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-              console.error('Errore durante l\'invio dell\'email:', error);
-            } else {
-              console.log('Email inviata:', info.response);
-            }
-          });
+        await sendResetEmail(email, resetLink);
+      } catch (error) {
+        logger.error('Errore generazione o invio reset password', {
+          requestId: event.context.requestId,
+          error,
+          userId: user.id,
+          email,
+        });
+      }
+    }
 
-        return { message: 'Email inviata con successo' };     
+    await ensureMinResponseTime();
+    return {
+      success: true,
+      message: GENERIC_RESET_MESSAGE,
+    };
+  } catch (error) {
+    if (error?.statusCode) {
+      throw error;
+    }
 
-    } catch (error) {
-        console.error('Errore:', error);
-        return {
-        success: false,
-        error: 'Errore durante il processo di reset password'
-        };
-    }  
+    logger.error('Errore forgot-password', {
+      requestId: event.context.requestId,
+      error,
+    });
+    throw createError({
+      statusCode: 500,
+      message: 'Errore durante il processo di reset password',
+    });
+  }
 });

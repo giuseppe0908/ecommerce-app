@@ -2,11 +2,11 @@
 import { useWishlistStore } from '~/stores/wishlistStore';
 import { useCartStore } from '~/stores/cartStore';
 import { onMounted, ref } from 'vue';
-import { useToast } from 'vue-toastification';
+import { useAppToast } from '~/composables/useAppToast';
 
 const wishlistStore = useWishlistStore();
 const cartStore = useCartStore();
-const toast = useToast();
+const toast = useAppToast();
 
 const loading = ref(false);
 const error = ref(null);
@@ -46,16 +46,32 @@ const closeWishlist = () => {
 };
 
 // Method to add product to cart
+const getCartProductCode = (product) => {
+  return product?.codeItem || product?.code || product?.id || null;
+};
+
+const isProductInCart = (product) => {
+  return cartStore.isInCart(getCartProductCode(product));
+};
+
 const addToCart = (product) => {
   const selectedProduct = {
-    codeItem: product.id,
+    codeItem: getCartProductCode(product),
     name: product.name,
     price: product.price,
     brand: product.brand?.name,
     image: product.photo || product.img
   };
   
+  const alreadyInCart = cartStore.isInCart(selectedProduct.codeItem);
+
   cartStore.addtocart(selectedProduct);
+
+  if (alreadyInCart) {
+    toast.info('Quantita aggiornata nel carrello');
+    return;
+  }
+
   toast.success('Prodotto aggiunto al carrello!');
 };
 
@@ -135,8 +151,10 @@ const retryLoading = async () => {
                 </button>
                 <button 
                   @click="addToCart(item)"
-                  class="text-gray-400 hover:text-green-500 transition-colors mt-2"
-                  title="Aggiungi al carrello"
+                  class="transition-colors mt-2"
+                  :class="isProductInCart(item) ? 'text-green-600' : 'text-gray-400 hover:text-green-500'"
+                  :title="isProductInCart(item) ? 'Gia presente nel carrello' : 'Aggiungi al carrello'"
+                  :aria-pressed="isProductInCart(item)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />

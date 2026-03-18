@@ -1,6 +1,7 @@
 <script setup>
 import { useResponsiveButton } from '~/composables/useResponsiveButton';
-const { screenWidth, buttonStyle, buttonWidth, buttonHeight, colorPrimary } = useResponsiveButton();
+import promoImage from '../assets/img/promo.png';
+const { screenWidth, buttonWidth, buttonHeight, colorPrimary } = useResponsiveButton();
 
 const props = defineProps(['colorPrimary']);
 </script>
@@ -8,6 +9,16 @@ const props = defineProps(['colorPrimary']);
 <template>
     <section class="Promo h-[50vh] md:h-[100vh] bg-white relative overflow-hidden">
         <div class="imgPromo h-[70%] w-[85%] md:w-[70%] centrato absolute transition-all duration-300 hover:shadow-lg rounded-tr-full rounded-br-full">
+            <img
+              :src="promoImage"
+              alt="Sezione promozioni del catalogo"
+              class="imgPromo__media"
+              width="1400"
+              height="900"
+              sizes="(min-width: 768px) 70vw, 85vw"
+              loading="lazy"
+              decoding="async"
+            >
             <div class="centrato absolute"
                 :class="{
                     'md:right-[-148px] md:translate-x-1/2 md:w-[227px]': screenWidth >= 768,
@@ -32,10 +43,15 @@ const props = defineProps(['colorPrimary']);
 
 <style scoped>
 .imgPromo{
-    background-image: url("../assets/img/promo.png");
-    background-size: cover; 
-    background-position: center; 
+    overflow: hidden;
     transition: transform 0.3s ease;
+}
+
+.imgPromo__media {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
 }
 
 .centrato{

@@ -11,7 +11,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
       </svg>
       <p class="text-gray-500 mb-2">La tua lista dei preferiti è vuota</p>
-      <NuxtLink to="/catalog" class="text-blue-600 hover:underline">Esplora il catalogo</NuxtLink>
+      <NuxtLink to="/product" class="text-blue-600 hover:underline">Esplora il catalogo</NuxtLink>
     </div>
     
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -95,10 +95,10 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useWishlistStore } from '~/stores/wishlistStore';
-import { useToast } from 'vue-toastification';
+import { useAppToast } from '~/composables/useAppToast';
 
 const wishlistStore = useWishlistStore();
-const toast = useToast();
+const toast = useAppToast();
 const isLoading = ref(true);
 const showConfirmation = ref(false);
 
@@ -116,7 +116,7 @@ const removeFromWishlist = (productId) => {
   wishlistStore.removeFromWishlist(productId);
   toast.info('Prodotto rimosso dai preferiti', {
     position: 'top-right',
-    duration: 2000
+    timeout: 2000
   });
 };
 
@@ -131,7 +131,7 @@ const clearWishlist = () => {
   showConfirmation.value = false;
   toast.info('Lista preferiti svuotata', {
     position: 'top-right',
-    duration: 2000
+    timeout: 2000
   });
 };
 </script>

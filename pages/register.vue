@@ -75,65 +75,76 @@
             />
           </div>
 
-          <div class="flex">
-            <input v-model="form.role" type="checkbox">
-            <label for="">Admin</label>
-          </div>
-         
-  
           <!-- Pulsante di invio -->
           <button
             type="submit"
+            :disabled="isSubmitting"
             class="w-full bg-blue-500 text-white font-semibold py-2 rounded-lg hover:bg-blue-600 focus:ring-4 focus:ring-blue-300"
           >
-            Registrati
+            {{ isSubmitting ? 'Registrazione in corso...' : 'Registrati' }}
           </button>
         </form>
+        <p v-if="errorMessage" class="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          {{ errorMessage }}
+        </p>
       </div>
     </div>
   </template>
   
   <script setup>
-  import { reactive } from "vue";
+  import { reactive, ref } from "vue";
   import { useRouter } from 'vue-router';
+  import { useAuthStore } from '@/stores/authStore';
+
   const router = useRouter();
+  const authStore = useAuthStore();
+  useNoIndexPageSeo({
+    title: 'Registrazione',
+    description: 'Crea un account per salvare preferiti, gestire ordini e completare il checkout piu rapidamente.',
+    path: '/register',
+  })
   const form = reactive({
     name: "",
     surname: "",
     email: "",
     password: "",
-    role: false, // Imposta il ruolo come booleano per il checkbox
     address: "",
     number: "",
   });
+  const isSubmitting = ref(false);
+  const errorMessage = ref("");
   
   const handleSubmit = async () => {
-    // Controlla che tutti i campi siano riempiti
+    errorMessage.value = "";
+
     if (!form.name || !form.surname || !form.email || !form.password || !form.address || !form.number) {
-      alert("Per favore, compila tutti i campi.");
+      errorMessage.value = "Per favore, compila tutti i campi.";
       return;
     }
   
+    isSubmitting.value = true;
+
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json", // Assicurati che il corpo sia interpretato come JSON
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(form), // Serializza il form come JSON
+        body: JSON.stringify(form),
       });
   
       if (response.ok) {
-        alert("Registrazione avvenuta con successo!");
-        router.push('/dashboard');  // Reindirizza alla pagina protetta
-        // Resetta il form o redirigi l'utente dove necessario
+        await authStore.login(form.email, form.password);
+        router.push('/dashboard');
       } else {
         const error = await response.json();
-        alert(error.message || "Errore durante la registrazione.");
+        errorMessage.value = error.message || "Errore durante la registrazione.";
       }
     } catch (error) {
-      alert("Errore durante la registrazione. Riprova.");
+      errorMessage.value = "Errore durante la registrazione. Riprova.";
       console.error(error);
+    } finally {
+      isSubmitting.value = false;
     }
   };
   </script>

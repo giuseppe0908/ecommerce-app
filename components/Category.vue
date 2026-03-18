@@ -48,4 +48,11 @@ isLoading.value = false;
     /* margin: 0 auto; */
 
 }
+
+@media (max-width: 767px) {
+  .Category {
+    margin-top: 0;
+    padding-left: 0;
+  }
+}
 </style>

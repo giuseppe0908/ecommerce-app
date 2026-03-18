@@ -284,7 +284,7 @@ export class EcommerceRecommendationEngine {
       ...buildBaseProfileWhere(userProfile),
       subCategory: {
         category: {
-          name: { contains: trimmedCategory },
+          name: { contains: trimmedCategory, mode: 'insensitive' },
         },
       },
     };

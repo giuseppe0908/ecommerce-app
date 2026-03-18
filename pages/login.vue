@@ -90,6 +90,11 @@ import { useAuthStore } from '@/stores/authStore'
 import { navigateTo } from 'nuxt/app';
 
 const authStore = useAuthStore()
+useNoIndexPageSeo({
+  title: 'Login',
+  description: 'Accedi alla tua area personale per gestire ordini, preferiti e checkout.',
+  path: '/login',
+})
 
 // Variabili reattive per email, password, e messaggi di errore
 const email = ref('');
@@ -100,11 +105,11 @@ const passwordFieldType = ref('password');
 
 // Controllo se l'utente è già autenticato e lo rendirizzo alla dashboard
 onMounted(() => {
-  const localStorageToken = localStorage.getItem('authToken')
-  const localStorageUser = localStorage.getItem('user')
-  if (localStorageToken && localStorageUser) {
-    navigateTo('/dashboard')
-  }
+  authStore.initialize().then((isAuthenticated) => {
+    if (isAuthenticated) {
+      navigateTo('/dashboard')
+    }
+  })
 })
 
 const togglePasswordVisibility = () => {

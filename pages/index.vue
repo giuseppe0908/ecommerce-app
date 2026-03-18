@@ -3,11 +3,18 @@
     <div :style="{ backgroundColor: categoryStore.colorPrimary }">
       <Jumbo :colorPrimary=categoryStore.colorPrimary />
       <Category/>
-      <Promo :colorPrimary=categoryStore.colorPrimary />
-      <Brand :colorPrimary=categoryStore.colorPrimary />
-      <NewArrivals />
-      <Banner/>
-      <Cart v-if="cartStore.flag_cart" :colorPrimary=categoryStore.colorPrimary />
+      <section class="deferred-home-section">
+        <Promo :colorPrimary=categoryStore.colorPrimary />
+      </section>
+      <section class="deferred-home-section">
+        <Brand :colorPrimary=categoryStore.colorPrimary />
+      </section>
+      <section class="deferred-home-section">
+        <NewArrivals />
+      </section>
+      <section class="deferred-home-section">
+        <Banner/>
+      </section>
     </div> 
   </template>
   <script setup>
@@ -17,12 +24,34 @@
   import Brand from '~/components/Brand.vue'
   import NewArrivals from '~/components/NewArrivals.vue'
   import Banner from '~/components/Banner.vue'
-  import Cart from '~/components/Cart.vue'
   import { useCategoryStore } from '@/stores/categoryStore'
-  import { useCartStore } from '@/stores/cartStore';
-
-  const cartStore = useCartStore();
   const categoryStore = useCategoryStore()
+
+  const { canonicalUrl, siteName } = usePageSeo({
+    title: 'Moda, sneakers e accessori online',
+    description: 'Scopri novita, promo e best seller del catalogo con un percorso di acquisto veloce e ottimizzato.',
+    path: '/',
+  })
+
+  useHead(() => ({
+    script: [
+      {
+        key: 'homepage-jsonld',
+        type: 'application/ld+json',
+        children: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: siteName.value,
+          url: canonicalUrl.value,
+          potentialAction: {
+            '@type': 'SearchAction',
+            target: `${canonicalUrl.value}product?q={search_term_string}`,
+            'query-input': 'required name=search_term_string',
+          },
+        }),
+      },
+    ],
+  }))
 
   </script>
   
@@ -45,7 +74,10 @@ import { onMounted } from 'vue'
 </script> -->
   
   <style>
-/* image */
+.deferred-home-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 900px;
+}
 
 
 </style>

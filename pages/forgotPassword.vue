@@ -79,6 +79,12 @@
   <script setup>
   import { ref } from 'vue';
   
+  useNoIndexPageSeo({
+    title: 'Recupera password',
+    description: 'Richiedi il link per reimpostare in modo sicuro la password del tuo account.',
+    path: '/forgotPassword',
+  })
+
   const email = ref('');
   const loading = ref(false);
   const successMessage = ref('');

@@ -76,9 +76,9 @@ test(
         AI_CHAT_ENABLED: process.env.AI_CHAT_ENABLED || 'false',
         AI_CHAT_PROVIDER: process.env.AI_CHAT_PROVIDER || 'ollama',
         DATABASE_URL:
-          process.env.DATABASE_URL || 'mysql://root:@127.0.0.1:3306/smoke_ecommerce',
+          process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:5432/smoke_ecommerce',
         DIRECT_DATABASE_URL:
-          process.env.DIRECT_DATABASE_URL || 'mysql://root:@127.0.0.1:3306/smoke_ecommerce',
+          process.env.DIRECT_DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:5432/smoke_ecommerce',
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     });

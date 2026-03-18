@@ -17,6 +17,7 @@ type SearchParams = {
   categories: number[];
   brands: number[];
   genderId?: number;
+  subCategoryId?: number;
   priceMin?: number;
   priceMax?: number;
   inStock: boolean;
@@ -37,6 +38,7 @@ const productSearchSelect = {
   promo: true,
   plus: true,
   price: true,
+  percentualPromo: true,
   rating: true,
   newArrival: true,
   available_quantity: true,
@@ -44,6 +46,12 @@ const productSearchSelect = {
   brandId: true,
   genderId: true,
   category: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  subCategory: {
     select: {
       id: true,
       name: true,
@@ -116,6 +124,9 @@ function parseSearchParams(query: SearchQuery): SearchParams {
   const categories = parsePositiveIntList(query.categories as string | string[] | undefined);
   const brands = parsePositiveIntList(query.brands as string | string[] | undefined);
   const genderId = parsePositiveInt(toFirstString(query.gender as string | string[] | undefined));
+  const subCategoryId = parsePositiveInt(
+    toFirstString(query.subCategory as string | string[] | undefined)
+  );
 
   const priceMin = parsePositiveNumber(toFirstString(query.priceMin as string | string[] | undefined));
   const priceMax = parsePositiveNumber(toFirstString(query.priceMax as string | string[] | undefined));
@@ -138,6 +149,7 @@ function parseSearchParams(query: SearchQuery): SearchParams {
     categories,
     brands,
     genderId,
+    subCategoryId,
     priceMin: normalizedPriceMin,
     priceMax: normalizedPriceMax,
     inStock: toFirstString(query.inStock as string | string[] | undefined) === 'true',
@@ -171,6 +183,10 @@ function buildWhereConditions(params: SearchParams): Prisma.ProductWhereInput {
 
   if (params.genderId) {
     whereConditions.genderId = params.genderId;
+  }
+
+  if (params.subCategoryId) {
+    whereConditions.subCategoryId = params.subCategoryId;
   }
 
   if (params.priceMin !== undefined || params.priceMax !== undefined) {

@@ -1,10 +1,12 @@
 <script setup>
 import { useCartStore } from '@/stores/cartStore'
 import { useWishlistStore } from '@/stores/wishlistStore'
-import { useToast } from 'vue-toastification'
+import { useAppToast } from '~/composables/useAppToast'
 
 const cartStore = useCartStore()
 const wishlistStore = useWishlistStore()
+const toast = useAppToast()
+const FALLBACK_PRODUCT_IMAGE = 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg'
 //const props = defineProps(['id', 'name', 'img', 'promo', 'plus', 'price', 'category','brand','colorPrimary', 'colorSecondary', 'codeItem']);
 const props = defineProps({
   id: { type: Number, required: true },
@@ -27,10 +29,9 @@ const addcart = (product, event) => {
   event.preventDefault() // Blocca l'azione predefinita del link
   event.stopPropagation() // Ferma la propagazione
   cartStore.addtocart(product)
-  const toast = useToast();
   toast.success('Prodotto aggiunto al carrello!', {
     position: 'top-right',
-    duration: 3000
+    timeout: 3000
   });
   
 }
@@ -71,7 +72,7 @@ const handleCardClick = (event) => {
             <p class="text-[10px]">PROMO</p>
         </div>
         <div class="img h-[220px] ">
-            <img class=" w-full h-full"  src="https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg" :alt="name">
+            <img class=" w-full h-full" :src="img || FALLBACK_PRODUCT_IMAGE" :alt="name" loading="lazy" decoding="async" fetchpriority="low" width="320" height="440">
         </div>
         <div class="descriptions text-white h-48">
             <div class="category font-bold" :style="promo ? { color: colorSecondary } : { color: 'white' }">

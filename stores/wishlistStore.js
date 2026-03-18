@@ -1,7 +1,21 @@
 // stores/wishlistStore.js
 import { defineStore } from 'pinia'
-import { useToast } from 'vue-toastification'
-import { useNuxtApp } from '#app'
+import { navigateTo, useNuxtApp } from '#app'
+import { useAuthStore } from './authStore'
+
+function showToast(type, message, options = {}) {
+  if (!process.client) return
+
+  try {
+    const { $toast } = useNuxtApp()
+    const notifier = $toast && typeof $toast[type] === 'function' ? $toast[type] : null
+    if (notifier) {
+      notifier(message, options)
+    }
+  } catch {
+    // no-op: toast non disponibile fuori dal contesto Nuxt attivo
+  }
+}
 
 export const useWishlistStore = defineStore('wishlistStore', {
   state: () => ({
@@ -29,23 +43,17 @@ export const useWishlistStore = defineStore('wishlistStore', {
   },
 
   actions: {
-     // Inizializza l'utente dallo storage
-     initUser() {
-        if (process.client) {
-          try {
-            const userStorage = localStorage.getItem('user');
-            if (userStorage) {
-              this.user = JSON.parse(userStorage);
-            }
-          } catch (error) {
-            console.error('Errore nel caricamento dell\'utente:', error);
-            this.user = null;
-          }
+     // Inizializza l'utente dalla sessione server-side
+     async initUser() {
+        const authStore = useAuthStore()
+        if (!authStore.isInitialized) {
+          await authStore.initialize()
         }
+        this.user = authStore.user
       },
     // Inizializza la wishlist - ora carica da API se l'utente è loggato, altrimenti da localStorage
     async initWishlist() {
-      this.initUser();
+      await this.initUser();
       
       // Reset wishlist state before initializing to prevent data leakage between users
       this.wishlist = [];
@@ -56,7 +64,7 @@ export const useWishlistStore = defineStore('wishlistStore', {
       
       if (this.user && this.user.id) {
         // Utente loggato: carica preferiti dal database
-        await this.fetchUserFavorites(this.user.id);
+        await this.fetchUserFavorites();
       } else if (process.client) {
         // Utente non loggato: carica da localStorage
         const savedWishlist = localStorage.getItem('wishlist');
@@ -67,14 +75,14 @@ export const useWishlistStore = defineStore('wishlistStore', {
     },
     
     // Carica i preferiti di un utente dal database
-    async fetchUserFavorites(userId) {
-      if (!userId) return;
+    async fetchUserFavorites() {
+      if (!this.user?.id) return;
       
       this.loading = true;
       this.error = null;
       
       try {
-        const { data } = await useFetch(`/api/favorites?userId=${userId}`);
+        const { data } = await useFetch('/api/favorites');
         if (data.value) {
           // Trasforma i dati ricevuti nel formato utilizzato dalla wishlist
           // Assicurati che la wishlist contenga solo i preferiti dell'utente corrente
@@ -96,42 +104,39 @@ export const useWishlistStore = defineStore('wishlistStore', {
     // Gestisce l'aggiunta/rimozione di un prodotto dai preferiti
     async toggleWishlistItem(product) {
 
-      this.initUser();
+      await this.initUser();
       if(this.user && this.user.id){  // Added null check here
-        await this.toggleFavoriteInDb(this.user.id, product.id);
+        await this.toggleFavoriteInDb(product.id);
       }else{
         // Utente non loggato: mostra un messaggio
-        const toast = useToast();
-        toast.warning('Accedi prima di aggiungere ai preferiti');
+        showToast('warning', 'Accedi prima di aggiungere ai preferiti');
         navigateTo('/login');
       }
     },
     
     // Aggiunge/rimuove un prodotto dai preferiti nel database
-    async toggleFavoriteInDb(userId, productId) {
-      if (!userId || !productId) return;
+    async toggleFavoriteInDb(productId) {
+      if (!productId) return;
+      if (!this.user?.id) return;
       
       this.loading = true;
       this.error = null;
-      console.log(this.isInWishlist(productId));
       
       try {
         if (this.isInWishlist(productId)) {
           // Rimuovi dai preferiti
           await useFetch('/api/favorites', {
             method: 'DELETE',
-            body: { userId, productId }
+            body: { productId }
           });
           
           // Aggiorna lo stato locale
           this.wishlist = this.wishlist.filter(item => item.id !== productId);
         } else {
           // Aggiungi ai preferiti
-          console.log(productId);
-          
           const { data } = await useFetch('/api/favorites', {
             method: 'POST',
-            body: { userId, productId }
+            body: { productId }
           });
           
           // Se l'operazione è andata a buon fine e abbiamo ricevuto i dati del prodotto
@@ -149,7 +154,7 @@ export const useWishlistStore = defineStore('wishlistStore', {
     
     // Rimuove un prodotto dalla wishlist
     async removeFromWishlist(productId) {
-      this.initUser();
+      await this.initUser();
       const userId = this.user?.id;
       
       if (userId) {
@@ -158,7 +163,7 @@ export const useWishlistStore = defineStore('wishlistStore', {
         try {
           await useFetch('/api/favorites', {
             method: 'DELETE',
-            body: { userId, productId }
+            body: { productId }
           });
           this.wishlist = this.wishlist.filter(item => item.id !== productId);
         } catch (error) {
@@ -183,7 +188,7 @@ export const useWishlistStore = defineStore('wishlistStore', {
     
     // Pulisce la wishlist
     async clearWishlist() {
-        this.initUser();
+        await this.initUser();
         const userId = this.user?.id;  // Using optional chaining here
 
         this.loading = true;
@@ -194,7 +199,7 @@ export const useWishlistStore = defineStore('wishlistStore', {
             // Utente loggato: elimina tutti i preferiti dal database
             await useFetch('/api/favorites', {
                 method: 'DELETE',
-                body: { userId, clearAll: true }
+                body: { clearAll: true }
             });
             }
             
@@ -207,15 +212,13 @@ export const useWishlistStore = defineStore('wishlistStore', {
             }
             
             // Feedback all'utente
-            const toast = useToast();
-            toast.success('Lista preferiti svuotata con successo');
+            showToast('success', 'Lista preferiti svuotata con successo');
         } catch (error) {
             console.error('Errore nello svuotamento della lista preferiti:', error);
             this.error = 'Impossibile svuotare la lista preferiti';
             
             // Feedback all'utente in caso di errore
-            const toast = useToast();
-            toast.error('Impossibile svuotare la lista preferiti');
+            showToast('error', 'Impossibile svuotare la lista preferiti');
         } finally {
             this.loading = false;
         }

@@ -1,243 +1,312 @@
 import { defineStore } from 'pinia'
 
+const CHAT_STORAGE_KEY = 'ecommerce-chat-data'
+const MAX_CACHE_ITEMS = 50
+
+function isClientStorageAvailable() {
+  return process.client && typeof localStorage !== 'undefined'
+}
+
+function defaultUserPreferences() {
+  return {
+    favoriteCategories: [],
+    priceRange: { min: 0, max: 1000 },
+    preferredBrands: [],
+    size: null,
+    gender: null,
+  }
+}
+
+function defaultChatContext() {
+  return {
+    currentPage: null,
+    productId: null,
+    categoryId: null,
+    searchQuery: null,
+    lastInteraction: null,
+    interactionType: null,
+    categoryInterest: null,
+    priceInterest: false,
+    saleInterest: false,
+    timestamp: null,
+  }
+}
+
+function defaultAnalytics() {
+  return {
+    totalMessages: 0,
+    sessionsCount: 0,
+    averageSessionLength: 0,
+    popularQueries: [],
+  }
+}
+
+function toIsoTimestamp(value) {
+  if (value instanceof Date) return value.toISOString()
+  if (typeof value === 'string' || typeof value === 'number') {
+    const date = new Date(value)
+    if (!Number.isNaN(date.getTime())) return date.toISOString()
+  }
+  return new Date().toISOString()
+}
+
+function normalizeMessage(rawMessage) {
+  if (!rawMessage || typeof rawMessage !== 'object') {
+    return null
+  }
+
+  const text =
+    typeof rawMessage.text === 'string'
+      ? rawMessage.text
+      : typeof rawMessage.content === 'string'
+        ? rawMessage.content
+        : ''
+
+  if (!text.trim()) {
+    return null
+  }
+
+  const isUser =
+    typeof rawMessage.isUser === 'boolean'
+      ? rawMessage.isUser
+      : rawMessage.type === 'user'
+
+  return {
+    ...rawMessage,
+    id: rawMessage.id ?? Date.now() + Math.floor(Math.random() * 1000),
+    text,
+    content: text,
+    isUser,
+    type: isUser ? 'user' : 'assistant',
+    timestamp: toIsoTimestamp(rawMessage.timestamp),
+  }
+}
+
 export const useChatStore = defineStore('chat', {
   state: () => ({
     messages: [],
     isLoading: false,
     sessionId: null,
-    userPreferences: {
-      favoriteCategories: [],
-      priceRange: { min: 0, max: 1000 },
-      preferredBrands: [],
-      size: null,
-      gender: null
-    },
-    chatContext: {
-      currentPage: null,
-      productId: null,
-      categoryId: null,
-      searchQuery: null,
-      lastInteraction: null
-    },
-    analytics: {
-      totalMessages: 0,
-      sessionsCount: 0,
-      averageSessionLength: 0,
-      popularQueries: []
-    }
+    responseCache: {},
+    responseCacheKeys: [],
+    userPreferences: defaultUserPreferences(),
+    chatContext: defaultChatContext(),
+    analytics: defaultAnalytics(),
   }),
 
   getters: {
-    lastMessage: (state) => state.messages[state.messages.length - 1],
+    lastMessage: (state) => state.messages[state.messages.length - 1] || null,
     messageCount: (state) => state.messages.length,
     hasMessages: (state) => state.messages.length > 0,
-    
-    // Intelligent context for recommendations
+
     getSmartContext: (state) => {
       const recentMessages = state.messages.slice(-5)
-      const keywords = recentMessages
-        .filter(msg => msg.type === 'user')
-        .map(msg => msg.content.toLowerCase())
+      const keywordsText = recentMessages
+        .filter((msg) => msg.isUser)
+        .map((msg) => msg.text.toLowerCase())
         .join(' ')
-      
+
       return {
         ...state.chatContext,
-        recentKeywords: extractKeywords(keywords),
-        userIntent: detectUserIntent(keywords),
-        recommendationContext: buildRecommendationContext(state)
+        recentKeywords: extractKeywords(keywordsText),
+        userIntent: detectUserIntent(keywordsText),
+        recommendationContext: buildRecommendationContext(state),
       }
-    }
+    },
   },
 
   actions: {
-    // Enhanced message sending with smart context
+    setCachedResponse(key, value) {
+      if (!key || !value) return
+
+      if (!(key in this.responseCache)) {
+        this.responseCacheKeys.push(key)
+      }
+
+      this.responseCache[key] = value
+
+      while (this.responseCacheKeys.length > MAX_CACHE_ITEMS) {
+        const oldestKey = this.responseCacheKeys.shift()
+        if (oldestKey) {
+          delete this.responseCache[oldestKey]
+        }
+      }
+    },
+
+    getCachedResponse(key) {
+      if (!key) return null
+      return this.responseCache[key] || null
+    },
+
     async sendMessage(content) {
-      // Controlla cache prima
-      const cacheKey = content.toLowerCase().trim()
-      if (this.responseCache.has(cacheKey)) {
-        const cachedResponse = this.responseCache.get(cacheKey)
+      const normalizedContent = typeof content === 'string' ? content.trim() : ''
+      if (!normalizedContent) return null
+
+      const cacheKey = normalizedContent.toLowerCase()
+      const cachedResponse = this.getCachedResponse(cacheKey)
+
+      if (cachedResponse) {
         this.addMessage({
           text: cachedResponse,
           isUser: false,
+          cached: true,
           timestamp: new Date(),
-          cached: true
         })
         return cachedResponse
       }
 
       this.isLoading = true
-      
-      // Add user message
-      const userMessage = {
-        id: Date.now(),
-        type: 'user',
-        content,
-        timestamp: new Date().toISOString(),
-        context: { ...this.chatContext }
-      }
-      this.messages.push(userMessage)
-      
-      // Update context based on message
-      this.updateContextFromMessage(content)
-      
+
+      this.addMessage({
+        text: normalizedContent,
+        isUser: true,
+        context: { ...this.chatContext },
+      })
+
+      this.updateContextFromMessage(normalizedContent)
+
       try {
-        // Get smart context for AI
         const smartContext = this.getSmartContext
-        
-        // Enhanced API call with intelligent context
+
         const response = await $fetch('/api/chat/ollama', {
           method: 'POST',
           body: {
-            message: content,
+            message: normalizedContent,
             context: smartContext,
             userPreferences: this.userPreferences,
-            sessionHistory: this.messages.slice(-10) // Last 10 messages for context
-          }
+            sessionHistory: this.messages.slice(-10).map((message) => ({
+              type: message.type,
+              content: message.text,
+              timestamp: message.timestamp,
+            })),
+          },
         })
 
-        // Add AI response
-        const aiMessage = {
-          id: Date.now() + 1,
-          type: 'assistant',
-          content: response.response || response.message,
-          timestamp: new Date().toISOString(),
-          model: response.model,
-          confidence: response.confidence || 0.8,
-          suggestions: response.suggestions || []
-        }
-        this.messages.push(aiMessage)
-        
-        // Salva in cache per domande future simili
-        const cacheKey = content.toLowerCase().trim()
-        this.responseCache.set(cacheKey, response.response || response.message)
-        
-        // Limita la cache a 50 elementi per evitare memory leak
-        if (this.responseCache.size > 50) {
-          const firstKey = this.responseCache.keys().next().value
-          this.responseCache.delete(firstKey)
-        }
-        
-        // Update analytics
-        this.updateAnalytics(content, response)
-        
-        // Learn from interaction
-        this.learnFromInteraction(content, response)
-        
+        const answer = response?.response || response?.message || 'Al momento non ho una risposta disponibile.'
+
+        this.addMessage({
+          text: answer,
+          isUser: false,
+          model: response?.model,
+          confidence: response?.confidence ?? 0.8,
+          suggestions: Array.isArray(response?.suggestions) ? response.suggestions : [],
+        })
+
+        this.setCachedResponse(cacheKey, answer)
+        this.updateAnalytics(normalizedContent)
+        this.learnFromInteraction(normalizedContent)
+
+        return answer
       } catch (error) {
-        console.error('Errore nell\'invio del messaggio:', error)
-        
-        const errorMessage = {
-          id: Date.now() + 1,
-          type: 'assistant',
-          content: 'Mi dispiace, si è verificato un errore. Riprova tra poco.',
-          timestamp: new Date().toISOString(),
-          isError: true
-        }
-        this.messages.push(errorMessage)
+        console.error("Errore nell'invio del messaggio:", error)
+
+        this.addMessage({
+          text: 'Mi dispiace, si e verificato un errore. Riprova tra poco.',
+          isUser: false,
+          isError: true,
+        })
+
+        return null
       } finally {
         this.isLoading = false
         this.saveToStorage()
       }
     },
 
-    // Add message directly to chat
     addMessage(message) {
-      const formattedMessage = {
-        id: message.id || Date.now(),
-        type: message.isUser ? 'user' : 'assistant',
-        content: message.text || message.content,
-        timestamp: message.timestamp || new Date().toISOString(),
-        ...message
-      }
-      
+      const formattedMessage = normalizeMessage(message)
+      if (!formattedMessage) return
+
       this.messages.push(formattedMessage)
       this.saveToStorage()
     },
 
-    // Smart context updates
     updateContextFromMessage(message) {
-      const lowerMessage = message.toLowerCase()
-      
-      // Detect product interest
+      const lowerMessage = String(message).toLowerCase()
+      const updatedContext = { ...this.chatContext }
+
       if (lowerMessage.includes('prodotto') || lowerMessage.includes('articolo')) {
-        this.chatContext.lastInteraction = 'product_inquiry'
+        updatedContext.interactionType = 'product_inquiry'
       }
-      
-      // Detect category interest
+
       const categories = ['abbigliamento', 'scarpe', 'accessori', 'sport', 'casual', 'elegante']
-      const mentionedCategory = categories.find(cat => lowerMessage.includes(cat))
+      const mentionedCategory = categories.find((category) => lowerMessage.includes(category))
       if (mentionedCategory) {
-        this.chatContext.categoryInterest = mentionedCategory
+        updatedContext.categoryInterest = mentionedCategory
       }
-      
-      // Detect price sensitivity
-      if (lowerMessage.includes('prezzo') || lowerMessage.includes('costo') || lowerMessage.includes('economico')) {
-        this.chatContext.priceInterest = true
+
+      if (
+        lowerMessage.includes('prezzo') ||
+        lowerMessage.includes('costo') ||
+        lowerMessage.includes('economico')
+      ) {
+        updatedContext.priceInterest = true
       }
-      
-      // Detect sale interest
-      if (lowerMessage.includes('sald') || lowerMessage.includes('scont') || lowerMessage.includes('offert')) {
-        this.chatContext.saleInterest = true
+
+      if (
+        lowerMessage.includes('sald') ||
+        lowerMessage.includes('scont') ||
+        lowerMessage.includes('offert')
+      ) {
+        updatedContext.saleInterest = true
       }
-      
-      this.chatContext.lastInteraction = Date.now()
+
+      updatedContext.lastInteraction = Date.now()
+      updatedContext.timestamp = Date.now()
+      this.chatContext = updatedContext
     },
 
-    // Learn from user interactions
-    learnFromInteraction(userMessage, aiResponse) {
+    learnFromInteraction(userMessage) {
       const intent = detectUserIntent(userMessage.toLowerCase())
-      
-      // Update user preferences based on interactions
-      if (intent === 'product_search') {
-        // Extract potential preferences
-        const brands = extractBrands(userMessage)
-        const categories = extractCategories(userMessage)
-        
-        brands.forEach(brand => {
-          if (!this.userPreferences.preferredBrands.includes(brand)) {
-            this.userPreferences.preferredBrands.push(brand)
-          }
-        })
-        
-        categories.forEach(category => {
-          if (!this.userPreferences.favoriteCategories.includes(category)) {
-            this.userPreferences.favoriteCategories.push(category)
-          }
-        })
+
+      if (intent !== 'product_search' && intent !== 'recommendation_request') {
+        return
       }
+
+      const brands = extractBrands(userMessage)
+      const categories = extractCategories(userMessage)
+
+      brands.forEach((brand) => {
+        if (!this.userPreferences.preferredBrands.includes(brand)) {
+          this.userPreferences.preferredBrands.push(brand)
+        }
+      })
+
+      categories.forEach((category) => {
+        if (!this.userPreferences.favoriteCategories.includes(category)) {
+          this.userPreferences.favoriteCategories.push(category)
+        }
+      })
     },
 
-    // Enhanced analytics
-    updateAnalytics(userMessage, aiResponse) {
-      this.analytics.totalMessages++
-      
-      // Track popular queries
+    updateAnalytics(userMessage) {
+      this.analytics.totalMessages += 1
+
       const intent = detectUserIntent(userMessage.toLowerCase())
-      const existingQuery = this.analytics.popularQueries.find(q => q.intent === intent)
-      
+      const existingQuery = this.analytics.popularQueries.find((query) => query.intent === intent)
+
       if (existingQuery) {
-        existingQuery.count++
+        existingQuery.count += 1
+        existingQuery.lastUsed = new Date().toISOString()
       } else {
         this.analytics.popularQueries.push({
           intent,
           count: 1,
-          lastUsed: new Date().toISOString()
+          lastUsed: new Date().toISOString(),
         })
       }
-      
-      // Keep only top 10 popular queries
+
       this.analytics.popularQueries = this.analytics.popularQueries
         .sort((a, b) => b.count - a.count)
         .slice(0, 10)
     },
 
-    // Context management
     setPageContext(page, additionalData = {}) {
       this.chatContext = {
         ...this.chatContext,
         currentPage: page,
         ...additionalData,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       }
     },
 
@@ -246,108 +315,128 @@ export const useChatStore = defineStore('chat', {
         ...this.chatContext,
         productId,
         productData,
-        lastInteraction: 'product_view',
-        timestamp: Date.now()
+        interactionType: 'product_view',
+        lastInteraction: Date.now(),
+        timestamp: Date.now(),
       }
     },
 
-    // User preferences management
     updateUserPreferences(preferences) {
       this.userPreferences = {
         ...this.userPreferences,
-        ...preferences
+        ...preferences,
       }
+
       this.saveToStorage()
     },
 
-    // Session management
     startNewSession() {
-      this.sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      this.analytics.sessionsCount++
+      this.sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
+      this.analytics.sessionsCount += 1
       this.saveToStorage()
     },
 
     clearChat() {
       this.messages = []
       this.isLoading = false
-      this.chatContext = {
-        currentPage: null,
-        productId: null,
-        categoryId: null,
-        searchQuery: null,
-        lastInteraction: null
-      }
+      this.chatContext = defaultChatContext()
       this.saveToStorage()
     },
 
-    // Initialize chat system
     initializeChat() {
-      // Load previous session data
       this.loadFromStorage()
-      
-      // Start new session if none exists
+
       if (!this.sessionId) {
         this.startNewSession()
       }
-      
-      // Add welcome message if no messages exist
+
       if (this.messages.length === 0) {
-        this.messages.push({
-          id: Date.now(),
-          type: 'ai',
-          content: 'Ciao! Sono il tuo assistente e-commerce. Come posso aiutarti oggi? Posso consigliarti prodotti, informarti sui saldi o rispondere a qualsiasi domanda sui nostri articoli! 🛍️',
-          timestamp: new Date().toISOString()
+        this.addMessage({
+          text: 'Ciao! Sono il tuo assistente e-commerce. Come posso aiutarti oggi? Posso consigliarti prodotti, informarti sui saldi o rispondere a domande sui nostri articoli.',
+          isUser: false,
         })
         this.saveToStorage()
       }
-      
-      // Update analytics
-      this.analytics.sessionsCount++
-      
-      console.log('Chat system initialized successfully')
     },
 
-    // Cache per risposte frequenti
-    responseCache: new Map(),
-    
-    // Persistence
     saveToStorage() {
+      if (!isClientStorageAvailable()) return
+
       try {
         const dataToSave = {
           messages: this.messages,
           sessionId: this.sessionId,
           chatContext: this.chatContext,
           userPreferences: this.userPreferences,
-          analytics: this.analytics
+          analytics: this.analytics,
+          responseCache: this.responseCache,
+          responseCacheKeys: this.responseCacheKeys,
         }
-        localStorage.setItem('ecommerce-chat-data', JSON.stringify(dataToSave))
+
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(dataToSave))
       } catch (error) {
         console.warn('Errore nel salvataggio chat:', error)
       }
     },
 
     loadFromStorage() {
+      if (!isClientStorageAvailable()) return
+
       try {
-        const saved = localStorage.getItem('ecommerce-chat-data')
-        if (saved) {
-          const data = JSON.parse(saved)
-          this.messages = data.messages || []
-          this.sessionId = data.sessionId || null
-          this.chatContext = { ...this.chatContext, ...data.chatContext }
-          this.userPreferences = { ...this.userPreferences, ...data.userPreferences }
-          this.analytics = { ...this.analytics, ...data.analytics }
+        const saved = localStorage.getItem(CHAT_STORAGE_KEY)
+        if (!saved) return
+
+        const data = JSON.parse(saved)
+
+        this.messages = Array.isArray(data?.messages)
+          ? data.messages.map((message) => normalizeMessage(message)).filter((message) => message !== null)
+          : []
+
+        this.sessionId = typeof data?.sessionId === 'string' ? data.sessionId : null
+
+        this.chatContext = {
+          ...defaultChatContext(),
+          ...(data?.chatContext || {}),
         }
+
+        this.userPreferences = {
+          ...defaultUserPreferences(),
+          ...(data?.userPreferences || {}),
+        }
+
+        this.analytics = {
+          ...defaultAnalytics(),
+          ...(data?.analytics || {}),
+        }
+
+        this.responseCache =
+          data?.responseCache && typeof data.responseCache === 'object'
+            ? data.responseCache
+            : {}
+
+        const storedCacheKeys = Array.isArray(data?.responseCacheKeys)
+          ? data.responseCacheKeys.filter((key) => typeof key === 'string')
+          : Object.keys(this.responseCache)
+
+        this.responseCacheKeys = storedCacheKeys.slice(-MAX_CACHE_ITEMS)
+
+        // Sincronizza eventuali chiavi cache orfane
+        Object.keys(this.responseCache).forEach((key) => {
+          if (!this.responseCacheKeys.includes(key)) {
+            delete this.responseCache[key]
+          }
+        })
       } catch (error) {
         console.warn('Errore nel caricamento chat:', error)
-        // Reset to defaults on error
         this.messages = []
         this.sessionId = null
+        this.responseCache = {}
+        this.responseCacheKeys = []
       }
-    }
-  }
+    },
+  },
 })
 
-// Utility functions for intelligent context
 function extractKeywords(text) {
   const keywords = text.match(/\b\w{4,}\b/g) || []
   return [...new Set(keywords)].slice(0, 10)
@@ -372,6 +461,9 @@ function detectUserIntent(text) {
   if (text.includes('disponibil') || text.includes('stock')) {
     return 'availability_check'
   }
+  if (text.includes('prodotto') || text.includes('articolo') || text.includes('cerco')) {
+    return 'product_search'
+  }
   return 'general_inquiry'
 }
 
@@ -380,17 +472,20 @@ function buildRecommendationContext(state) {
     favoriteCategories: state.userPreferences.favoriteCategories,
     priceRange: state.userPreferences.priceRange,
     preferredBrands: state.userPreferences.preferredBrands,
-    recentInteractions: state.messages.slice(-5).map(m => m.type === 'user' ? m.content : null).filter(Boolean),
-    currentContext: state.chatContext
+    recentInteractions: state.messages
+      .slice(-5)
+      .map((message) => (message.isUser ? message.text : null))
+      .filter(Boolean),
+    currentContext: state.chatContext,
   }
 }
 
 function extractBrands(text) {
   const commonBrands = ['nike', 'adidas', 'puma', 'zara', 'h&m', 'uniqlo', 'gucci', 'prada']
-  return commonBrands.filter(brand => text.toLowerCase().includes(brand))
+  return commonBrands.filter((brand) => text.toLowerCase().includes(brand))
 }
 
 function extractCategories(text) {
   const categories = ['abbigliamento', 'scarpe', 'accessori', 'sport', 'casual', 'elegante', 'formale']
-  return categories.filter(category => text.toLowerCase().includes(category))
+  return categories.filter((category) => text.toLowerCase().includes(category))
 }

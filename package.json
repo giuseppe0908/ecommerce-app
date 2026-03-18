@@ -5,6 +5,7 @@
   "scripts": {
     "build": "nuxt build",
     "db:generate": "prisma generate",
+    "db:push": "prisma db push",
     "db:migrate:deploy": "prisma migrate deploy",
     "dev": "nuxt dev",
     "generate": "nuxt generate",

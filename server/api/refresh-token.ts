@@ -1,57 +1,48 @@
-import jwt from 'jsonwebtoken'
-import { PrismaClient } from '@prisma/client'
+import { requireAuthenticatedUser } from '../utils/auth-session'
+import { createLogger } from '../utils/observability'
+import { issueUserSession } from '../utils/session'
 
-const prisma = new PrismaClient()
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
-const TOKEN_EXPIRY = '1h' // Token expires in 1 hour
+const logger = createLogger('auth-refresh-token')
 
 export default defineEventHandler(async (event) => {
+  if (event.node.req.method !== 'POST') {
+    throw createError({ statusCode: 405, message: 'Metodo non supportato' })
+  }
+
   try {
-    // Get the authorization header
-    const authHeader = getRequestHeader(event, 'authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw createError({
-        statusCode: 401,
-        message: 'Token di autenticazione mancante o non valido'
-      })
-    }
-    
-    // Extract the token
-    const token = authHeader.split(' ')[1]
-    
-    // Verify and decode the token
-    const decoded = jwt.verify(token, JWT_SECRET, { ignoreExpiration: true })
-    
-    // Find the user
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.sub }
+    const authUser = await requireAuthenticatedUser(event)
+    const { token } = await issueUserSession(event, {
+      id: authUser.id,
+      email: authUser.email,
+      role: authUser.role,
     })
-    
-    if (!user) {
-      throw createError({
-        statusCode: 404,
-        message: 'Utente non trovato'
-      })
-    }
-    
-    // Generate a new token
-    const newToken = jwt.sign(
-      { 
-        sub: user.id,
-        email: user.email,
-        role: user.role,
-        exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour expiration
+
+    return {
+      success: true,
+      token,
+      user: {
+        id: authUser.id,
+        name: authUser.name,
+        surname: authUser.surname,
+        email: authUser.email,
+        role: authUser.role,
+        address: authUser.address,
+        number: authUser.number,
       },
-      JWT_SECRET
-    )
-    
-    return { token: newToken }
-    
-  } catch (error) {
-    console.error('Error refreshing token:', error)
+    }
+  } catch (error: any) {
+    if (error?.statusCode) {
+      throw error
+    }
+
+    logger.error('Errore aggiornamento sessione', {
+      requestId: event.context.requestId,
+      error,
+    })
+
     throw createError({
-      statusCode: 401,
-      message: 'Impossibile aggiornare il token'
+      statusCode: 500,
+      message: 'Errore interno durante l\'aggiornamento sessione'
     })
   }
 })

@@ -1,49 +1,48 @@
-import { PrismaClient } from '@prisma/client';
 import { H3Event } from 'h3';
+import prisma from '../utils/prisma';
+import { requireAdminUser } from '../utils/auth-session';
+import { createLogger } from '../utils/observability';
 
-const prisma = new PrismaClient();
+const logger = createLogger('cleanup-tokens');
 
-/**
- * Endpoint per la pulizia dei token scaduti
- * Può essere chiamato manualmente o tramite un job schedulato
- */
 export default defineEventHandler(async (event: H3Event) => {
+  await requireAdminUser(event);
+
   try {
-    // Ottieni la data corrente
     const currentDate = new Date();
-    
-    // Elimina tutti i token scaduti
-    const deletedTokens = await prisma.token.deleteMany({
-      where: {
-        expiresAt: {
-          lt: currentDate // Trova tutti i token con data di scadenza minore della data corrente
-        }
-      }
-    });
-    
-    // Elimina anche i token di reset scaduti
-    const deletedResetTokens = await prisma.resetToken.deleteMany({
-      where: {
-        expiresAt: {
-          lt: currentDate
-        }
-      }
-    });
-    
-    console.log(`Pulizia completata: ${deletedTokens.count} token di autenticazione e ${deletedResetTokens.count} token di reset eliminati`);
-    
+
+    const [deletedTokens, deletedResetTokens] = await Promise.all([
+      prisma.token.deleteMany({
+        where: {
+          expiresAt: {
+            lt: currentDate,
+          },
+        },
+      }),
+      prisma.resetToken.deleteMany({
+        where: {
+          expiresAt: {
+            lt: currentDate,
+          },
+        },
+      }),
+    ]);
+
     return {
       success: true,
       message: 'Pulizia token completata',
       deletedTokens: deletedTokens.count,
-      deletedResetTokens: deletedResetTokens.count
+      deletedResetTokens: deletedResetTokens.count,
     };
   } catch (error) {
-    console.error('Errore durante la pulizia dei token:', error);
-    
+    logger.error('Errore durante la pulizia dei token', {
+      requestId: event.context.requestId,
+      error,
+    });
+
     throw createError({
       statusCode: 500,
-      message: 'Errore durante la pulizia dei token'
+      message: 'Errore durante la pulizia dei token',
     });
   }
 });

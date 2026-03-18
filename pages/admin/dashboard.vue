@@ -141,17 +141,23 @@ const totalProducts = ref(0);
 const totalCustomers = ref(0);
 
 onMounted(async () => {
-  authStore.initialize();
+  await authStore.initialize();
   
   try {
     // Fetch dashboard statistics
     const statsResponse = await fetch('/api/admin/statistics');
+
+    if (!statsResponse.ok) {
+      const errorPayload = await statsResponse.json().catch(() => ({}));
+      throw new Error(errorPayload?.message || 'Errore nel recupero statistiche admin');
+    }
+
     const stats = await statsResponse.json();
     
-    totalOrders.value = stats.totalOrders;
-    monthlyRevenue.value = stats.monthlyRevenue;
-    totalProducts.value = stats.totalProducts;
-    totalCustomers.value = stats.totalCustomers;
+    totalOrders.value = Number(stats?.totalOrders ?? 0);
+    monthlyRevenue.value = Number(stats?.monthlyRevenue ?? 0);
+    totalProducts.value = Number(stats?.totalProducts ?? 0);
+    totalCustomers.value = Number(stats?.totalCustomers ?? 0);
   } catch (error) {
     console.error('Errore nel caricamento delle statistiche:', error);
   }

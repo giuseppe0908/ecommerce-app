@@ -3,16 +3,38 @@ import { withAccelerate } from '@prisma/extension-accelerate';
 
 const prismaLogs: Prisma.LogLevel[] =
   process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'];
-const databaseUrl = (process.env.DATABASE_URL || '').trim();
+const stripWrappingQuotes = (value: string) => {
+  const trimmed = value.trim();
+
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1);
+  }
+
+  return trimmed;
+};
+
+const databaseUrl = stripWrappingQuotes(process.env.DATABASE_URL || '');
 const isAccelerateUrl = databaseUrl.startsWith('prisma://');
 
 function createPrismaClient() {
   const client = new PrismaClient({
+    ...(databaseUrl
+      ? {
+          datasources: {
+            db: {
+              url: databaseUrl,
+            },
+          },
+        }
+      : {}),
     log: prismaLogs,
   });
 
-  // Local development keeps a direct MySQL connection.
-  // Preview/production on Vercel should use a pooled prisma:// URL via Accelerate.
+  // Local development keeps a direct PostgreSQL connection.
+  // Preview/production can use Neon directly, or prisma:// via Accelerate if configured.
   return isAccelerateUrl ? client.$extends(withAccelerate()) : client;
 }
 

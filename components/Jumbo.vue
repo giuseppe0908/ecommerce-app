@@ -1,17 +1,27 @@
 <template>
     <div class="jumbo relative bg-no-repeat w-full h-[320px] md:h-[676px]">
         <div class="image-container w-full h-full">
-            <img class="w-full h-full" src="../assets/img/jumbo-nonradius.png" alt="jumbo">
+            <img
+              class="w-full h-full"
+              :src="jumboImage"
+              alt="Hero del catalogo moda con accesso rapido alle sezioni donna, uomo e bambino"
+              width="1600"
+              height="676"
+              sizes="100vw"
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+            >
         </div>
         <div class="centrato absolute ">    
             <div class="">
-                <Button name="DONNA" :bgColor="colorPrimary" textColor="white" to="product?gender=donna"  :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight"/>
+                <Button name="DONNA" :bgColor="colorPrimary" textColor="white" to="/product?gender=donna"  :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight"/>
             </div>
             <div class="mt-5 lg:mt-8">
-                <Button name="UOMO" bgColor="white" :textColor="colorPrimary"  to="product?gender=/uomo" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight"/>
+                <Button name="UOMO" bgColor="white" :textColor="colorPrimary"  to="/product?gender=uomo" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight"/>
             </div>
             <div class="mt-5 lg:mt-8 ">
-                <Button name="BAMBINO" :bgColor="colorPrimary" textColor="white"  to="product?gender=bambini" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight" marginLeft="25px"/>
+                <Button name="BAMBINO" :bgColor="colorPrimary" textColor="white"  to="/product?gender=bambini" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight" marginLeft="25px"/>
             </div>
         </div>
         <!-- <div class="centrato absolute left-48 title text-[20px] md:w-[50%]" >
@@ -32,26 +42,30 @@
 
 <script setup>
 import Button from './Button.vue'
+import jumboImage from '../assets/img/jumbo-nonradius.png'
 
     const props = defineProps(['colorPrimary'])
     const {colorPrimary} = props
-    
 
-   // Variabile reattiva per la larghezza del bottone
-    const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
-    const buttonHeight = ref('42px');
-    // Imposta la larghezza e largezza in base alla dimensione dello schermo lato client
-    onMounted(() => {
-    if (process.client) {
-        buttonWidth.value = window.innerWidth >= 1024 ? '206px' : '142px';
-        buttonHeight.value = window.innerWidth >= 1024 ? '64px' : '42px'
-        // Aggiorna la larghezza e altezza del bottone al ridimensionamento della finestra
-        window.addEventListener('resize', () => {
-            buttonWidth.value = window.innerWidth >= 1024 ? '206px' : '142px';
-            buttonHeight.value = window.innerWidth >= 1024 ? '64px' : '42px';
-        }); 
+    const buttonWidth = ref('142px')
+    const buttonHeight = ref('42px')
+
+    function updateButtonDimensions() {
+      if (!process.client) return
+
+      buttonWidth.value = window.innerWidth >= 1024 ? '206px' : '142px'
+      buttonHeight.value = window.innerWidth >= 1024 ? '64px' : '42px'
     }
-    });
+
+    onMounted(() => {
+      updateButtonDimensions()
+      window.addEventListener('resize', updateButtonDimensions)
+    })
+
+    onBeforeUnmount(() => {
+      if (!process.client) return
+      window.removeEventListener('resize', updateButtonDimensions)
+    })
 </script>
 <style scoped>
 

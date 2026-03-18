@@ -1,314 +1,322 @@
 <template>
-  <div class="product-catalog-container">
-    <!-- ============================================
-         MOBILE NAVIGATION MENU
-         Full-screen overlay menu for mobile devices
-         ============================================ -->
+  <div class="catalog-page">
     <transition name="fade">
       <div
         v-if="isMenuOpen"
-        class="mobile-menu"
+        class="fixed inset-0 z-50 overflow-y-auto bg-[#5D758B] px-4 py-6 text-white"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="mobile-menu-title"
+        aria-labelledby="catalog-mobile-menu"
       >
-        <!-- Menu Header with Gender Tabs -->
-        <div class="mobile-menu__header">
-          <nav class="mobile-menu__tabs" role="tablist" aria-label="Categorie per genere">
+        <div class="mx-auto max-w-5xl">
+          <div class="mb-6 flex items-center justify-between">
+            <nav class="flex gap-6 text-sm font-semibold" aria-label="Schede genere mobile">
+              <button
+                v-for="tab in GENDER_TABS"
+                :key="tab.id"
+                type="button"
+                class="border-b-2 pb-1 transition"
+                :class="activeGenderTab === tab.id ? 'border-white text-white' : 'border-transparent text-slate-300 hover:text-white'"
+                @click="setActiveGenderTab(tab.id)"
+              >
+                {{ tab.label }}
+              </button>
+            </nav>
+
             <button
-              v-for="tab in GENDER_TABS"
-              :key="tab.id"
-              :class="[
-                'mobile-menu__tab',
-                { 'mobile-menu__tab--active': activeGenderTab === tab.id }
-              ]"
-              :aria-selected="activeGenderTab === tab.id"
-              role="tab"
-              @click="setActiveGenderTab(tab.id)"
+              type="button"
+              class="rounded-md px-3 py-1 text-2xl text-slate-200 transition hover:bg-white/10 hover:text-white"
+              aria-label="Chiudi menu catalogo"
+              @click="toggleMobileMenu"
             >
-              {{ tab.label }}
+              ×
             </button>
-          </nav>
+          </div>
 
-          <!-- Close Button -->
-          <button
-            class="mobile-menu__close"
-            aria-label="Chiudi menu"
-            @click="toggleMobileMenu"
-          >
-            <span aria-hidden="true">×</span>
-          </button>
-        </div>
+          <div class="mb-6">
+            <input
+              v-model="searchQuery"
+              type="search"
+              placeholder="RICERCA"
+              class="w-full rounded-xl border border-white/20 bg-white px-4 py-3 text-sm text-slate-900 outline-none ring-0"
+              aria-label="Cerca prodotti"
+              @input="handleSearchInput"
+            >
+          </div>
 
-        <!-- Search Input -->
-        <div class="mobile-menu__search">
-          <input
-            v-model="searchQuery"
-            type="search"
-            :placeholder="SEARCH_PLACEHOLDER"
-            class="search-input"
-            aria-label="Cerca prodotti"
-            @input="handleSearchInput"
-          />
-        </div>
-
-        <!-- Category Grid -->
-        <div class="mobile-menu__categories" role="list">
-          <article
-            v-for="category in categories"
-            :key="category.id"
-            class="category-card"
-            role="listitem"
-          >
-            <div class="category-card__image-wrapper">
-              <img
-                :data-src="category.image"
-                :alt="`Categoria ${category.name}`"
-                class="category-card__image lazyload"
-                loading="lazy"
-              />
-              <div class="category-card__button-wrapper">
-                <Button
-                  :name="category.name"
-                  bg-color="white"
-                  :text-color="colorPrimary"
-                  :to="buildCategoryUrl(category.name)"
-                  width="100%"
-                  :height="buttonHeight"
-                  :aria-label="`Vai alla categoria ${category.name}`"
-                />
-              </div>
-            </div>
-          </article>
+          <div class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+            <article
+              v-for="category in catalogCategories"
+              :key="category.id"
+              class="group"
+            >
+              <button
+                type="button"
+                class="w-full text-left"
+                :aria-label="`Vai alla categoria ${category.name}`"
+                @click="applyCategoryFromMenu(category)"
+              >
+                <div class="relative overflow-hidden rounded-2xl shadow-lg">
+                  <img
+                    :src="category.image"
+                    :alt="`Categoria ${category.name}`"
+                    class="h-40 w-full object-cover transition duration-300 group-hover:scale-105"
+                    loading="lazy"
+                  >
+                  <div class="absolute inset-x-3 bottom-3 rounded-full bg-white/95 px-4 py-2 text-center text-sm font-semibold text-[#5D758B] shadow">
+                    {{ category.name }}
+                  </div>
+                </div>
+              </button>
+            </article>
+          </div>
         </div>
       </div>
     </transition>
 
-    <!-- ============================================
-         DESKTOP HEADER NAVIGATION
-         Horizontal navigation bar for larger screens
-         ============================================ -->
-    <nav
-      v-if="!isMenuOpen"
-      class="desktop-header"
-      aria-label="Navigazione principale"
-    >
-      <!-- Mobile Menu Toggle Button -->
-      <button
-        class="desktop-header__hamburger"
-        aria-label="Apri menu"
-        aria-expanded="false"
-        @click="toggleMobileMenu"
-      >
-        <svg
-          class="hamburger-icon"
-          :style="{ color: colorPrimary }"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-hidden="true"
+    <section class="catalog-page__header">
+      <div class="catalog-page__tabs">
+        <button
+          v-for="tab in GENDER_TABS"
+          :key="tab.id"
+          type="button"
+          class="catalog-page__tab"
+          :class="{ 'catalog-page__tab--active': isGenderActive(tab.id) }"
+          @click="applyGenderFilter(tab.id)"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 6h16M4 12h16M4 18h16"
-          />
-        </svg>
-      </button>
-
-      <!-- Quick Action Buttons -->
-      <div class="desktop-header__actions" role="group" aria-label="Filtri rapidi">
-        <Button
-          v-for="action in quickActions"
-          :key="action.id"
-          :name="action.label"
-          :bg-color="action.isActive ? colorPrimary : 'white'"
-          :text-color="action.isActive ? 'white' : colorPrimary"
-          :to="action.to"
-          :width="action.width"
-          height="30px"
-          font-size="12px"
-          @click="action.onClick"
-        />
+          {{ tab.label }}
+        </button>
       </div>
-    </nav>
 
-    <!-- ============================================
-         DESKTOP CATEGORY NAVIGATION
-         Visible only on larger screens (≥640px)
-         ============================================ -->
-    <nav
-      class="category-navigation"
-      aria-label="Categorie prodotto"
-    >
-      <ul class="category-navigation__list">
-        <li
-          v-for="category in categories"
-          :key="category.id"
-          class="category-navigation__item"
+      <div class="catalog-page__nav-row">
+        <button
+          type="button"
+          class="catalog-page__menu-button"
+          aria-label="Apri menu catalogo"
+          @click="toggleMobileMenu"
         >
-          <button
-            class="category-navigation__link"
-            :style="{ color: colorPrimary }"
-            :aria-label="`Filtra per categoria ${category.name}`"
-            @click="applyFilter('category', category)"
-          >
-            {{ category.name }}
-          </button>
-        </li>
-      </ul>
-    </nav>
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
 
-    <!-- ============================================
-         ACTIVE FILTERS BREADCRUMB
-         Shows currently applied filters
-         ============================================ -->
-    <div
-      v-if="activeFilters.length > 0"
-      class="active-filters"
-      role="navigation"
-      aria-label="Filtri attivi"
-    >
-      <ul class="active-filters__list">
-        <li
-          v-for="filter in activeFilters"
-          :key="filter.key"
-          class="active-filters__item"
-        >
+        <nav class="catalog-page__nav" aria-label="Categorie catalogo">
           <button
-            class="active-filters__remove"
-            :aria-label="`Rimuovi filtro ${filter.label}`"
-            @click="removeFilter(filter.key)"
+            v-for="category in catalogCategories"
+            :key="category.id"
+            type="button"
+            class="catalog-page__nav-item"
+            :class="{ 'catalog-page__nav-item--active': isCategoryActive(category) }"
+            @click="applyCategoryFilter(category)"
           >
-            {{ filter.label }}
-            <span aria-hidden="true"> ›</span>
+            {{ category.name.toUpperCase() }}
           </button>
-        </li>
-      </ul>
-    </div>
+        </nav>
+      </div>
 
-    <!-- ============================================
-         MAIN CONTENT AREA
-         Filters sidebar + Product grid
-         ============================================ -->
-    <div v-if="!isMenuOpen" class="main-content">
-      <!-- ============================================
-           LEFT SIDEBAR - FILTERS (Desktop only)
-           ============================================ -->
-      <aside class="filters-sidebar" aria-label="Filtri prodotti">
-        <div class="filters-sidebar__section">
-          <button
-            class="filter-toggle-button"
-            :style="getFilterButtonStyles(isFilterPanelOpen)"
-            :aria-expanded="isFilterPanelOpen"
-            aria-controls="filter-panel"
-            @click="toggleFilterPanel"
-          >
-            {{ FILTER_LABEL }}
-          </button>
+      <p class="catalog-page__breadcrumb">
+        {{ breadcrumbTrail.join(' > ') }}
+      </p>
+    </section>
 
-          <!-- Filter Options List -->
-          <transition name="slide-down">
-            <ul
-              v-if="isFilterPanelOpen"
-              id="filter-panel"
-              class="filter-options-list"
-              role="list"
-            >
-              <li
-                v-for="option in FILTER_OPTIONS"
-                :key="option"
-                class="filter-options-list__item"
+    <div class="catalog-page__layout">
+      <aside class="catalog-sidebar">
+        <section class="catalog-sidebar__section">
+          <h2>{{ sidebarTitle }}</h2>
+          <ul>
+            <li v-for="item in sidebarItems" :key="item.type + '-' + item.id">
+              <button
+                v-if="item.type === 'subCategory'"
+                type="button"
+                class="catalog-sidebar__link"
+                :class="{ 'catalog-sidebar__link--active': isSubCategoryActive(item) }"
+                @click="applySubCategoryFilter(item)"
               >
-                {{ option }}
-              </li>
-            </ul>
-          </transition>
-        </div>
-      </aside>
+                {{ item.name.toUpperCase() }}
+              </button>
 
-      <!-- ============================================
-           RIGHT CONTENT AREA - Advanced Filters + Products
-           ============================================ -->
-      <main class="content-area">
-        <!-- Advanced Filters Section -->
-        <section class="advanced-filters" aria-label="Filtri avanzati">
-          <div class="advanced-filters__wrapper">
-            <button
-              class="filter-toggle-button"
-              :style="getFilterButtonStyles(isAdvancedFiltersOpen)"
-              :aria-expanded="isAdvancedFiltersOpen"
-              aria-controls="advanced-filters-panel"
-              @click="toggleAdvancedFilters"
-            >
-              {{ FILTER_LABEL }}
-            </button>
-
-            <!-- Advanced Filter Panel with Slide Animation -->
-            <transition name="slide-in-right">
-              <div
-                v-if="isAdvancedFiltersOpen"
-                id="advanced-filters-panel"
-                class="filter-panel"
+              <button
+                v-else
+                type="button"
+                class="catalog-sidebar__link"
+                :class="{ 'catalog-sidebar__link--active': isCategoryActive(item) }"
+                @click="applyCategoryFilter(item)"
               >
-                <!-- Filter Type Buttons -->
-                <div class="filter-panel__types" role="group" aria-label="Tipi di filtro">
-                  <button
-                    v-for="filterType in availableFilterTypes"
-                    :key="filterType.id"
-                    class="filter-type-button"
-                    :style="getFilterButtonStyles(filterType.selected)"
-                    :aria-pressed="filterType.selected"
-                    @click="selectFilterType(filterType)"
-                  >
-                    {{ filterType.name }}
-                  </button>
-                </div>
-
-                <!-- Price Range Filter Component -->
-                <PriceRangeFilter
-                  v-if="isPriceFilterActive"
-                  :min-price="priceConstraints.min"
-                  :max-price="priceConstraints.max"
-                  :current-range="priceRange"
-                  :color-primary="colorPrimary"
-                  @update:range="updatePriceRange"
-                  @apply="applyPriceFilter"
-                  @reset="resetPriceFilter"
-                />
-              </div>
-            </transition>
-          </div>
+                {{ item.name.toUpperCase() }}
+              </button>
+            </li>
+          </ul>
         </section>
 
-        <!-- ============================================
-             PRODUCT GRID
-             Responsive grid with product cards
-             ============================================ -->
-        <section
-          class="product-grid"
-          aria-label="Catalogo prodotti"
-          :aria-busy="isLoading"
-        >
-          <!-- Loading State -->
-          <div v-if="isLoading" class="loading-state" aria-live="polite">
-            <div class="spinner" role="status">
-              <span class="sr-only">Caricamento prodotti...</span>
-            </div>
+        <section class="catalog-sidebar__controls">
+          <div class="catalog-sidebar__search">
+            <label for="catalog-search" class="catalog-sidebar__label">Cerca</label>
+            <input
+              id="catalog-search"
+              v-model="searchQuery"
+              type="search"
+              placeholder="RICERCA"
+              class="catalog-sidebar__input"
+              @input="handleSearchInput"
+            >
           </div>
 
-          <!-- Empty State -->
-          <div v-else-if="products.length === 0" class="empty-state">
-            <p class="empty-state__message">
-              {{ EMPTY_STATE_MESSAGE }}
+          <button
+            type="button"
+            class="catalog-sidebar__toggle"
+            :aria-expanded="isAdvancedFiltersOpen"
+            @click="toggleAdvancedFilters"
+          >
+            {{ isAdvancedFiltersOpen ? 'Chiudi filtri avanzati' : 'Apri filtri avanzati' }}
+          </button>
+
+          <div class="catalog-sidebar__advanced" :class="{ 'catalog-sidebar__advanced--open': isAdvancedFiltersOpen }">
+            <div class="catalog-sidebar__field">
+              <label class="catalog-sidebar__label" for="brand-filter">Brand</label>
+              <select
+                id="brand-filter"
+                v-model="selectedBrand"
+                class="catalog-sidebar__select"
+                @change="applyBrandSelection"
+              >
+                <option value="">Tutti i brand</option>
+                <option
+                  v-for="brand in brands"
+                  :key="brand.id"
+                  :value="normalizeName(brand.name)"
+                >
+                  {{ brand.name }}
+                </option>
+              </select>
+            </div>
+
+            <PriceRangeFilter
+              :min-price="priceConstraints.min"
+              :max-price="priceConstraints.max"
+              :current-range="priceRange"
+              :color-primary="colorPrimary"
+              @update:range="updatePriceRange"
+              @apply="applyPriceFilter"
+              @reset="resetPriceFilter"
+            />
+          </div>
+        </section>
+      </aside>
+
+      <main class="catalog-content">
+        <div class="catalog-content__filters-bar">
+          <button
+            type="button"
+            class="catalog-filter-btn catalog-filter-btn--outline"
+            @click="toggleAdvancedFilters"
+          >
+            FILTRI
+          </button>
+
+          <label class="catalog-filter-select">
+            <span>Ordina</span>
+            <select v-model="selectedSort" @change="applySortSelection">
+              <option v-for="option in SORT_OPTIONS" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </label>
+
+          <button
+            type="button"
+            class="catalog-filter-btn"
+            :class="{ 'catalog-filter-btn--active': isBooleanFilterActive('inStock') }"
+            @click="toggleBooleanFilter('inStock')"
+          >
+            Consegna
+          </button>
+
+          <button
+            type="button"
+            class="catalog-filter-btn"
+            :class="{ 'catalog-filter-btn--active': isBooleanFilterActive('promo') }"
+            @click="toggleBooleanFilter('promo')"
+          >
+            Promo
+          </button>
+
+          <button
+            type="button"
+            class="catalog-filter-btn"
+            :class="{ 'catalog-filter-btn--active': !!selectedBrand }"
+            @click="toggleAdvancedFilters"
+          >
+            Brand
+          </button>
+
+          <button
+            type="button"
+            class="catalog-filter-btn"
+            :class="{ 'catalog-filter-btn--active': hasPriceFilter }"
+            @click="toggleAdvancedFilters"
+          >
+            Prezzo
+          </button>
+
+          <button
+            type="button"
+            class="catalog-filter-btn"
+            :class="{ 'catalog-filter-btn--active': isBooleanFilterActive('newArrivals') }"
+            @click="toggleBooleanFilter('newArrivals')"
+          >
+            Novita
+          </button>
+
+          <button
+            type="button"
+            class="catalog-filter-btn catalog-filter-btn--outline"
+            @click="clearAllFilters"
+          >
+            Reset
+          </button>
+        </div>
+
+        <div v-if="activeFilters.length > 0" class="catalog-content__active-filters">
+          <button
+            v-for="filter in activeFilters"
+            :key="filter.key"
+            type="button"
+            class="catalog-content__active-filter"
+            @click="removeFilter(filter.key)"
+          >
+            {{ filter.label }} ×
+          </button>
+        </div>
+
+        <div class="catalog-content__summary">
+          <div>
+            <h1>{{ catalogTitle }}</h1>
+            <p>{{ resultSummary }}</p>
+          </div>
+
+          <div class="catalog-content__summary-box">
+            <strong>{{ selectedSortLabel }}</strong>
+            <span>Pagina {{ pagination.page }} di {{ pagination.pages || 1 }}</span>
+          </div>
+        </div>
+
+        <section class="catalog-content__products" :aria-busy="isLoading">
+          <div v-if="isLoading" class="catalog-content__loading">
+            <div class="catalog-content__spinner"></div>
+          </div>
+
+          <div
+            v-else-if="products.length === 0"
+            class="catalog-content__empty"
+          >
+            <p class="catalog-content__empty-title">Nessun prodotto trovato</p>
+            <p class="catalog-content__empty-copy">
+              Prova a modificare ricerca, brand o intervallo di prezzo.
             </p>
           </div>
 
-          <!-- Product Cards Grid -->
-          <div v-else class="product-grid__container">
-            <Card
+          <div v-else class="catalog-content__grid">
+            <CatalogProductCard
               v-for="product in products"
               :key="product.id"
               :id="product.id"
@@ -318,1087 +326,1098 @@
               :promo="product.promo"
               :plus="product.plus"
               :price="product.price"
+              :percentual-promo="product.percentualPromo"
               :category="product.category"
+              :sub-category="product.subCategory"
               :brand="product.brand"
               :color-primary="colorPrimary"
-              color-secondary="#00192F"
             />
           </div>
         </section>
+
+        <div
+          v-if="pagination.pages > 1"
+          class="catalog-content__pagination"
+        >
+          <button
+            type="button"
+            class="catalog-content__pagination-button"
+            :disabled="pagination.page <= 1"
+            @click="goToPage(pagination.page - 1)"
+          >
+            Pagina precedente
+          </button>
+
+          <div class="catalog-content__pagination-pages">
+            <button
+              v-for="pageNumber in paginationPages"
+              :key="pageNumber"
+              type="button"
+              class="catalog-content__pagination-page"
+              :class="{ 'catalog-content__pagination-page--active': pageNumber === pagination.page }"
+              @click="goToPage(pageNumber)"
+            >
+              {{ pageNumber }}
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="catalog-content__pagination-button"
+            :disabled="pagination.page >= pagination.pages"
+            @click="goToPage(pagination.page + 1)"
+          >
+            Pagina successiva
+          </button>
+        </div>
       </main>
     </div>
   </div>
 </template>
 
 <script setup>
-import { useRoute, useRouter } from 'vue-router';
-import { ref, computed, onMounted, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import CatalogProductCard from '~/components/Product/CatalogProductCard.vue'
 
-/**
- * ============================================
- * CONSTANTS & CONFIGURATION
- * ============================================
- */
+const route = useRoute()
+const router = useRouter()
+
+const colorPrimary = '#5D758B'
+const FALLBACK_CATEGORY_IMAGE = 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg'
+const DEBOUNCE_DELAY_MS = 350
+
 const GENDER_TABS = [
   { id: 'donna', label: 'DONNA' },
   { id: 'uomo', label: 'UOMO' },
-  { id: 'bambini', label: 'BAMBINI' }
-];
+  { id: 'bambini', label: 'BAMBINO' },
+]
 
-const FILTER_OPTIONS = ['pippo', 'pluto', 'tipo', 'olindo', 'nettuno', 'ulisse', 'nessuno'];
+const SORT_OPTIONS = [
+  { value: 'id:desc', label: 'Più recenti' },
+  { value: 'price:asc', label: 'Prezzo crescente' },
+  { value: 'price:desc', label: 'Prezzo decrescente' },
+  { value: 'name:asc', label: 'Nome A-Z' },
+  { value: 'rating:desc', label: 'Valutazione migliore' },
+]
 
-const FILTER_LABEL = 'FILTRI';
-const SEARCH_PLACEHOLDER = 'RICERCA';
-const EMPTY_STATE_MESSAGE = 'Nessun prodotto trovato. Prova a modificare i filtri.';
+const { data: categoriesData } = await useFetch('/api/categories')
+const { data: gendersData } = await useFetch('/api/genders')
+const { data: brandsData } = await useFetch('/api/brands')
 
-const DEBOUNCE_DELAY_MS = 500;
-const PRICE_STEP = 1;
+const categories = computed(() => (Array.isArray(categoriesData.value) ? categoriesData.value : []))
+const genders = computed(() => (Array.isArray(gendersData.value) ? gendersData.value : []))
+const brands = computed(() => (Array.isArray(brandsData.value) ? brandsData.value : []))
 
-/**
- * ============================================
- * COMPOSABLES & EXTERNAL DEPENDENCIES
- * ============================================
- */
-const route = useRoute();
-const router = useRouter();
-
-// Custom composable for responsive UI values
-const { screenWidth, buttonHeight, colorPrimary } = useResponsiveButton();
-
-// API data fetching using Nuxt's useFetch
-const { data: categories } = await useFetch('/api/categories');
-const { data: genders } = await useFetch('/api/genders');
-const { data: brands } = await useFetch('/api/brands');
-
-/**
- * ============================================
- * REACTIVE STATE MANAGEMENT
- * ============================================
- */
-
-// UI State
-const isMenuOpen = ref(false);
-const isFilterPanelOpen = ref(false);
-const isAdvancedFiltersOpen = ref(false);
-const isLoading = ref(false);
-const activeGenderTab = ref('donna');
-
-// Product Data
-const products = ref([]);
-const searchQuery = ref('');
-
-// Filter State
-const filters = ref({
-  category: '',
-  brand: '',
-  gender: '',
-  priceMin: '',
-  priceMax: '',
-  promo: '',
-  plus: '',
-  newArrivals: ''
-});
-
-// Price Filter State
+const isMenuOpen = ref(false)
+const isAdvancedFiltersOpen = ref(false)
+const isLoading = ref(false)
+const activeGenderTab = ref('donna')
+const searchQuery = ref('')
+const selectedBrand = ref('')
+const selectedSort = ref('id:desc')
+const products = ref([])
+const pagination = ref({
+  total: 0,
+  page: 1,
+  limit: 12,
+  pages: 0,
+})
 const priceConstraints = ref({
   min: 0,
-  max: 1000
-});
-
+  max: 1000,
+})
 const priceRange = ref({
-  min: priceConstraints.value.min,
-  max: priceConstraints.value.max
-});
+  min: 0,
+  max: 1000,
+})
+const lastRequestKey = ref('')
 
-// Available filter types with selection state
-const availableFilterTypes = ref([
-  { id: 'color', name: 'Colore', value: '', selected: false },
-  { id: 'size', name: 'Taglia', value: '', selected: false },
-  { id: 'price', name: 'Prezzo', value: '', selected: false }
-]);
+let searchDebounceTimer
 
-// Request deduplication
-const lastQueryString = ref('');
-
-/**
- * ============================================
- * COMPUTED PROPERTIES
- * ============================================
- */
-
-/**
- * Determines if price filter is currently active
- * @returns {boolean} True if price filter type is selected
- */
-const isPriceFilterActive = computed(() => {
-  return availableFilterTypes.value.find(f => f.id === 'price')?.selected || false;
-});
-
-/**
- * Generates array of active filters with labels for UI display
- * @returns {Array<{key: string, label: string}>} Array of active filter objects
- */
-const activeFilters = computed(() => {
-  const filterMap = [
-    {
-      condition: filters.value.gender,
-      key: 'gender',
-      getLabel: () => genders.value.find(g => g.id === parseInt(filters.value.gender, 10))?.name || ''
-    },
-    {
-      condition: filters.value.category,
-      key: 'category',
-      getLabel: () => categories.value.find(c => c.id === parseInt(filters.value.category, 10))?.name || ''
-    },
-    {
-      condition: filters.value.brand,
-      key: 'brand',
-      getLabel: () => brands.value.find(b => b.id === parseInt(filters.value.brand, 10))?.name || ''
-    },
-    {
-      condition: filters.value.priceMin,
-      key: 'priceMin',
-      getLabel: () => `Prezzo Min: €${filters.value.priceMin}`
-    },
-    {
-      condition: filters.value.priceMax,
-      key: 'priceMax',
-      getLabel: () => `Prezzo Max: €${filters.value.priceMax}`
-    },
-    {
-      condition: filters.value.newArrivals,
-      key: 'newArrivals',
-      getLabel: () => 'Nuovi Arrivi'
-    },
-    {
-      condition: filters.value.promo,
-      key: 'promo',
-      getLabel: () => 'Promo'
-    },
-    {
-      condition: filters.value.plus,
-      key: 'plus',
-      getLabel: () => 'Spedizione Plus'
-    }
-  ];
-
-  return filterMap
-    .filter(filter => filter.condition)
-    .map(filter => ({ key: filter.key, label: filter.getLabel() }));
-});
-
-/**
- * Generates quick action buttons configuration for desktop header
- * @returns {Array<Object>} Array of button configuration objects
- */
-const quickActions = computed(() => {
-  return [
-    {
-      id: 'donna',
-      label: 'DONNA',
-      isActive: route.query.gender === 'donna',
-      to: buildGenderUrl('donna'),
-      width: '83px'
-    },
-    {
-      id: 'uomo',
-      label: 'UOMO',
-      isActive: route.query.gender === 'uomo',
-      to: buildGenderUrl('uomo'),
-      width: '83px'
-    },
-    {
-      id: 'bambini',
-      label: 'BAMBINO',
-      isActive: route.query.gender === 'bambini',
-      to: buildGenderUrl('bambini'),
-      width: '83px'
-    },
-    {
-      id: 'newArrivals',
-      label: 'NUOVI ARRIVI',
-      isActive: route.query.newArrivals === 'true',
-      onClick: toggleNewArrivals,
-      width: '110px'
-    }
-  ];
-});
-
-/**
- * ============================================
- * API & DATA FETCHING
- * ============================================
- */
-
-/**
- * Fetches products from API based on current filters
- * Implements request deduplication to avoid unnecessary API calls
- * @async
- * @returns {Promise<void>}
- */
-const fetchProducts = async () => {
-  try {
-    // Sync filters with URL query parameters
-    syncFiltersFromQuery();
-
-    // Build query string for API request
-    const queryString = new URLSearchParams(
-      Object.entries(filters.value).filter(([_, value]) => value !== '')
-    ).toString();
-
-    // Prevent duplicate requests
-    if (queryString === lastQueryString.value) return;
-    lastQueryString.value = queryString;
-
-    // Set loading state
-    isLoading.value = true;
-
-    // Fetch products from API
-    const response = await fetch(`/api/products?${queryString}`);
-
-    if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    products.value = Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.error('[fetchProducts] Error:', error.message);
-    products.value = [];
-
-    // TODO: Implement user-facing error notification
-    // showErrorNotification('Errore nel caricamento dei prodotti');
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-/**
- * Synchronizes local filter state with URL query parameters
- * Updates filters for category, brand, gender, price, and feature flags
- * @returns {void}
- */
-const syncFiltersFromQuery = () => {
-  // Sync entity-based filters (category, brand, gender)
-  syncEntityFilter(categories, 'category');
-  syncEntityFilter(brands, 'brand');
-  syncEntityFilter(genders, 'gender');
-
-  // Sync price filters
-  syncPriceFilter('priceMin', priceConstraints.value.min);
-  syncPriceFilter('priceMax', priceConstraints.value.max);
-
-  // Sync boolean filters
-  syncBooleanFilter('newArrivals');
-  syncBooleanFilter('promo');
-  syncBooleanFilter('plus');
-};
-
-/**
- * Syncs a single entity-based filter from query params
- * @param {Ref<Array>} entityArray - Ref to array of entities (categories, brands, etc.)
- * @param {string} paramName - Query parameter name
- */
-const syncEntityFilter = (entityArray, paramName) => {
-  const queryValue = route.query[paramName];
-
-  if (queryValue && entityArray.value) {
-    const entity = entityArray.value.find(
-      item => item.name.toLowerCase() === queryValue.toLowerCase()
-    );
-    filters.value[paramName] = entity ? entity.id.toString() : '';
-  } else {
-    filters.value[paramName] = '';
-  }
-};
-
-/**
- * Syncs a price filter from query params with validation
- * @param {string} paramName - Query parameter name ('priceMin' or 'priceMax')
- * @param {number} defaultValue - Default value if param is invalid
- */
-const syncPriceFilter = (paramName, defaultValue) => {
-  const queryValue = route.query[paramName];
-
-  if (queryValue && !isNaN(parseFloat(queryValue))) {
-    const numValue = parseFloat(queryValue);
-    filters.value[paramName] = queryValue;
-    priceRange.value[paramName === 'priceMin' ? 'min' : 'max'] = numValue;
-  } else if (queryValue === undefined) {
-    filters.value[paramName] = '';
-    priceRange.value[paramName === 'priceMin' ? 'min' : 'max'] = defaultValue;
-  }
-};
-
-/**
- * Syncs a boolean filter from query params
- * @param {string} paramName - Query parameter name
- */
-const syncBooleanFilter = (paramName) => {
-  filters.value[paramName] = route.query[paramName] === 'true' ? 'true' : '';
-};
-
-/**
- * ============================================
- * FILTER MANAGEMENT
- * ============================================
- */
-
-/**
- * Applies a filter and updates the URL
- * @param {string} filterType - Type of filter to apply (e.g., 'category', 'brand')
- * @param {Object} value - Value object containing filter data
- */
-const applyFilter = (filterType, value) => {
-  const newQuery = { ...route.query };
-
-  if (value && value.name) {
-    newQuery[filterType] = value.name.toLowerCase();
-  } else {
-    delete newQuery[filterType];
+function toFirstString(value) {
+  if (Array.isArray(value)) {
+    return typeof value[0] === 'string' ? value[0] : ''
   }
 
-  router.replace({ query: newQuery });
-};
-
-/**
- * Removes a specific filter from the active filters
- * @param {string} filterKey - Key of the filter to remove
- */
-const removeFilter = (filterKey) => {
-  const newQuery = { ...route.query };
-  delete newQuery[filterKey];
-
-  // Reset local state for price filters
-  if (filterKey === 'priceMin') {
-    priceRange.value.min = priceConstraints.value.min;
-    filters.value.priceMin = '';
-  }
-
-  if (filterKey === 'priceMax') {
-    priceRange.value.max = priceConstraints.value.max;
-    filters.value.priceMax = '';
-  }
-
-  if (filterKey === 'newArrivals') {
-    filters.value.newArrivals = '';
-  }
-
-  router.replace({ query: newQuery });
-};
-
-/**
- * Toggles the "New Arrivals" filter
- */
-const toggleNewArrivals = () => {
-  const newQuery = { ...route.query };
-
-  if (newQuery.newArrivals === 'true') {
-    delete newQuery.newArrivals;
-    filters.value.newArrivals = '';
-  } else {
-    newQuery.newArrivals = 'true';
-    filters.value.newArrivals = 'true';
-  }
-
-  router.replace({ query: newQuery });
-};
-
-/**
- * Selects a filter type (color, size, price) in advanced filters
- * @param {Object} filterType - Filter type object to select
- */
-const selectFilterType = (filterType) => {
-  // Deselect all filter types
-  availableFilterTypes.value.forEach(f => (f.selected = false));
-
-  // Select the clicked filter type
-  filterType.selected = true;
-};
-
-/**
- * ============================================
- * PRICE FILTER MANAGEMENT
- * ============================================
- */
-
-/**
- * Updates price range constraints based on available products
- * Calculates min/max prices from product data
- */
-const updatePriceConstraints = () => {
-  if (!products.value || products.value.length === 0) return;
-
-  const prices = products.value.map(p => p.price).filter(price => !isNaN(price));
-
-  if (prices.length === 0) return;
-
-  const minProductPrice = Math.floor(Math.min(...prices));
-  const maxProductPrice = Math.ceil(Math.max(...prices));
-
-  priceConstraints.value.min = minProductPrice;
-  priceConstraints.value.max = maxProductPrice;
-
-  // Initialize range if not set
-  if (!priceRange.value.min || priceRange.value.min < minProductPrice) {
-    priceRange.value.min = minProductPrice;
-  }
-  if (!priceRange.value.max || priceRange.value.max > maxProductPrice) {
-    priceRange.value.max = maxProductPrice;
-  }
-};
-
-/**
- * Updates the price range reactively during slider interaction
- * @param {Object} newRange - New price range {min, max}
- */
-const updatePriceRange = (newRange) => {
-  priceRange.value = { ...newRange };
-};
-
-/**
- * Applies the current price range filter to the URL
- * Triggers product refetch with new price constraints
- */
-const applyPriceFilter = () => {
-  const newQuery = { ...route.query };
-
-  // Update local filters
-  filters.value.priceMin = priceRange.value.min.toString();
-  filters.value.priceMax = priceRange.value.max.toString();
-
-  // Add to URL only if different from default
-  if (priceRange.value.min !== priceConstraints.value.min) {
-    newQuery.priceMin = priceRange.value.min.toString();
-  } else {
-    delete newQuery.priceMin;
-    filters.value.priceMin = '';
-  }
-
-  if (priceRange.value.max !== priceConstraints.value.max) {
-    newQuery.priceMax = priceRange.value.max.toString();
-  } else {
-    delete newQuery.priceMax;
-    filters.value.priceMax = '';
-  }
-
-  router.replace({ query: newQuery });
-  isAdvancedFiltersOpen.value = false;
-};
-
-/**
- * Resets price filter to default constraints
- * Removes price parameters from URL
- */
-const resetPriceFilter = () => {
-  priceRange.value.min = priceConstraints.value.min;
-  priceRange.value.max = priceConstraints.value.max;
-
-  const newQuery = { ...route.query };
-  delete newQuery.priceMin;
-  delete newQuery.priceMax;
-
-  filters.value.priceMin = '';
-  filters.value.priceMax = '';
-
-  router.replace({ query: newQuery });
-};
-
-/**
- * ============================================
- * UI INTERACTION HANDLERS
- * ============================================
- */
-
-/**
- * Toggles mobile menu visibility
- */
-const toggleMobileMenu = () => {
-  isMenuOpen.value = !isMenuOpen.value;
-
-  // Prevent body scroll when menu is open
-  if (isMenuOpen.value) {
-    document.body.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = '';
-  }
-};
-
-/**
- * Toggles filter panel in sidebar
- */
-const toggleFilterPanel = () => {
-  isFilterPanelOpen.value = !isFilterPanelOpen.value;
-};
-
-/**
- * Toggles advanced filters panel
- */
-const toggleAdvancedFilters = () => {
-  isAdvancedFiltersOpen.value = !isAdvancedFiltersOpen.value;
-};
-
-/**
- * Sets the active gender tab in mobile menu
- * @param {string} tabId - ID of the tab to activate
- */
-const setActiveGenderTab = (tabId) => {
-  activeGenderTab.value = tabId;
-};
-
-/**
- * Handles search input with debouncing
- * Prevents excessive API calls during typing
- */
-const handleSearchInput = debounce(() => {
-  fetchProducts();
-}, DEBOUNCE_DELAY_MS);
-
-/**
- * ============================================
- * URL BUILDERS
- * ============================================
- */
-
-/**
- * Builds URL for category filtering
- * @param {string} categoryName - Name of the category
- * @returns {string} Complete URL with query parameters
- */
-const buildCategoryUrl = (categoryName) => {
-  const params = new URLSearchParams(route.query);
-  params.set('category', categoryName.toLowerCase());
-  return `/product?${params.toString()}`;
-};
-
-/**
- * Builds URL for gender filtering while preserving other filters
- * @param {string} gender - Gender value (donna, uomo, bambini)
- * @returns {string} Complete URL with query parameters
- */
-const buildGenderUrl = (gender) => {
-  const params = new URLSearchParams();
-
-  params.append('gender', gender.toLowerCase());
-
-  // Preserve existing query parameters except gender
-  for (const [key, value] of Object.entries(route.query)) {
-    if (key !== 'gender') {
-      params.append(key, value);
-    }
-  }
-
-  return `/product?${params.toString()}`;
-};
-
-/**
- * ============================================
- * UTILITY FUNCTIONS
- * ============================================
- */
-
-/**
- * Creates a debounced function that delays execution
- * @param {Function} func - Function to debounce
- * @param {number} delay - Delay in milliseconds
- * @returns {Function} Debounced function
- */
-function debounce(func, delay) {
-  let timeoutId;
-  return function (...args) {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func.apply(this, args), delay);
-  };
+  return typeof value === 'string' ? value : ''
 }
 
-/**
- * Generates dynamic styles for filter buttons based on state
- * @param {boolean} isActive - Whether the button is active
- * @returns {Object} Style object for button
- */
-const getFilterButtonStyles = (isActive) => {
+function normalizeName(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+}
+
+function parsePositiveNumber(value) {
+  const parsed = Number(toFirstString(value))
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null
+}
+
+function parsePositiveInt(value, fallback = 1) {
+  const parsed = Number.parseInt(toFirstString(value), 10)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
+}
+
+function findEntityByQuery(collection, rawValue) {
+  const normalizedQuery = normalizeName(toFirstString(rawValue))
+  if (!normalizedQuery) return null
+
+  return (
+    collection.find((entity) => String(entity.id) === normalizedQuery) ||
+    collection.find((entity) => normalizeName(entity.name) === normalizedQuery) ||
+    null
+  )
+}
+
+function parseSortValue(rawSort) {
+  const [sortBy = 'id', sortOrder = 'desc'] = String(rawSort || 'id:desc').split(':')
   return {
-    backgroundColor: isActive ? colorPrimary : 'white',
-    color: isActive ? 'white' : colorPrimary,
-    border: isActive ? 'none' : `1px solid ${colorPrimary}`
-  };
-};
+    sortBy,
+    sortOrder,
+  }
+}
 
-/**
- * ============================================
- * LIFECYCLE HOOKS & WATCHERS
- * ============================================
- */
+function buildCategoryImage(category) {
+  const selectedGender = findEntityByQuery(genders.value, activeGenderTab.value)
+  const categoryImages = Array.isArray(category?.images) ? category.images : []
 
-/**
- * Watch route query changes and refetch products
- * Deep watch ensures nested property changes are detected
- */
+  return (
+    categoryImages.find((image) => image.genderId === selectedGender?.id)?.imageUrl ||
+    categoryImages[0]?.imageUrl ||
+    FALLBACK_CATEGORY_IMAGE
+  )
+}
+
+const catalogCategories = computed(() =>
+  categories.value.map((category) => ({
+    ...category,
+    image: buildCategoryImage(category),
+  }))
+)
+
+const allSubCategories = computed(() =>
+  categories.value.flatMap((category) =>
+    Array.isArray(category.subCategories)
+      ? category.subCategories.map((subCategory) => ({
+          ...subCategory,
+          categoryId: category.id,
+          categoryName: category.name,
+        }))
+      : []
+  )
+)
+
+const activeFilters = computed(() => {
+  const filters = []
+  const category = findEntityByQuery(categories.value, route.query.category)
+  const brand = findEntityByQuery(brands.value, route.query.brand)
+  const gender = findEntityByQuery(genders.value, route.query.gender)
+  const subCategory = findEntityByQuery(allSubCategories.value, route.query.subCategory)
+
+  if (searchQuery.value.trim()) {
+    filters.push({ key: 'q', label: `Ricerca: ${searchQuery.value.trim()}` })
+  }
+
+  if (category) {
+    filters.push({ key: 'category', label: category.name })
+  }
+
+  if (subCategory) {
+    filters.push({ key: 'subCategory', label: subCategory.name })
+  }
+
+  if (brand) {
+    filters.push({ key: 'brand', label: brand.name })
+  }
+
+  if (gender) {
+    filters.push({ key: 'gender', label: gender.name })
+  }
+
+  if (toFirstString(route.query.priceMin)) {
+    filters.push({ key: 'priceMin', label: `Da €${toFirstString(route.query.priceMin)}` })
+  }
+
+  if (toFirstString(route.query.priceMax)) {
+    filters.push({ key: 'priceMax', label: `Fino a €${toFirstString(route.query.priceMax)}` })
+  }
+
+  if (toFirstString(route.query.newArrivals) === 'true') {
+    filters.push({ key: 'newArrivals', label: 'Nuovi arrivi' })
+  }
+
+  if (toFirstString(route.query.promo) === 'true') {
+    filters.push({ key: 'promo', label: 'Promo' })
+  }
+
+  if (toFirstString(route.query.inStock) === 'true') {
+    filters.push({ key: 'inStock', label: 'Disponibili' })
+  }
+
+  return filters
+})
+
+const resultSummary = computed(() => {
+  if (pagination.value.total === 0) {
+    return 'Nessun risultato per i filtri selezionati.'
+  }
+
+  const start = (pagination.value.page - 1) * pagination.value.limit + 1
+  const end = Math.min(pagination.value.total, pagination.value.page * pagination.value.limit)
+  return `Visualizzi ${start}-${end} di ${pagination.value.total} prodotti.`
+})
+
+const selectedCategory = computed(() => findEntityByQuery(categories.value, route.query.category))
+const selectedBrandEntity = computed(() => findEntityByQuery(brands.value, route.query.brand))
+const selectedGenderEntity = computed(() => findEntityByQuery(genders.value, route.query.gender))
+const selectedSubCategory = computed(() => findEntityByQuery(allSubCategories.value, route.query.subCategory))
+const hasNonCanonicalCatalogQuery = computed(() => Object.keys(route.query).length > 0)
+const hasPriceFilter = computed(
+  () => Boolean(toFirstString(route.query.priceMin) || toFirstString(route.query.priceMax))
+)
+
+const sidebarTitle = computed(() =>
+  String(selectedSubCategory.value?.name || selectedCategory.value?.name || 'Categorie').toUpperCase()
+)
+
+const sidebarItems = computed(() => {
+  if (selectedCategory.value?.subCategories?.length) {
+    return selectedCategory.value.subCategories.map((subCategory) => ({
+      ...subCategory,
+      type: 'subCategory',
+    }))
+  }
+
+  return catalogCategories.value.map((category) => ({
+    ...category,
+    type: 'category',
+  }))
+})
+
+const breadcrumbTrail = computed(() => {
+  const segments = [
+    selectedGenderEntity.value?.name,
+    selectedCategory.value?.name,
+    selectedSubCategory.value?.name,
+  ].filter(Boolean)
+
+  return segments.length > 0 ? segments : ['Catalogo']
+})
+
+const selectedSortLabel = computed(
+  () => SORT_OPTIONS.find((option) => option.value === selectedSort.value)?.label || 'Più recenti'
+)
+
+const catalogTitle = computed(() => {
+  if (searchQuery.value.trim()) {
+    return `Risultati ricerca: ${searchQuery.value.trim()}`
+  }
+
+  const labels = [
+    selectedCategory.value?.name,
+    selectedSubCategory.value?.name,
+    selectedBrandEntity.value?.name,
+    selectedGenderEntity.value?.name,
+  ].filter(Boolean)
+
+  return labels.length > 0 ? `Catalogo ${labels.join(' · ')}` : 'Catalogo prodotti'
+})
+
+const catalogDescription = computed(() => {
+  if (searchQuery.value.trim()) {
+    return `Esplora i risultati per "${searchQuery.value.trim()}" nel catalogo prodotti, con filtri su brand, categoria, disponibilita e fascia prezzo.`
+  }
+
+  if (activeFilters.value.length > 0) {
+    return `Catalogo filtrato per ${activeFilters.value.map((filter) => filter.label).join(', ')}. Scopri disponibilita, promozioni e varianti aggiornate.`
+  }
+
+  return 'Esplora il catalogo completo con brand, categorie, promo, nuovi arrivi e disponibilita aggiornate lato server.'
+})
+
+const { baseUrl, canonicalUrl, siteName } = usePageSeo({
+  title: catalogTitle,
+  description: catalogDescription,
+  path: '/product',
+  index: computed(() => !hasNonCanonicalCatalogQuery.value),
+})
+
+useHead(() => ({
+  script: [
+    {
+      key: 'catalog-jsonld',
+      type: 'application/ld+json',
+      children: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: catalogTitle.value,
+        description: catalogDescription.value,
+        url: canonicalUrl.value,
+        isPartOf: {
+          '@type': 'WebSite',
+          name: siteName.value,
+          url: `${baseUrl.value}/`,
+        },
+      }),
+    },
+  ],
+}))
+
+const paginationPages = computed(() => {
+  const totalPages = pagination.value.pages
+  const currentPage = pagination.value.page
+  if (totalPages <= 1) return []
+
+  const pages = new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1])
+  return Array.from(pages)
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((left, right) => left - right)
+})
+
+function syncStateFromRoute() {
+  searchQuery.value = toFirstString(route.query.q)
+  selectedBrand.value = normalizeName(toFirstString(route.query.brand))
+
+  const routeSortBy = toFirstString(route.query.sortBy)
+  const routeSortOrder = toFirstString(route.query.sortOrder)
+  selectedSort.value = SORT_OPTIONS.some(
+    (option) => option.value === `${routeSortBy || 'id'}:${routeSortOrder || 'desc'}`
+  )
+    ? `${routeSortBy || 'id'}:${routeSortOrder || 'desc'}`
+    : 'id:desc'
+
+  const routeGender = normalizeName(toFirstString(route.query.gender))
+  if (GENDER_TABS.some((tab) => tab.id === routeGender)) {
+    activeGenderTab.value = routeGender
+  }
+
+  const routePriceMin = parsePositiveNumber(route.query.priceMin)
+  const routePriceMax = parsePositiveNumber(route.query.priceMax)
+
+  priceRange.value = {
+    min: routePriceMin ?? priceConstraints.value.min,
+    max: routePriceMax ?? priceConstraints.value.max,
+  }
+}
+
+function getCleanQueryValue(value) {
+  if (value === undefined || value === null) return undefined
+  if (typeof value === 'string' && value.trim() === '') return undefined
+  return value
+}
+
+function applyQueryPatch(patch, options = {}) {
+  const { resetPage = true, closePanels = false } = options
+  const nextQuery = { ...route.query }
+
+  for (const [key, value] of Object.entries(patch)) {
+    const normalizedValue = getCleanQueryValue(value)
+    if (normalizedValue === undefined) {
+      delete nextQuery[key]
+    } else {
+      nextQuery[key] = normalizedValue
+    }
+  }
+
+  if (resetPage) {
+    delete nextQuery.page
+  }
+
+  router.replace({ query: nextQuery })
+
+  if (closePanels) {
+    isAdvancedFiltersOpen.value = false
+    if (isMenuOpen.value) {
+      toggleMobileMenu()
+    }
+  }
+}
+
+function buildSearchApiQuery() {
+  const category = findEntityByQuery(categories.value, route.query.category)
+  const brand = findEntityByQuery(brands.value, route.query.brand)
+  const gender = findEntityByQuery(genders.value, route.query.gender)
+  const { sortBy, sortOrder } = parseSortValue(selectedSort.value)
+
+  const apiQuery = {
+    page: String(parsePositiveInt(route.query.page, 1)),
+    limit: String(pagination.value.limit || 12),
+    sortBy,
+    sortOrder,
+  }
+
+  if (searchQuery.value.trim()) {
+    apiQuery.q = searchQuery.value.trim()
+  }
+
+  if (category?.id) {
+    apiQuery.categories = String(category.id)
+  }
+
+  if (brand?.id) {
+    apiQuery.brands = String(brand.id)
+  }
+
+  if (gender?.id) {
+    apiQuery.gender = String(gender.id)
+  }
+
+  if (selectedSubCategory.value?.id) {
+    apiQuery.subCategory = String(selectedSubCategory.value.id)
+  }
+
+  if (toFirstString(route.query.promo) === 'true') {
+    apiQuery.onSale = 'true'
+  }
+
+  if (toFirstString(route.query.inStock) === 'true') {
+    apiQuery.inStock = 'true'
+  }
+
+  if (toFirstString(route.query.newArrivals) === 'true') {
+    apiQuery.newArrivals = 'true'
+  }
+
+  if (toFirstString(route.query.priceMin)) {
+    apiQuery.priceMin = toFirstString(route.query.priceMin)
+  }
+
+  if (toFirstString(route.query.priceMax)) {
+    apiQuery.priceMax = toFirstString(route.query.priceMax)
+  }
+
+  return apiQuery
+}
+
+async function fetchProducts() {
+  syncStateFromRoute()
+
+  const apiQuery = buildSearchApiQuery()
+  const requestKey = JSON.stringify(apiQuery)
+
+  if (requestKey === lastRequestKey.value) {
+    return
+  }
+
+  lastRequestKey.value = requestKey
+  isLoading.value = true
+
+  try {
+    const payload = await $fetch('/api/products/search', {
+      query: apiQuery,
+    })
+
+    products.value = Array.isArray(payload?.products) ? payload.products : []
+    pagination.value = {
+      total: Number(payload?.pagination?.total || 0),
+      page: Number(payload?.pagination?.page || 1),
+      limit: Number(payload?.pagination?.limit || 12),
+      pages: Number(payload?.pagination?.pages || 0),
+    }
+
+    const nextMin = Number(payload?.facets?.priceRange?.min || 0)
+    const nextMax = Number(payload?.facets?.priceRange?.max || 0)
+    priceConstraints.value = {
+      min: nextMin,
+      max: nextMax > nextMin ? nextMax : nextMin + 1,
+    }
+
+    const routePriceMin = parsePositiveNumber(route.query.priceMin)
+    const routePriceMax = parsePositiveNumber(route.query.priceMax)
+    priceRange.value = {
+      min: routePriceMin ?? priceConstraints.value.min,
+      max: routePriceMax ?? priceConstraints.value.max,
+    }
+
+    if (pagination.value.pages > 0 && pagination.value.page > pagination.value.pages) {
+      applyQueryPatch({ page: String(pagination.value.pages) }, { resetPage: false })
+    }
+  } catch (error) {
+    console.error('Errore caricamento catalogo:', error)
+    products.value = []
+    pagination.value = {
+      total: 0,
+      page: 1,
+      limit: 12,
+      pages: 0,
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+function handleSearchInput() {
+  clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    applyQueryPatch({ q: searchQuery.value.trim() })
+  }, DEBOUNCE_DELAY_MS)
+}
+
+function toggleMobileMenu() {
+  isMenuOpen.value = !isMenuOpen.value
+
+  if (process.client) {
+    document.body.style.overflow = isMenuOpen.value ? 'hidden' : ''
+  }
+}
+
+function toggleAdvancedFilters() {
+  isAdvancedFiltersOpen.value = !isAdvancedFiltersOpen.value
+}
+
+function setActiveGenderTab(tabId) {
+  activeGenderTab.value = tabId
+}
+
+function applyCategoryFilter(category) {
+  applyQueryPatch({
+    category: normalizeName(category.name),
+    subCategory: undefined,
+  })
+}
+
+function applyCategoryFromMenu(category) {
+  applyQueryPatch(
+    {
+      category: normalizeName(category.name),
+      gender: normalizeName(toFirstString(route.query.gender)) || activeGenderTab.value,
+      subCategory: undefined,
+    },
+    { closePanels: true }
+  )
+}
+
+function findParentCategoryForSubCategory(subCategory) {
+  if (!subCategory) return null
+
+  return (
+    categories.value.find((category) => category.id === subCategory.categoryId) ||
+    categories.value.find((category) =>
+      Array.isArray(category.subCategories)
+        ? category.subCategories.some((candidate) => candidate.id === subCategory.id)
+        : false
+    ) ||
+    null
+  )
+}
+
+function applySubCategoryFilter(subCategory) {
+  const parentCategory = findParentCategoryForSubCategory(subCategory)
+
+  applyQueryPatch({
+    category: parentCategory ? normalizeName(parentCategory.name) : undefined,
+    subCategory: normalizeName(subCategory.name),
+  })
+}
+
+function applyGenderFilter(genderSlug) {
+  if (isGenderActive(genderSlug)) {
+    applyQueryPatch({ gender: undefined })
+    return
+  }
+
+  applyQueryPatch({ gender: genderSlug })
+}
+
+function applyBrandSelection() {
+  applyQueryPatch({
+    brand: selectedBrand.value || undefined,
+  })
+}
+
+function applySortSelection() {
+  const { sortBy, sortOrder } = parseSortValue(selectedSort.value)
+  applyQueryPatch(
+    {
+      sortBy,
+      sortOrder,
+    },
+    { resetPage: false }
+  )
+}
+
+function toggleBooleanFilter(filterKey) {
+  const isActive = toFirstString(route.query[filterKey]) === 'true'
+  applyQueryPatch({
+    [filterKey]: isActive ? undefined : 'true',
+  })
+}
+
+function updatePriceRange(range) {
+  priceRange.value = { ...range }
+}
+
+function applyPriceFilter() {
+  applyQueryPatch(
+    {
+      priceMin:
+        priceRange.value.min > priceConstraints.value.min ? String(priceRange.value.min) : undefined,
+      priceMax:
+        priceRange.value.max < priceConstraints.value.max ? String(priceRange.value.max) : undefined,
+    },
+    { closePanels: true }
+  )
+}
+
+function resetPriceFilter() {
+  priceRange.value = {
+    min: priceConstraints.value.min,
+    max: priceConstraints.value.max,
+  }
+
+  applyQueryPatch(
+    {
+      priceMin: undefined,
+      priceMax: undefined,
+    },
+    { closePanels: true }
+  )
+}
+
+function removeFilter(filterKey) {
+  if (filterKey === 'q') {
+    searchQuery.value = ''
+  }
+
+  if (filterKey === 'priceMin' || filterKey === 'priceMax') {
+    priceRange.value = {
+      min: priceConstraints.value.min,
+      max: priceConstraints.value.max,
+    }
+  }
+
+  applyQueryPatch({
+    [filterKey]: undefined,
+    ...(filterKey === 'category' ? { subCategory: undefined } : {}),
+  })
+}
+
+function clearAllFilters() {
+  searchQuery.value = ''
+  selectedBrand.value = ''
+  selectedSort.value = 'id:desc'
+  priceRange.value = {
+    min: priceConstraints.value.min,
+    max: priceConstraints.value.max,
+  }
+
+  router.replace({
+    query: {},
+  })
+}
+
+function goToPage(pageNumber) {
+  if (pageNumber < 1 || pageNumber > pagination.value.pages) return
+  applyQueryPatch({ page: String(pageNumber) }, { resetPage: false })
+}
+
+function isCategoryActive(category) {
+  return normalizeName(toFirstString(route.query.category)) === normalizeName(category.name)
+}
+
+function isSubCategoryActive(subCategory) {
+  return normalizeName(toFirstString(route.query.subCategory)) === normalizeName(subCategory.name)
+}
+
+function isGenderActive(genderSlug) {
+  return normalizeName(toFirstString(route.query.gender)) === normalizeName(genderSlug)
+}
+
+function isBooleanFilterActive(filterKey) {
+  return toFirstString(route.query[filterKey]) === 'true'
+}
+
 watch(
   () => route.query,
   () => {
-    fetchProducts();
+    lastRequestKey.value = ''
+    fetchProducts()
   },
-  { deep: true }
-);
+  { deep: true, immediate: true }
+)
 
-/**
- * Watch products array and update price constraints
- * Runs immediately on mount to set initial constraints
- */
-watch(
-  products,
-  () => {
-    updatePriceConstraints();
-  },
-  { immediate: true }
-);
-
-/**
- * Component mounted hook
- * Initializes product data on first render
- */
-onMounted(() => {
-  fetchProducts();
-});
+onBeforeUnmount(() => {
+  clearTimeout(searchDebounceTimer)
+  if (process.client) {
+    document.body.style.overflow = ''
+  }
+})
 </script>
 
 <style scoped>
-/**
- * ============================================
- * GLOBAL CONTAINER
- * ============================================
- */
-.product-catalog-container {
-  width: 95%;
-  margin: 0 auto;
+.catalog-page {
+  --primary-color: #5d7488;
+  --text-dark: #333;
+  --text-light: #777;
+  --bg-gray: #f5f5f5;
+  --border-color: #e0e0e0;
+  color: var(--text-dark);
+  padding: 20px 30px 40px;
 }
 
-/**
- * ============================================
- * MOBILE MENU STYLES
- * ============================================
- */
-.mobile-menu {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  min-height: 100vh;
-  background-color: #5d758b;
-  color: white;
-  padding: 1.5rem;
-  z-index: 9999;
-  overflow-y: auto;
+.catalog-page__header {
+  margin-bottom: 24px;
 }
 
-.mobile-menu__header {
+.catalog-page__tabs {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
-.mobile-menu__tabs {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.mobile-menu__tab {
+.catalog-page__tab {
+  padding: 8px 25px;
+  border-radius: 20px;
+  border: 1px solid var(--primary-color);
+  background: var(--primary-color);
+  color: #fff;
+  cursor: pointer;
   font-weight: 600;
-  font-size: 0.875rem;
-  color: #9ca3af;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  padding-bottom: 0.25rem;
+  font-size: 12px;
+}
+
+.catalog-page__tab--active {
+  background: #fff;
+  color: var(--primary-color);
+}
+
+.catalog-page__nav-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.catalog-page__menu-button {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: #fff;
+  color: var(--primary-color);
+  align-items: center;
+  justify-content: center;
+}
+
+.catalog-page__nav {
+  display: flex;
+  gap: 25px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.catalog-page__nav-item {
+  border: 0;
+  background: transparent;
+  color: inherit;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.mobile-menu__tab--active {
-  color: #000;
-  border-bottom-color: white;
+.catalog-page__nav-item--active {
+  color: var(--text-dark);
+  font-weight: 700;
 }
 
-.mobile-menu__tab:hover {
-  color: #000;
+.catalog-page__breadcrumb {
+  font-size: 13px;
+  color: var(--text-dark);
+  font-weight: 600;
 }
 
-.mobile-menu__close {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #9ca3af;
-  background: none;
-  border: none;
+.catalog-page__layout {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+.catalog-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+}
+
+.catalog-sidebar__section {
+  margin-bottom: 24px;
+}
+
+.catalog-sidebar__section h2 {
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.catalog-sidebar__section ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.catalog-sidebar__section li + li {
+  margin-top: 12px;
+}
+
+.catalog-sidebar__link {
+  border: 0;
+  background: transparent;
+  color: var(--primary-color);
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  padding: 0.5rem;
-  line-height: 1;
-  transition: color 0.2s ease;
+  text-align: left;
 }
 
-.mobile-menu__close:hover {
-  color: white;
+.catalog-sidebar__link--active {
+  color: var(--text-dark);
 }
 
-.mobile-menu__search {
-  margin-bottom: 1.5rem;
+.catalog-sidebar__controls {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.catalog-sidebar__search {
+  margin-bottom: 14px;
+}
+
+.catalog-sidebar__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+
+.catalog-sidebar__input,
+.catalog-sidebar__select {
   width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 13px;
+  background: #fff;
 }
 
-.search-input {
+.catalog-sidebar__toggle {
   width: 100%;
-  padding: 0.75rem 1rem;
+  border: 1px solid var(--primary-color);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--primary-color);
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.catalog-sidebar__advanced {
+  display: none;
+  margin-top: 14px;
+}
+
+.catalog-sidebar__advanced--open {
+  display: block;
+}
+
+.catalog-sidebar__field {
+  margin-bottom: 16px;
+}
+
+.catalog-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.catalog-content__filters-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.catalog-filter-btn,
+.catalog-filter-select {
+  padding: 6px 15px;
+  border-radius: 15px;
   border: none;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
+  background: var(--primary-color);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalog-filter-btn--outline {
+  background: #fff;
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
+}
+
+.catalog-filter-btn--active {
+  background: #223040;
+}
+
+.catalog-filter-select select {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
   outline: none;
 }
 
-.mobile-menu__categories {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
-  padding-top: 1.25rem;
-}
-
-/**
- * Category Cards
- */
-.category-card {
-  position: relative;
-}
-
-.category-card__image-wrapper {
-  position: relative;
-  height: 140px;
-  width: 135px;
-}
-
-.category-card__image {
-  width: 100%;
-  height: 100%;
-  border-radius: 0.75rem;
-  object-fit: cover;
-}
-
-.category-card__button-wrapper {
-  position: absolute;
-  bottom: -20px;
-  left: 0;
-  width: 100%;
-}
-
-/**
- * ============================================
- * DESKTOP HEADER NAVIGATION
- * ============================================
- */
-.desktop-header {
-  width: 95%;
-  margin: 0 auto;
+.catalog-content__active-filters {
   display: flex;
-  gap: 1.5rem;
-  align-items: center;
-  padding: 1rem 0;
-}
-
-.desktop-header__hamburger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding-right: 0.5rem;
-  border-radius: 0.375rem;
-  color: #1f2937;
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.desktop-header__hamburger:hover {
-  color: #111827;
-}
-
-.hamburger-icon {
-  height: 1.5rem;
-  width: 1.5rem;
-}
-
-.desktop-header__actions {
-  display: flex;
-  gap: 1rem;
-}
-
-/* Hide hamburger on desktop */
-@media (min-width: 768px) {
-  .desktop-header__hamburger {
-    display: none;
-  }
-}
-
-/**
- * ============================================
- * CATEGORY NAVIGATION (Desktop)
- * ============================================
- */
-.category-navigation {
-  display: none;
-  width: 95%;
-  margin: 0 auto;
-  padding: 1rem 0;
-}
-
-@media (min-width: 640px) {
-  .category-navigation {
-    display: block;
-  }
-}
-
-.category-navigation__list {
-  display: flex;
-  gap: 1rem;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  transition: gap 0.2s ease;
-}
-
-.category-navigation__list:hover {
-  gap: 1.5rem;
-}
-
-.category-navigation__item {
-  list-style: none;
-}
-
-.category-navigation__link {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  padding: 0.5rem;
-  transition: transform 0.2s ease;
-}
-
-.category-navigation__link:hover {
-  transform: scale(1.25);
-}
-
-/**
- * ============================================
- * ACTIVE FILTERS BREADCRUMB
- * ============================================
- */
-.active-filters {
-  width: 95%;
-  margin: 0 auto;
-  padding: 0.5rem 0;
-}
-
-.active-filters__list {
-  display: flex;
+  gap: 8px;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  list-style: none;
-  padding: 0;
-  margin: 0;
+  margin-bottom: 18px;
 }
 
-.active-filters__item {
-  list-style: none;
-}
-
-.active-filters__remove {
-  background-color: #f0f0f0;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  border: none;
+.catalog-content__active-filter {
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: #fff;
+  padding: 6px 12px;
+  font-size: 12px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
 }
 
-.active-filters__remove:hover {
-  background-color: #e0e0e0;
-}
-
-/**
- * ============================================
- * MAIN CONTENT LAYOUT
- * ============================================
- */
-.main-content {
-  width: 95%;
-  margin: 0 auto;
+.catalog-content__summary {
   display: flex;
-  gap: 2.5rem;
-  padding-left: 0.5rem;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 30px;
 }
 
-@media (min-width: 768px) {
-  .main-content {
-    display: flex;
-  }
+.catalog-content__summary h1 {
+  font-size: 24px;
+  margin-bottom: 6px;
 }
 
-/**
- * ============================================
- * FILTERS SIDEBAR (Desktop only)
- * ============================================
- */
-.filters-sidebar {
-  display: none;
+.catalog-content__summary p {
+  color: var(--text-light);
+  font-size: 13px;
 }
 
-@media (min-width: 768px) {
-  .filters-sidebar {
-    display: block;
-    min-width: 200px;
-  }
+.catalog-content__summary-box {
+  min-width: 180px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--bg-gray);
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
 }
 
-.filters-sidebar__section {
-  margin-bottom: 1.5rem;
+.catalog-content__products {
+  min-height: 280px;
 }
 
-.filter-toggle-button {
+.catalog-content__loading,
+.catalog-content__empty {
+  min-height: 280px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 74px;
-  height: 31px;
-  border-radius: 1.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid;
+  flex-direction: column;
 }
 
-.filter-toggle-button:hover {
-  transform: scale(1.25);
-}
-
-.filter-options-list {
-  list-style: none;
-  padding-left: 0;
-  margin-top: 1rem;
-}
-
-.filter-options-list__item {
-  padding: 0.5rem 0;
-  font-size: 0.875rem;
-  color: #4b5563;
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.filter-options-list__item:hover {
-  color: #1f2937;
-}
-
-/**
- * ============================================
- * CONTENT AREA (Filters + Products)
- * ============================================
- */
-.content-area {
-  flex: 1;
-}
-
-/**
- * ============================================
- * ADVANCED FILTERS SECTION
- * ============================================
- */
-.advanced-filters {
-  margin-bottom: 2rem;
-}
-
-.advanced-filters__wrapper {
-  position: relative;
-  display: flex;
-}
-
-.filter-panel {
-  position: absolute;
-  top: 40px;
-  left: 0;
-  background-color: white;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-  min-width: 250px;
-}
-
-.filter-panel__types {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.filter-type-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 74px;
-  height: 31px;
-  border-radius: 1.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid;
-}
-
-.filter-type-button:hover {
-  transform: scale(1.25);
-}
-
-/**
- * ============================================
- * PRODUCT GRID
- * ============================================
- */
-.product-grid {
-  width: 100%;
-}
-
-.product-grid__container {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
-  padding-top: 0.5rem;
-}
-
-@media (min-width: 768px) {
-  .product-grid__container {
-    grid-template-columns: repeat(6, 1fr);
-  }
-}
-
-/**
- * ============================================
- * LOADING & EMPTY STATES
- * ============================================
- */
-.loading-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 4rem 0;
-}
-
-.spinner {
-  width: 3rem;
-  height: 3rem;
-  border: 4px solid #f3f4f6;
-  border-top-color: v-bind(colorPrimary);
-  border-radius: 50%;
+.catalog-content__spinner {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 4px solid #dbe3e8;
+  border-top-color: var(--primary-color);
   animation: spin 0.8s linear infinite;
+}
+
+.catalog-content__empty {
+  border: 1px dashed var(--border-color);
+  border-radius: 18px;
+  background: #fafafa;
+  text-align: center;
+  padding: 24px;
+}
+
+.catalog-content__empty-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.catalog-content__empty-copy {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.catalog-content__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.catalog-content__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+
+.catalog-content__pagination-button,
+.catalog-content__pagination-page {
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: #fff;
+  color: var(--text-dark);
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.catalog-content__pagination-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.catalog-content__pagination-pages {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.catalog-content__pagination-page--active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #fff;
+}
+
+.fade-enter-active,
+.fade-leave-active,
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 @keyframes spin {
@@ -1407,75 +1426,42 @@ onMounted(() => {
   }
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
+@media (max-width: 1024px) {
+  .catalog-page {
+    padding: 20px 20px 32px;
+  }
+
+  .catalog-page__layout {
+    flex-direction: column;
+  }
+
+  .catalog-sidebar {
+    width: 100%;
+  }
 }
 
-.empty-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 4rem 2rem;
-}
+@media (max-width: 768px) {
+  .catalog-page__menu-button {
+    display: inline-flex;
+  }
 
-.empty-state__message {
-  font-size: 1.125rem;
-  color: #6b7280;
-  text-align: center;
-}
+  .catalog-page__nav {
+    display: none;
+  }
 
-/**
- * ============================================
- * TRANSITIONS & ANIMATIONS
- * ============================================
- */
+  .catalog-content__summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 
-/* Fade transition for mobile menu */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
+  .catalog-content__summary-box {
+    min-width: 0;
+    width: 100%;
+    text-align: left;
+  }
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* Slide down transition for filter options */
-.slide-down-enter-active {
-  transition: all 0.3s ease-out;
-}
-
-.slide-down-leave-active {
-  transition: all 0.2s ease-in;
-}
-
-.slide-down-enter-from,
-.slide-down-leave-to {
-  transform: translateY(-10px);
-  opacity: 0;
-}
-
-/* Slide in right transition for filter panel */
-.slide-in-right-enter-active {
-  transition: all 0.3s ease-out;
-}
-
-.slide-in-right-leave-active {
-  transition: all 0.3s ease-in;
-}
-
-.slide-in-right-enter-from,
-.slide-in-right-leave-to {
-  transform: translateX(20px);
-  opacity: 0;
+  .catalog-content__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>

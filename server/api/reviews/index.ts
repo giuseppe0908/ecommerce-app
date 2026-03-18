@@ -1,8 +1,19 @@
-import { PrismaClient } from '@prisma/client';
-import jwt from 'jsonwebtoken';
+import { z } from 'zod';
+import { requireAuthenticatedUser } from '../../utils/auth-session';
+import { createLogger } from '../../utils/observability';
+import prisma from '../../utils/prisma';
 
-const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET;
+const logger = createLogger('reviews');
+const reviewBodySchema = z.object({
+  productId: z.coerce.number().int().positive(),
+  rating: z.coerce.number().int().min(1).max(5),
+  comment: z
+    .string()
+    .trim()
+    .max(2000)
+    .optional()
+    .transform((value) => value || ''),
+});
 
 export default defineEventHandler(async (event) => {
   const method = event.node.req.method;
@@ -11,32 +22,20 @@ export default defineEventHandler(async (event) => {
 
   if (method === 'POST') {
     try {
-      // Verify authentication
-      const authHeader = event.node.req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        throw createError({ statusCode: 401, message: 'Authentication required' });
-      }
-
-      const token = authHeader.split(' ')[1];
-      let decoded;
-      try {
-        decoded = jwt.verify(token, JWT_SECRET);
-      } catch (err) {
-        throw createError({ statusCode: 401, message: 'Invalid token' });
-      }
-
-      const userId = decoded.id;
+      const authUser = await requireAuthenticatedUser(event);
+      const userId = authUser.id;
 
       // Get request body
-      const { productId, rating, comment } = await readBody(event);
-
-      // Validate input
-      if (!productId || !rating || rating < 1 || rating > 5) {
-        throw createError({ 
-          statusCode: 400, 
-          message: 'Invalid input. ProductId and rating (1-5) are required.' 
+      const body = await readBody(event);
+      const parsedBody = reviewBodySchema.safeParse(body);
+      if (!parsedBody.success) {
+        throw createError({
+          statusCode: 400,
+          message: 'Input recensione non valido',
+          data: parsedBody.error.format(),
         });
       }
+      const { productId, rating, comment } = parsedBody.data;
 
       // Check if product exists
       const product = await prisma.product.findUnique({
@@ -47,53 +46,52 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 404, message: 'Product not found' });
       }
 
-      // Check if user has already reviewed this product
-      const existingReview = await prisma.review.findFirst({
+      const review = await prisma.review.upsert({
         where: {
-          productId,
-          userId
-        }
-      });
-
-      let review;
-      if (existingReview) {
-        // Update existing review
-        review = await prisma.review.update({
-          where: { id: existingReview.id },
-          data: {
-            rating,
-            comment
-          }
-        });
-      } else {
-        // Create new review
-        review = await prisma.review.create({
-          data: {
-            productId,
+          userId_productId: {
             userId,
-            rating,
-            comment
-          }
-        });
-      }
-
-      // Update product average rating
-      const allReviews = await prisma.review.findMany({
-        where: { productId }
+            productId,
+          },
+        },
+        create: {
+          productId,
+          userId,
+          rating,
+          comment,
+        },
+        update: {
+          rating,
+          comment,
+        },
       });
-      
-      const totalRating = allReviews.reduce((sum, review) => sum + review.rating, 0);
-      const averageRating = totalRating / allReviews.length;
-      
+
+      // Update product average rating usando aggregate (evita full scan applicativo).
+      const ratingAggregate = await prisma.review.aggregate({
+        where: { productId },
+        _avg: { rating: true },
+      });
+
+      const averageRating = Number(ratingAggregate._avg.rating ?? 0);
+
       await prisma.product.update({
         where: { id: productId },
-        data: { rating: averageRating }
+        data: { rating: averageRating },
       });
 
       return review;
     } catch (error) {
-      console.error('Error creating review:', error);
-      throw error;
+      if ((error as { statusCode?: number })?.statusCode) {
+        throw error;
+      }
+
+      logger.error('Errore creazione recensione', {
+        requestId: event.context.requestId,
+        error,
+      });
+      throw createError({
+        statusCode: 500,
+        message: 'Errore durante il salvataggio della recensione',
+      });
     }
   }
 
