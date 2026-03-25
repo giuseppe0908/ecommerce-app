@@ -1,11 +1,30 @@
 <template>
-  <div class="font-montserrat">
-  
+  <div>
     <NuxtLayout>
       <NuxtPage />
+      <Wishlist />
     </NuxtLayout>
   </div>
 </template>
+
 <script setup>
+import Wishlist from '~/components/Wishlist.vue';
+    //STRIPE
+   // const data = await response.json();
+//    const response = await useFetch('/api/stripe/products');
+//    const products = response.data.value ;
+//     console.log(products);
 
 </script>
+
+<style>
+.page-enter-active,
+.page-leave-active {
+  transition: all 0.4s;
+}
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+  filter: blur(1rem);
+}
+</style>

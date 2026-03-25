@@ -1,196 +1,137 @@
 <template>
-  <div v-if="user">
-    <h1>Benvenuto, {{ user.name }}</h1>
-    <p>Ruolo: {{ user.role }}</p>
+  <div class="dashboard-container max-w-7xl mx-auto px-4 py-8">
+    <div v-if="user">
+      <DashboardHeader
+        :user="user"
+        :progress="progress"
+        :progressBarClass="progressBarClass"
+        :formattedTime="formatTime(timeRemaining)"
+      />
 
-    <!-- Barra del tempo rimanente -->
-    <div class="progress-bar-container">
-      <div class="progress-bar">
-        <div
-          :class="progressBarClass"
-          :style="{ width: `${progress}%` }"
-        ></div>
+      <AdminOverview v-if="user.role === 'ADMIN'" />
+
+      <div v-else class="user-dashboard grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+          <UserProfile :userData="user" />
+          <OrderHistory :userId="user.id" :userData="user" />
+        </div>
+
+        <div class="space-y-6">
+          <WishlistManagement />
+          <ProductRecommendations :userId="user.id" />
+        </div>
+      </div>
+
+      <div class="mt-8 text-center">
+        <button
+          @click="handleLogout"
+          class="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+        >
+          Logout
+        </button>
       </div>
     </div>
-    <p>Tempo rimanente: {{ formatTime(timeRemaining) }}</p>
 
-
-    <button @click="handleLogout" class="mt-4 px-4 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">
-      Logout
-    </button>
-
-    <div v-if="user.role === 'ADMIN'">
-      <h2>Funzionalità Admin</h2>
-      <nuxt-link to="/admin/allProducts">Visualizza Prodotti</nuxt-link>
-      <div class="tabs flex gap-2 mb-5">
-        <button class="py-3 px-5" @click="activeTab = 'products'" :class="{ active: activeTab === 'products' }">Gestione Prodotti</button>
-        <button class="py-3 px-5" @click="activeTab = 'users'" :class="{ active: activeTab === 'users' }">Gestione Utenti</button>
-      </div>
-
-      <div v-if="activeTab === 'products'">
-        <ProductManagement />
-      </div>
-      <div v-if="activeTab === 'users'">
-        <UserManagement />
-      </div>
-
+    <div v-else class="flex justify-center items-center h-64">
+      <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
     </div>
-    <div v-else>
-      <h2>Funzionalità Utente</h2>
-    </div>
-  </div>
-  <div v-else>
-    <p>Caricamento...</p>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import ProductManagement from './components/Managment/ProductManagement.vue';
-import UserManagement from './components/Managment/UserManagement.vue';
+import { computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { navigateTo } from 'nuxt/app'
 import { useAuthStore } from '~/stores/authStore'
-import { navigateTo } from 'nuxt/app';
+import { useSessionTimer } from '~/composables/useSessionTimer'
+
+import DashboardHeader from '~/components/Dashboard/DashboardHeader.vue'
+import AdminOverview from '~/components/Dashboard/AdminOverview.vue'
+import UserProfile from '~/components/Dashboard/UserProfile.vue'
+import OrderHistory from '~/components/Dashboard/OrderHistory.vue'
+import WishlistManagement from '~/components/Dashboard/WishlistManagement.vue'
+import ProductRecommendations from '~/components/Dashboard/ProductRecommendations.vue'
 
 definePageMeta({
-  middleware: [
-    'auth',   // Controlla autenticazione
-  ]
+  middleware: ['auth'],
 })
 
+const router = useRouter()
 const authStore = useAuthStore()
 
+const user = computed(() => {
+  if (!authStore.user) return null
 
-const user = ref(null);
-const activeTab = ref('');
-const router = useRouter();
-const totalDuration =5 * 60 * 1000; // 5 minuti in millisecondi
-// const totalDuration =60 * 1000; 
-const timeRemaining = ref(totalDuration); // Tempo rimanente
-let interval = null;
-
-async function fetchUser() {
-  const token = localStorage.getItem('authToken');
-
-  if (!token) {
-    // router.push('/login');
-    navigateTo('/login')
-    return;
+  return {
+    id: authStore.user.id,
+    name: authStore.user.name || authStore.user.email,
+    role: authStore.user.role,
+    email: authStore.user.email,
+    address: authStore.user.address || '',
+    number: authStore.user.number || '',
+    surname: authStore.user.surname || '',
   }
+})
 
-  try {
-    const response = await fetch('/api/auth/me', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (response.ok) {
-      user.value = await response.json();
-    } else {
-      navigateTo('/login')  
-    }
-  } catch (error) {
-    navigateTo('/login')
-  }
+const handleLogout = async () => {
+  await authStore.logout()
+  router.push('/login')
 }
 
-// Calcolo della percentuale di progresso
-const progress = computed(() => (timeRemaining.value / totalDuration) * 100);
+const {
+  timeRemaining,
+  progress,
+  progressBarClass,
+  formatTime,
+  startTimer,
+  stopTimer,
+  attachActivityListeners,
+  detachActivityListeners,
+} = useSessionTimer({
+  durationMs: 5 * 60 * 1000,
+  onExpire: handleLogout,
+})
 
-// Classe dinamica per la barra in base al tempo rimanente
-const progressBarClass = computed(() => {
-  if (progress.value > 50) return 'bg-green-500'; // Verde sopra il 50%
-  if (progress.value > 20) return 'bg-yellow-500'; // Giallo tra 20% e 50%
-  return 'bg-red-500'; // Rosso sotto il 20%
-});
+onMounted(async () => {
+  const authenticated = await authStore.initialize()
+  if (!authenticated) {
+    navigateTo('/login')
+    return
+  }
 
-// Funzione per formattare il tempo rimanente in mm:ss
-const formatTime = (time) => {
-  const minutes = Math.floor(time / 60 / 1000);
-  const seconds = Math.floor((time % (60 * 1000)) / 1000);
-  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-};
+  startTimer()
+  attachActivityListeners()
+})
 
-const handleLogout = () => {
-  // Logica per il logout
-  user.value = null;
-  // localStorage.removeItem('authToken');
-  // localStorage.removeItem('user');
-  authStore.logout();
-  router.push('/login');
-};
-
-const resetTimer = () => {
-  timeRemaining.value = totalDuration;
-};
-
-const startTimer = () => {
-  interval = setInterval(() => {
-    if (timeRemaining.value > 0) {
-      timeRemaining.value -= 1000;
-    } else {
-      clearInterval(interval);
-      handleLogout();
-    }
-  }, 1000);
-};
-
-const handleUserActivity = () => {
-  resetTimer();
-};
-
-onMounted(() => {
-  
-  fetchUser();
-  startTimer();
-  //INIZIALIZZO LO STORE  
-  authStore.initialize()
-  window.addEventListener('mousemove', handleUserActivity);
-  window.addEventListener('click', handleUserActivity);
-  window.addEventListener('keydown', handleUserActivity);
-
-  onUnmounted(() => {
-    clearInterval(interval);
-    window.removeEventListener('mousemove', handleUserActivity);
-    window.removeEventListener('click', handleUserActivity);
-    window.removeEventListener('keydown', handleUserActivity);
-  });
-});
+onUnmounted(() => {
+  stopTimer()
+  detachActivityListeners()
+})
 </script>
 
 <style scoped>
-.progress-bar-container {
-  width: 50%; /* Modifica la larghezza della barra di progresso */
-  margin: 0 auto; /* Centra la barra di progresso */
+.dashboard-container {
+  min-height: calc(100vh - 80px);
 }
 
-.progress-bar {
-  width: 100%;
-  height: 20px;
-  background-color: #e0e0e0;
-  border-radius: 10px;
-  overflow: hidden;
+.session-timer {
+  transition: all 0.3s ease;
 }
 
-.progress-bar div {
-  height: 100%;
-  transition: width 0.5s ease;
+.tabs button {
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 4px;
 }
 
-.bg-green-500 {
-  background-color: #48bb78; /* Verde */
-}
-
-.bg-yellow-500 {
-  background-color: #ecc94b; /* Giallo */
-}
-
-.bg-red-500 {
-  background-color: #f56565; /* Rosso */
-}
-button.active {
+.tabs button.active {
   background-color: #007bff;
   color: white;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header h1 {
+    font-size: 1.75rem;
+  }
 }
 </style>

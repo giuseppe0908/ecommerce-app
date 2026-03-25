@@ -1,6 +1,12 @@
 <script setup>
 import { useCartStore } from '@/stores/cartStore'
+import { useWishlistStore } from '@/stores/wishlistStore'
+import { useAppToast } from '~/composables/useAppToast'
+
 const cartStore = useCartStore()
+const wishlistStore = useWishlistStore()
+const toast = useAppToast()
+const FALLBACK_PRODUCT_IMAGE = 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg'
 //const props = defineProps(['id', 'name', 'img', 'promo', 'plus', 'price', 'category','brand','colorPrimary', 'colorSecondary', 'codeItem']);
 const props = defineProps({
   id: { type: Number, required: true },
@@ -18,10 +24,23 @@ const props = defineProps({
 });
 
 const { id, name, img, promo, plus, price, category, brand, colorPrimary, colorSecondary, codeItem } = props;
+
 const addcart = (product, event) => {
   event.preventDefault() // Blocca l'azione predefinita del link
   event.stopPropagation() // Ferma la propagazione
   cartStore.addtocart(product)
+  toast.success('Prodotto aggiunto al carrello!', {
+    position: 'top-right',
+    timeout: 3000
+  });
+  
+}
+
+// Add to wishlist function
+const toggleWishlist = (event) => {
+  event.preventDefault() // Blocca l'azione predefinita del link
+  event.stopPropagation() // Ferma la propagazione
+  wishlistStore.toggleWishlistItem(props)
 }
 
 const stopPropagation = (event) => {
@@ -37,9 +56,13 @@ const handleCardClick = (event) => {
 
 <template>
   <nuxtLink :to="'/product/'+id" class="no-underline" @click="handleCardClick">
-    <div class="card relative min-w-[150px] min-h-[193px] flex flex-col cursor-pointer">
-        <div class="btnLike absolute right-2 top-2  text-gray-500 cursor-pointer">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-black border-2 border-black rounded-full p-1" :style="{ color:colorPrimary }" fill="none" viewBox="0 0 24 24" stroke="currentColor" @click="stopPropagation">
+    <div class="card relative w-[162px] min-h-[193px] flex flex-col cursor-pointer">
+        <div class="btnLike absolute right-2 top-2 text-gray-500 cursor-pointer" @click="toggleWishlist">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-black border-2 border-black rounded-full p-1" 
+               :style="{ color: colorPrimary }" 
+               :fill="wishlistStore.isInWishlist(id) ? 'currentColor' : 'none'" 
+               viewBox="0 0 24 24" 
+               stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 10-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
             </svg>
         </div>
@@ -49,7 +72,7 @@ const handleCardClick = (event) => {
             <p class="text-[10px]">PROMO</p>
         </div>
         <div class="img h-[220px] ">
-            <img class=" w-full h-full" src="https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg" alt="">
+            <img class=" w-full h-full" :src="img || FALLBACK_PRODUCT_IMAGE" :alt="name" loading="lazy" decoding="async" fetchpriority="low" width="320" height="440">
         </div>
         <div class="descriptions text-white h-48">
             <div class="category font-bold" :style="promo ? { color: colorSecondary } : { color: 'white' }">

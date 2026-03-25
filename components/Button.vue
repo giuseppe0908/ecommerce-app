@@ -63,11 +63,12 @@ const props = defineProps({
       :aria-label="name"
     >
       <span 
-        class="font-semibold text-center"
+        class="font-bold text-center"
         :style="{
           color: textColor,
           marginLeft: marginLeft,
-          fontSize: fontSize
+          fontSize: fontSize,
+          fontWeight: '800' 
         }"
       >
         {{ name }}

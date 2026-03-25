@@ -26,7 +26,7 @@ isLoading.value = false;
   <div v-if="pending">Caricamento...</div>
   <div v-else-if="error">Errore: {{ error }}</div>
   <section v-else
-    class="Category flex items-center overflow-x-scroll whitespace-nowrap mt-[9px] pr-4 md:overflow-x-hidden md:flex-wrap md:w-[85%] md:mx-auto"
+    class="Category flex items-center overflow-x-scroll whitespace-nowrap mt-[9px] pr-4 md:overflow-x-hidden md:flex-wrap md:w-[85%] md:h-screen md:justify-center md:gap-10 md:pr-0 md:mt-0"
   >
     <CardCategory v-for="(category) in categories"
       :key="category.id"
@@ -42,10 +42,17 @@ isLoading.value = false;
     display: none; /* Chrome, Safari, Opera */
 }
 .Category{
-    margin-top: 30px;
+    margin-top: 100px;
     padding-bottom: 57px;
-    padding-left: 10px;
+    padding-left: 55px;
     /* margin: 0 auto; */
 
+}
+
+@media (max-width: 767px) {
+  .Category {
+    margin-top: 0;
+    padding-left: 0;
+  }
 }
 </style>

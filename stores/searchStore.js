@@ -19,7 +19,11 @@ export const useSearchStore = defineStore('search', {
 
       this.isLoading = true
       try {
-        const { data } = await useFetch(`/api/search?q=${query}`)
+        const { data } = await useFetch('/api/search', {
+          query: {
+            q: query
+          }
+        })
         if (data.value) {
           this.searchResults = data.value
         }

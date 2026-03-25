@@ -4,18 +4,29 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate:deploy": "prisma migrate deploy",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
+    "lint": "eslint \"nuxt.config.ts\" \"server/**/*.{js,ts}\" \"middleware/**/*.ts\" \"prisma/**/*.ts\" \"tests/**/*.ts\" --max-warnings=0",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "test": "npm run test:api",
+    "test:api": "tsx --test tests/api/**/*.test.ts",
+    "test:e2e:smoke": "npm run build && tsx --test tests/smoke.e2e.test.ts",
+    "typecheck": "nuxi prepare && vue-tsc --noEmit -p tsconfig.typecheck.json",
+    "quality": "npm run lint && npm run typecheck && npm test && npm run build",
+    "postinstall": "prisma generate && nuxt prepare"
   },
   "dependencies": {
     "@fontsource/montserrat": "^5.1.0",
     "@nuxtjs/google-fonts": "^3.2.0",
     "@pinia/nuxt": "^0.7.0",
     "@prisma/client": "^5.22.0",
+    "@prisma/extension-accelerate": "^3.0.1",
     "@stripe/stripe-js": "^5.6.0",
     "@types/jsonwebtoken": "^9.0.9",
+    "@types/node-cache": "^4.2.5",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vueuse/core": "^12.8.2",
     "autoprefixer": "^10.4.20",
@@ -24,29 +35,42 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
+    "jwt-decode": "^4.0.0",
     "node-cache": "^5.1.2",
     "nodemailer": "^6.10.0",
     "nuxt": "^3.14.159",
+    "ofetch": "^1.4.1",
     "pinia": "^2.2.6",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
     "ts-node": "^10.9.2",
     "vite-plugin-vue": "^0.0.1",
-    "vue": "latest",
-    "vue-router": "latest"
+    "vue": "3.5.12",
+    "vue-router": "4.4.5",
+    "vue-toastification": "^2.0.0-rc.5",
+    "zod": "^3.24.2"
   },
   "prisma": {
     "seed": "tsx prisma/seeder.ts"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@nuxt/types": "^2.18.1",
     "@nuxt/typescript-build": "^3.0.2",
+    "@types/bcrypt": "^6.0.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/nodemailer": "^7.0.11",
+    "caniuse-lite": "^1.0.30001714",
+    "eslint": "^9.39.4",
+    "globals": "^16.5.0",
     "prisma": "^5.22.0",
     "stripe": "^17.6.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.57.0",
+    "vue-tsc": "^2.1.10"
   },
   "overrides": {
-    "vue": "latest"
+    "vue": "3.5.12"
   }
 }

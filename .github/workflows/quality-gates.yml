@@ -1,0 +1,49 @@
+name: Quality Gates
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      APP_SITE_NAME: Nuxt Commerce CI
+      APP_BASE_URL: http://127.0.0.1:3000
+      BASE_URL: http://127.0.0.1:3000
+      JWT_SECRET: ci-jwt-secret
+      DATABASE_URL: mysql://root:@127.0.0.1:3306/ci_ecommerce
+      DIRECT_DATABASE_URL: mysql://root:@127.0.0.1:3306/ci_ecommerce
+      STRIPE_PUBLISHABLE_KEY: pk_test_ci
+      STRIPE_SECRET_KEY: sk_test_ci
+      STRIPE_WEBHOOK_SECRET: whsec_ci
+      GITHUB_CLIENT_ID: ci-github-id
+      GITHUB_CLIENT_SECRET: ci-github-secret
+      GITHUB_CALLBACK_URL: http://127.0.0.1:3000/api/auth/github/callback
+      EMAIL_USER: ci@example.com
+      EMAIL_PASS: ci-password
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build

@@ -1,0 +1,3 @@
+-- No-op on PostgreSQL.
+-- The checkout payment flow tables and indexes are already included in the baseline migration at
+-- 20250101000000_init_schema for the Neon/Postgres setup.

@@ -10,84 +10,97 @@ import logoPuma from '../assets/img/logo/logoPuma.png';
 import logoConverse from '../assets/img/logo/logoConverse.png';
 
     const props = defineProps(['colorPrimary'])
-    const buttonWidth = ref('142px'); // Impostazione predefinita per mobile
-    const buttonHeight = ref('42px');
+    const buttonWidth = ref('142px')
+    const buttonHeight = ref('42px')
     const brandLogos = [
         {
             name: 'Nike',
-            url: 'brand/nike',
+            url: '/product?brand=nike',
             src: logoNike,
         },
         {
             name: 'Adidas',
-            url: 'brand/adidas',
+            url: '/product?brand=adidas',
             src: logoAdidas,
         },
         {
             name: 'Calvin Klein',
-            url: 'brand/calvin-klein',
+            url: '/product?brand=calvin-klein',
             src: logoCk,
         },
         {
             name: 'Jordan',
-            url: 'brand/jordan',
+            url: '/product?brand=jordan',
             src: logoJordan,
         },
         {
             name: 'Chanel',
-            url: 'brand/chanel',
+            url: '/product?brand=chanel',
             src: logoChanel,
         },
         {
             name: 'Starbucks',
-            url: 'brand/starbucks',
+            url: '/product?brand=starbucks',
             src: logoStarbucks,
         },
         {
             name: 'Puma',
-            url: 'brand/puma',
+            url: '/product?brand=puma',
             src: logoPuma,
         },
         {
             name: 'Converse',
-            url: 'brand/converse',
+            url: '/product?brand=converse',
             src: logoConverse,
         },
     ]
-    
+
+    function updateButtonDimensions() {
+        if (!process.client) return
+
+        buttonWidth.value = window.innerWidth >= 1024 ? '206px' : '142px'
+        buttonHeight.value = window.innerWidth >= 1024 ? '64px' : '42px'
+    }
+
     onMounted(() => {
-        if (process.client) {
-            buttonWidth.value = window.innerWidth >= 1024 ? '206px' : '142px';
-            buttonHeight.value = window.innerWidth >= 1024 ? '64px' : '42px'
-            // Aggiorna la larghezza e altezza del bottone al ridimensionamento della finestra
-            window.addEventListener('resize', () => {
-                buttonWidth.value = window.innerWidth >= 1024 ? '206px' : '142px';
-                buttonHeight.value = window.innerWidth >= 1024 ? '64px' : '42px';
-            }); 
-        }
-    });
+        updateButtonDimensions()
+        window.addEventListener('resize', updateButtonDimensions)
+    })
+
+    onBeforeUnmount(() => {
+        if (!process.client) return
+        window.removeEventListener('resize', updateButtonDimensions)
+    })
 </script>
 <template>
     <section class="Brand w-full" >
-        <div class="img-container h-[40vh] w-full relative  md:h-[55vh]">
-            <img class="w-full h-full " :src="brand" alt="">
+        <div class="img-container h-[40vh] w-full relative  md:h-[51vh]">
+            <img
+              class="w-full h-full"
+              :src="brand"
+              alt="Sezione brand con accesso rapido ai marchi del catalogo"
+              width="1600"
+              height="520"
+              sizes="100vw"
+              loading="lazy"
+              decoding="async"
+            >
             <div class="absolute top-8 md:top-12">
-                <Button name="BRAND" textColor="white" :bgColor="colorPrimary"  to="/Uomo" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight"/>
+                <Button name="BRAND" textColor="white" :bgColor="colorPrimary"  to="/product" :applyNegativeMargin="true" :width="buttonWidth" :height="buttonHeight"/>
             </div>
         </div>
-        <div class="loghi h-[40vh] md:h-[55vh]">
+        <div class="loghi h-[40vh] md:h-[51vh]">
             <div class="carousel flex items-center h-full w-[95%] mx-auto justify-between overflow-x-scroll md:overflow-x-hidden">
-                <!-- <div class="left text-9xl"> < </div> -->
+                <div class="arrow left text-6xl pt-[30px]"> < </div>
                 <div class="logo mx-3" v-for="(logo,index) in brandLogos" :key="index">
                     <NuxtLink :to="logo.url" class="no-underline w-full">
                         <div class="flex flex-col">
-                            <img :src="logo.src" :alt="logo.name" class="w-[100px] h-[100px]"/>
+                            <img :src="logo.src" :alt="logo.name" class="w-[100px] h-[100px]" width="100" height="100" loading="lazy" decoding="async"/>
                             <div class="text-center uppercase text-white bold">{{logo.name}}</div>
                         </div>
                     </NuxtLink>  
-
                 </div>
-                <!-- <div class="right text-9xl">></div> -->
+                <div class="arrow right text-6xl pt-[30px]"> > </div>
             </div>
         </div>
     </section>

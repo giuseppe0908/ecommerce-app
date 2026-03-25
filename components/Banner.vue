@@ -66,25 +66,40 @@
           src="../assets/img/Banner/img1Banner.png"
           alt="Image 4"
           class="w-[158px] h-[205px] top-52 left-40 w-28 h-28 object-cover -rotate-6 z-10"
+          width="158"
+          height="205"
+          loading="lazy"
+          decoding="async"
         />
         <!-- Immagine 2 -->
         <img
           src="../assets/img/Banner/img2Banner.png"
           alt="Image 2"
           class="w-[200px] h-[270px] object-cover top-16 -z-0"
-          
+          width="200"
+          height="270"
+          loading="lazy"
+          decoding="async"
         />
         <!-- Immagine 3 -->
         <img
           src="../assets/img/Banner/borsaValentino.png"
           alt="Image 3"
           class="  top-36 left-8 w-40 h-40 object-cover z-20"
+          width="160"
+          height="160"
+          loading="lazy"
+          decoding="async"
         />
         <!-- Immagine 4 -->
         <img
           src="../assets/img/Banner/img4Banner.png"
           alt="Image 1"
           class="  top-0 left-12 w-28 h-28 object-cover z-10"
+          width="112"
+          height="112"
+          loading="lazy"
+          decoding="async"
         />
       </div>
        

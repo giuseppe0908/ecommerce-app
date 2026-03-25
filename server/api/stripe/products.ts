@@ -2,14 +2,16 @@ import Stripe from 'stripe';
 import dotenv from 'dotenv';
 import { defineEventHandler } from 'h3';
 import NodeCache from 'node-cache';
+import { createLogger } from '../../utils/observability';
 
 dotenv.config();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2022-11-15',
+  apiVersion: '2025-01-27.acacia',
 });
 
 const cache = new NodeCache({ stdTTL: 600 }); // Cache con TTL di 10 minuti
+const logger = createLogger('stripe-products');
 
 export default defineEventHandler(async (event) => {
   const cacheKey = 'productsWithPrices';
@@ -59,7 +61,10 @@ export default defineEventHandler(async (event) => {
       products: productsWithPrices
     };
   } catch (error) {
-    console.error('Errore nel recupero dei prodotti:', error);
+    logger.error('Errore nel recupero dei prodotti Stripe', {
+      requestId: event.context.requestId,
+      error,
+    });
     return {
       success: false,
       error: 'Errore nel recupero dei prodotti'

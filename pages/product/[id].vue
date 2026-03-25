@@ -1,186 +1,407 @@
-  <template>
-    <div class="w-[95%] mx-auto my-0">    
-      <div class="buttons flex gap-4 text-xs">
-        <Button name="DONNA" :bgColor="colorPrimary" textColor="white" to="/donna"  width="100px" height="30px" fontSize="15px"/>
-        <Button name="UOMO" bgColor="white" :textColor="colorPrimary" to="/uomo" width="100px" height="30px" fontSize="15px"/>
-        <Button name="BAMBINO" :bgColor="colorPrimary" textColor="white" to="/bambino"  width="100px" height="30px" fontSize="15px"/>
-      </div>
-      <div class="navBar">
+<template>
+  <div class="w-[95%] mx-auto md:my-0">
+    <ProductDetailHero
+      :product="product"
+      :colorPrimary="colorPrimary"
+      :galleryItems="galleryItems"
+      :currentColorIndex="currentColorIndex"
+      :currentMainImage="currentMainImage"
+      :currentOtherImages="currentOtherImages"
+      :allImages="allImages"
+      :currentImageIndex="currentImageIndex"
+      :stockQuantity="stockQuantity"
+      :productSpecs="productSpecs"
+      :isInWishlist="isInWishlist"
+      @change-main-image="changeMainImage"
+      @change-color="changeColor"
+      @touch-start="handleTouchStart"
+      @touch-move="handleTouchMove"
+      @touch-end="handleTouchEnd"
+      @previous-image="previousImage"
+      @next-image="nextImage"
+      @go-to-image="goToImage"
+      @add-cart="addCart"
+      @toggle-wishlist="toggleWishlist"
+    />
 
-      </div>
-      <div class="cronologia"></div>
-      <div class="container flex gap-12 mt-8">
-        <div class="left flex gap-2">
-            <!-- Colonna delle immagini -->
-          <div class="imgVertical flex flex-col gap-4">
-            <img
-              v-for="(image, index) in currentOtherImages"
-              :key="index"
-              class="img square h-[138px] w-[136px] rounded-xl cursor-pointer"
-              :src="image"
-              :alt="'Immagine correlata ' + index"
-              @click="changeMainImage(image)"
-            />
-          </div>
-      
-          <!-- Immagine principale -->
-          <div class=" w-[412px] h-[605px]">
-            <img
-              class="w-full h-full rounded-xl"
-              :src="currentMainImage"
-              alt="Immagine principale"
-            />
-          </div>
-        </div>
-        <div class="right">
-          <div class="descriptions">
-            <div class="brand font-bold text-black text-3xl">
-              <p>{{ product.brand.name }}</p>
-            </div>
-            <div class="name text-[#5D758B] text-2xl">
-              <p>{{ product.name }}</p>
-            </div>
-            <div class="price text-2xl">
-              <span class="flex items-center">
-                {{ product.price }} <p class="text-[#5D758B]">€ IVA inclusa</p>
-              </span>
-             
-            </div>
-            <div class="color">
-              colore: Nero
-            </div>
-          </div>
-          <!-- Miniature delle colorazioni -->
-          <div class="color-thumbnails flex gap-2 items-center mt-4">
-            <img
-              v-for="(item, id) in img"
-              :key="item.id"
-              :src="item.images.main"
-              :alt="'Colorazione ' + item.color"
-              class="thumbnail cursor-pointer square h-[138px] w-[136px] rounded-xl cursor-pointer border"
-              :class="{ active: id === currentColorIndex }"
-              @click="changeColor(id)"
-            />
-          </div>
-          <div class="disponibility">
-            <p>Solo {1} disponibile!</p>
-          </div>
-          <div class="buttons flex gap-4 mt-4">
-            <Button name="Acquista" bgColor="white" colorText="#5D758B" width="200px" height="50px" @click="addCart" to="/checkout"/>
-          </div>  
-          </div>
-      </div>
-   </div>
+    <div class="reviews-section mt-12 border-t pt-6">
+      <ReviewComponent
+        :productId="numericProductId"
+        :reviews="productReviews"
+        :averageRating="averageRating"
+      />
+    </div>
+
+    <ProductRelatedGrid
+      :relatedProducts="relatedProducts"
+      :colorPrimary="colorPrimary"
+      :colorSecondary="colorSecondary"
+    />
+  </div>
 </template>
-  
-  
-  <script setup>
-  import { useRoute } from 'vue-router'
-  import { ref, onMounted } from 'vue'
 
-  
-  // Definisci il prodotto come un ref
-  const product = ref([])
-  const route = useRoute()
-  const colorPrimary = "#5D758B";
+<script setup>
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { useWishlistStore } from '~/stores/wishlistStore'
+import { useCartStore } from '~/stores/cartStore'
+import ProductDetailHero from '~/components/Product/ProductDetailHero.vue'
+import ProductRelatedGrid from '~/components/Product/ProductRelatedGrid.vue'
+import { useProductGallery } from '~/composables/useProductGallery'
+import { useAppToast } from '~/composables/useAppToast'
+import { toAbsoluteUrl, truncateText } from '~/utils/seo'
 
-  const productId = route.params.id
-  const { data } = await useFetch(`/api/products/${productId}`);
-  product.value = data.value || [];
-  
-  // const img = ref([
-  //   {
-  //     id:0,
-  //     url:["https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg","https://imgs.search.brave.com/9lz0DyLBFYJy2tZ8T-nuqLvIEuW2kqDdzwSVzLNJPFM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/Ym9yc2FpdGFsaWFu/YS5pdC9ob21lcGFn/ZS9pdGVtLXN0cmlw/cy9wYXJ0bmVyc2hp/cC1maW5hbnphLXNv/c3RlbmliaWxlLndl/YnA","https://imgs.search.brave.com/Hf8WRja9rNLInDTJi98CxnGkaw3FNxTK60_mA1-LP8w/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/Ym9yc2FpdGFsaWFu/YS5pdC9ob21lcGFn/ZS9pdGVtLXN0cmlw/cy9pbnZlc3RpbWVu/dGktZmluYW56YS1z/b3N0ZW5pYmlsZS53/ZWJw","https://imgs.search.brave.com/FY4jzaJKU2JGJbnQKBW7c_6pi8tB4eNybSxOC_l8IZ4/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/Ym9yc2FpdGFsaWFu/YS5pdC9ob21lcGFn/ZS9pdGVtLXN0cmlw/cy9pbnZlc2NvZGlj/ZW1icmUud2VicA","https://imgs.search.brave.com/o1rkiH8BTrsy1dYXh9e5XSwg7NaNvsQvSe4BAWOr9bw/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/Ym9yc2FpdGFsaWFu/YS5pdC9ob21lcGFn/ZS9pdGVtLXN0cmlw/cy9ldmVudGktZmlu/YW56YS1zb3N0ZW5p/YmlsZS53ZWJw"],
-  //   },
-  //   {
-  //     id:1,
-  //     url:["https://imgs.search.brave.com/rPdVLd8LhZ-b_HmtxgmpQR21h2o4wvWQdZFTs0_B-DA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/c29sZGlvbmxpbmUu/aXQvcGljdHVyZXMv/MjAxOS8wOC8xMi9w/aWF6emEtYWZmYXJp/LW1pbGFuby5qcGVn","https://imgs.search.brave.com/UVvPo40DWHz3xepCyKKkvzYDWqNA2ybh_PQ7y_zvwJI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/Ym9yc2FpdGFsaWFu/YS5pdC9ob21lcGFn/ZS9pdGVtLWdhbGxl/cnkvYm9yc2Etdmly/dHVhbGUuanBn","https://imgs.search.brave.com/HCpl-EqzXYvzK1IBM4G-WYMMhGOY-65WhMgttEIupZU/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZXJj/YXRpLmlsc29sZTI0/b3JlLmNvbS9zdGF0/aWMvaW1nL2Vjb21t/ZXJjZS9tZXJjYXRp/LXN1YnNjcmliZS5w/bmc","https://imgs.search.brave.com/NhqBwszAM2MatONDXJUsdSnack5aVsvOZqfkiWsdeqs/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/c29sZGlvbmxpbmUu/aXQvcGljdHVyZXMv/MjAyNC8wMS8xNi9k/aXZpZGVuZGlfOS5w/bmc","https://imgs.search.brave.com/ssFduhO2tceVJyFXSDelg0NAVO7DxYIIPiC4v_oBUow/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/Ym9yc2FpdGFsaWFu/YS5pdC9ob21lcGFn/ZS9pdGVtLXN0cmlw/cy9hY2Nlc3NvLWNh/cGl0YWxpLWZpbmFu/emEtc29zdGVuaWJp/bGUud2VicA" ],
-  //   },
-  //   {
-  //     id:2,
-  //     url:["https://imgs.search.brave.com/rPdVLd8LhZ-b_HmtxgmpQR21h2o4wvWQdZFTs0_B-DA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/c29sZGlvbmxpbmUu/aXQvcGljdHVyZXMv/MjAxOS8wOC8xMi9w/aWF6emEtYWZmYXJp/LW1pbGFuby5qcGVn","https://imgs.search.brave.com/UVvPo40DWHz3xepCyKKkvzYDWqNA2ybh_PQ7y_zvwJI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/Ym9yc2FpdGFsaWFu/YS5pdC9ob21lcGFn/ZS9pdGVtLWdhbGxl/cnkvYm9yc2Etdmly/dHVhbGUuanBn","https://imgs.search.brave.com/HCpl-EqzXYvzK1IBM4G-WYMMhGOY-65WhMgttEIupZU/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZXJj/YXRpLmlsc29sZTI0/b3JlLmNvbS9zdGF0/aWMvaW1nL2Vjb21t/ZXJjZS9tZXJjYXRp/LXN1YnNjcmliZS5w/bmc","https://imgs.search.brave.com/NhqBwszAM2MatONDXJUsdSnack5aVsvOZqfkiWsdeqs/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/c29sZGlvbmxpbmUu/aXQvcGljdHVyZXMv/MjAyNC8wMS8xNi9k/aXZpZGVuZGlfOS5w/bmc","https://imgs.search.brave.com/ssFduhO2tceVJyFXSDelg0NAVO7DxYIIPiC4v_oBUow/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/Ym9yc2FpdGFsaWFu/YS5pdC9ob21lcGFn/ZS9pdGVtLXN0cmlw/cy9hY2Nlc3NvLWNh/cGl0YWxpLWZpbmFu/emEtc29zdGVuaWJp/bGUud2VicA" ],
-  //   },
-  //   {
-  //     id:3,
-  //     url:["https://imgs.search.brave.com/qTAiH6lscUZ0z2rRFcMoFBZ9pWAAXnGebvF76BwsLtg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NjFsOVdnVnUtNUwu/anBn","https://imgs.search.brave.com/FDu6wsthYbjt9I8ybfACxFM__mV286HST8ILxPm4zDE/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zaG9w/LmdvaHVudC5jb20v/Y2RuL3Nob3AvcHJv/ZHVjdHMvY2hhcm1v/ei5qcGc_dj0xNTg3/MDc1NjA4JndpZHRo/PTUzMw","https://imgs.search.brave.com/fOdK5DasViuCjulY6H-lVeuAAPyFzK0n2ZK4TfRVi6I/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/d2lsZGVybmVzc3gu/Y29tL2Nkbi9zaG9w/L2ZpbGVzL3NjYXJw/YS1oZWxpeC1jbGlt/YmluZy1zaG9lLW1l/bnMtN19iYmM4N2Rh/OC1hMjVmLTRjZmEt/YTFkNi1mYWQ5MjE1/YTAzMDIuanBnP3Y9/MTcxODA4MzU0NiZ3/aWR0aD01MzM","https://imgs.search.brave.com/dzaAmNUFiQOu9SBfXGRP5ol0l8hNol4w00yZCdhwyZA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9ka3Mu/c2NlbmU3LmNvbS9p/cy9pbWFnZS9ka3Nj/ZG4vMjFGRFhXV1ZM/Q0NMTUJMVEdGQk9f/TGlnaHRfR3JheV9p/cy8_d2lkPTI1MiZo/ZWk9MjUyJnFsdD04/NSwwJmZtdD1qcGcm/b3Bfc2hhcnBlbj0x"],
-  //   }
+const route = useRoute()
+const numericProductId = Number.parseInt(String(route.params.id || ''), 10)
 
-  // ])
+const colorPrimary = '#5D758B'
+const colorSecondary = '#00192F'
 
-  const img = ref([
-  {
-    id: 0,
-    color: "Rosso",
-    images: {
-      main: "https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg", // Immagine principale
-      others: [
-        "https://imgs.search.brave.com/9lz0DyLBFYJy2tZ8T-nuqLvIEuW2kqDdzwSVzLNJPFM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/Ym9yc2FpdGFsaWFu/YS5pdC9ob21lcGFn/ZS9pdGVtLXN0cmlw/cy9wYXJ0bmVyc2hp/cC1maW5hbnphLXNv/c3RlbmliaWxlLndl/YnA","https://imgs.search.brave.com/Hf8WRja9rNLInDTJi98CxnGkaw3FNxTK60_mA1-LP8w/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/Ym9yc2FpdGFsaWFu/YS5pdC9ob21lcGFn/ZS9pdGVtLXN0cmlw/cy9pbnZlc3RpbWVu/dGktZmluYW56YS1z/b3N0ZW5pYmlsZS53/ZWJw",
-        "https://imgs.search.brave.com/FY4jzaJKU2JGJbnQKBW7c_6pi8tB4eNybSxOC_l8IZ4/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/Ym9yc2FpdGFsaWFu/YS5pdC9ob21lcGFn/ZS9pdGVtLXN0cmlw/cy9pbnZlc2NvZGlj/ZW1icmUud2VicA",
-        "https://imgs.search.brave.com/o1rkiH8BTrsy1dYXh9e5XSwg7NaNvsQvSe4BAWOr9bw/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/Ym9yc2FpdGFsaWFu/YS5pdC9ob21lcGFn/ZS9pdGVtLXN0cmlw/cy9ldmVudGktZmlu/YW56YS1zb3N0ZW5p/YmlsZS53ZWJw"
-      ],
+const { data } = await useFetch(`/api/products/${numericProductId}`)
+const product = ref(data.value || {})
+
+const wishlistStore = useWishlistStore()
+const cartStore = useCartStore()
+const toast = useAppToast()
+
+const {
+  galleryItems,
+  currentColorIndex,
+  currentMainImage,
+  currentOtherImages,
+  allImages,
+  currentImageIndex,
+  setGalleryItems,
+  changeMainImage,
+  changeColor,
+  nextImage,
+  previousImage,
+  goToImage,
+  handleTouchStart,
+  handleTouchMove,
+  handleTouchEnd,
+} = useProductGallery([])
+
+const productReviews = ref([])
+const averageRating = ref(0)
+const relatedProducts = ref([])
+
+function uniqueImages(images) {
+  return Array.from(
+    new Set(
+      (Array.isArray(images) ? images : []).filter(
+        (image) => typeof image === 'string' && image.trim()
+      )
+    )
+  )
+}
+
+function buildGalleryItems(productData) {
+  const productImages = Array.isArray(productData?.images) ? productData.images : []
+  const generalImages = uniqueImages(
+    productImages
+      .filter((image) => image.imageType === 'GENERAL')
+      .map((image) => image.imageUrl)
+  )
+
+  const colors = Array.isArray(productData?.productColors) ? productData.productColors : []
+  const fallbackMainImage = productData?.photo || generalImages[0] || ''
+
+  if (colors.length === 0) {
+    return [
+      {
+        id: 'default',
+        color: 'Standard',
+        images: {
+          main: fallbackMainImage,
+          others: uniqueImages(generalImages.filter((image) => image !== fallbackMainImage)),
+        },
+      },
+    ]
+  }
+
+  const gallery = colors
+    .map((productColor, index) => {
+      const color = productColor?.color
+      if (!color?.id) return null
+
+      const colorSpecificImages = productImages.filter(
+        (image) => image.colorId === color.id && image.imageType !== 'GENERAL'
+      )
+
+      const mainImage =
+        colorSpecificImages.find((image) => image.imageType === 'MAIN')?.imageUrl ||
+        colorSpecificImages[0]?.imageUrl ||
+        fallbackMainImage
+
+      const secondaryImages = uniqueImages([
+        ...colorSpecificImages
+          .filter((image) => image.imageUrl !== mainImage)
+          .map((image) => image.imageUrl),
+        ...generalImages.filter((image) => image !== mainImage),
+      ])
+
+      return {
+        id: color.id ?? index,
+        color: color.name || 'Standard',
+        images: {
+          main: mainImage,
+          others: secondaryImages,
+        },
+      }
+    })
+    .filter(Boolean)
+
+  return gallery.length > 0
+    ? gallery
+    : [
+        {
+          id: 'default',
+          color: 'Standard',
+          images: {
+            main: fallbackMainImage,
+            others: uniqueImages(generalImages.filter((image) => image !== fallbackMainImage)),
+          },
+        },
+      ]
+}
+
+const stockQuantity = computed(() => Number(product.value?.available_quantity ?? 0))
+
+const productTitle = computed(() => {
+  if (!product.value?.name) {
+    return 'Dettaglio prodotto'
+  }
+
+  return product.value?.brand?.name
+    ? `${product.value.name} - ${product.value.brand.name}`
+    : product.value.name
+})
+
+const productDescription = computed(() =>
+  truncateText(
+    product.value?.description ||
+      'Dettagli prodotto, disponibilita aggiornata, immagini reali e informazioni di acquisto.',
+    160
+  )
+)
+
+const productPath = computed(() =>
+  Number.isInteger(numericProductId) && numericProductId > 0 ? `/product/${numericProductId}` : '/product'
+)
+
+const productImageList = computed(() => {
+  const galleryImages = galleryItems.value.flatMap((item) => [
+    item?.images?.main,
+    ...(Array.isArray(item?.images?.others) ? item.images.others : []),
+  ])
+
+  return uniqueImages([
+    ...galleryImages,
+    product.value?.photo,
+  ])
+})
+
+const { baseUrl, canonicalUrl } = usePageSeo({
+  title: productTitle,
+  description: productDescription,
+  path: productPath,
+  image: computed(() => productImageList.value[0] || product.value?.photo || ''),
+  type: 'product',
+  index: computed(() => Boolean(product.value?.id)),
+})
+
+const productSpecs = computed(() => {
+  const featureSpecs = Array.isArray(product.value?.features)
+    ? product.value.features
+        .filter((entry) => entry?.feature?.name && entry?.value)
+        .map((entry) => ({
+          name: entry.feature.name,
+          value: entry.value,
+        }))
+    : []
+
+  const fallbackSpecs = [
+    product.value?.category?.name
+      ? { name: 'Categoria', value: product.value.category.name }
+      : null,
+    product.value?.brand?.name
+      ? { name: 'Brand', value: product.value.brand.name }
+      : null,
+    product.value?.gender?.name
+      ? { name: 'Target', value: product.value.gender.name }
+      : null,
+    product.value?.codeItem
+      ? { name: 'Codice articolo', value: product.value.codeItem }
+      : null,
+  ].filter(Boolean)
+
+  return featureSpecs.length > 0 ? featureSpecs : fallbackSpecs
+})
+
+const isInWishlist = computed(() => wishlistStore.isInWishlist(product.value?.id))
+
+const productStructuredData = computed(() => {
+  if (!product.value?.id) return null
+
+  const images = productImageList.value
+    .map((image) => toAbsoluteUrl(baseUrl.value, image))
+    .filter(Boolean)
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.value.name,
+    description: productDescription.value,
+    url: canonicalUrl.value,
+    image: images,
+    sku: product.value.codeItem || String(product.value.id),
+    mpn: product.value.codeItem || String(product.value.id),
+    brand: product.value?.brand?.name
+      ? {
+          '@type': 'Brand',
+          name: product.value.brand.name,
+        }
+      : undefined,
+    category: product.value?.category?.name || undefined,
+    offers: {
+      '@type': 'Offer',
+      url: canonicalUrl.value,
+      priceCurrency: 'EUR',
+      price: Number(product.value.price || 0).toFixed(2),
+      availability:
+        stockQuantity.value > 0
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
     },
-  },
-  {
-    id: 1,
-    color: "Blu",
-    images: {
-      main: "https://imgs.search.brave.com/rPdVLd8LhZ-b_HmtxgmpQR21h2o4wvWQdZFTs0_B-DA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/c29sZGlvbmxpbmUu/aXQvcGljdHVyZXMv/MjAxOS8wOC8xMi9w/aWF6emEtYWZmYXJp/LW1pbGFuby5qcGVn", // Immagine principale
-      others: [
-        "https://imgs.search.brave.com/UVvPo40DWHz3xepCyKKkvzYDWqNA2ybh_PQ7y_zvwJI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/Ym9yc2FpdGFsaWFu/YS5pdC9ob21lcGFn/ZS9pdGVtLWdhbGxl/cnkvYm9yc2Etdmly/dHVhbGUuanBn",
-        "https://imgs.search.brave.com/HCpl-EqzXYvzK1IBM4G-WYMMhGOY-65WhMgttEIupZU/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tZXJj/YXRpLmlsc29sZTI0/b3JlLmNvbS9zdGF0/aWMvaW1nL2Vjb21t/ZXJjZS9tZXJjYXRp/LXN1YnNjcmliZS5w/bmc",
-        "https://imgs.search.brave.com/NhqBwszAM2MatONDXJUsdSnack5aVsvOZqfkiWsdeqs/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/c29sZGlvbmxpbmUu/aXQvcGljdHVyZXMv/MjAyNC8wMS8xNi9k/aXZpZGVuZGlfOS5w/bmc",
-        "https://imgs.search.brave.com/ssFduhO2tceVJyFXSDelg0NAVO7DxYIIPiC4v_oBUow/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/Ym9yc2FpdGFsaWFu/YS5pdC9ob21lcGFn/ZS9pdGVtLXN0cmlw/cy9hY2Nlc3NvLWNh/cGl0YWxpLWZpbmFu/emEtc29zdGVuaWJp/bGUud2VicA" 
-      ],
-    },
-  },
-  {
-    id: 2,
-    color: "Verde",
-    images: {
-      main: "https://imgs.search.brave.com/nYQn-I6ZcecFyog0kkNR3C_f9gw5FXopetNtwY-4QBA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/c29sZGlvbmxpbmUu/aXQvcGljdHVyZXMv/MjAyMC8wNi8wMi9i/dHBfNS5qcGVn", // Immagine principale
-      others: [
-        "https://example.com/green1.jpg",
-        "https://example.com/green2.jpg",
-      ],
-    },
-  },
-]);
+    aggregateRating:
+      productReviews.value.length > 0
+        ? {
+            '@type': 'AggregateRating',
+            ratingValue: Number(averageRating.value || 0).toFixed(1),
+            reviewCount: productReviews.value.length,
+          }
+        : undefined,
+  }
+})
 
-const currentColorIndex = ref(0); // Indice della colorazione selezionata
-const currentMainImage = ref(img.value[0].images.main); // Immagine principale iniziale
-const currentOtherImages = ref(img.value[0].images.others); // Immagini correlate iniziali
+useHead(() => ({
+  script: productStructuredData.value
+    ? [
+        {
+          key: 'product-jsonld',
+          type: 'application/ld+json',
+          children: JSON.stringify(productStructuredData.value),
+        },
+      ]
+    : [],
+}))
 
-const changeColor = (index) => {
-  currentColorIndex.value = index;
-  const selectedColor = img.value[index];
-  currentMainImage.value = selectedColor.images.main;
-  currentOtherImages.value = selectedColor.images.others;
-};
+function addCart() {
+  if (!product.value?.id) return
 
-const changeMainImage = (image) => {
-  currentMainImage.value = image;
-};
+  const selectedProduct = {
+    id: product.value.id,
+    codeItem: product.value.codeItem || product.value.id,
+    name: product.value.name,
+    price: product.value.price,
+    brand: product.value.brand,
+    color: galleryItems.value[currentColorIndex.value]?.color || 'Standard',
+    image: currentMainImage.value || product.value.photo,
+  }
 
-const addCart = () => {
-  alert("Prodotto aggiunto al carrello!");
-};
-  
-  // Recupera l'ID dalla route e chiama fetchItemById
-  onMounted(async () => {
-   
-    
+  cartStore.addtocart(selectedProduct)
+  toast.success('Prodotto aggiunto al carrello!', {
+    position: 'top-right',
+    timeout: 3000,
   })
-  </script>
-  <style>
-.thumbnail {
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
 }
 
-.thumbnail.active {
-  border-color: #5D758B; /* Colore di evidenziazione */
+async function toggleWishlist() {
+  if (!product.value?.id) return
+
+  const wasInWishlist = isInWishlist.value
+  const productToToggle = {
+    id: product.value.id,
+    name: product.value.name,
+    price: product.value.price,
+    brand: product.value.brand,
+    img: currentMainImage.value || product.value.photo,
+  }
+
+  const heartIcon = document.querySelector('.wishlist-heart-icon')
+  if (heartIcon) {
+    heartIcon.classList.add('heart-pulse')
+    setTimeout(() => {
+      heartIcon.classList.remove('heart-pulse')
+    }, 500)
+  }
+
+  await wishlistStore.toggleWishlistItem(productToToggle)
+
+  if (wishlistStore.error) {
+    toast.error(wishlistStore.error, {
+      position: 'top-right',
+      timeout: 2000,
+    })
+    return
+  }
+
+  if (wasInWishlist) {
+    toast.info('Prodotto rimosso dai preferiti', {
+      position: 'top-right',
+      timeout: 2000,
+    })
+    return
+  }
+
+  toast.success('Prodotto aggiunto ai preferiti', {
+    position: 'top-right',
+    timeout: 2000,
+  })
 }
 
-  </style>
-  
+async function loadProductReviews() {
+  const reviewsData = await $fetch(`/api/reviews/${numericProductId}`).catch(() => null)
+  if (!Array.isArray(reviewsData)) {
+    productReviews.value = []
+    averageRating.value = 0
+    return
+  }
+
+  productReviews.value = reviewsData
+
+  if (reviewsData.length === 0) {
+    averageRating.value = 0
+    return
+  }
+
+  const sum = reviewsData.reduce((total, review) => total + (review?.rating || 0), 0)
+  averageRating.value = sum / reviewsData.length
+}
+
+async function loadRelatedProducts() {
+  const relatedData = await $fetch(`/api/products/related/${numericProductId}`).catch(() => null)
+  relatedProducts.value = Array.isArray(relatedData) ? relatedData : []
+}
+
+watch(
+  () => data.value,
+  (nextProduct) => {
+    product.value = nextProduct || {}
+    setGalleryItems(buildGalleryItems(product.value))
+  },
+  { immediate: true }
+)
+
+onMounted(async () => {
+  await wishlistStore.initWishlist()
+
+  try {
+    await Promise.all([loadProductReviews(), loadRelatedProducts()])
+  } catch (error) {
+    console.error('Errore nel caricamento dei dati prodotto:', error)
+  }
+})
+</script>
