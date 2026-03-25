@@ -163,6 +163,29 @@ export const useCartStore = defineStore('cartStore', {
       this.persistCart()
     },
 
+    removeItem(cod_item) {
+      const codeItem = String(cod_item ?? '')
+      if (!codeItem) return
+
+      const nextCart = this.cart.filter(
+        (item) => String(item.codeItem) !== codeItem
+      )
+
+      if (nextCart.length === this.cart.length) return
+
+      this.cart = nextCart
+      this.flag_cart = this.cart.length > 0
+
+      if (!this.flag_cart) {
+        this.total = 0
+        this.clearPersistedCart()
+        return
+      }
+
+      this.recalculateTotal()
+      this.persistCart()
+    },
+
     clearCart() {
       this.cart = []
       this.total = 0
